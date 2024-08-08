@@ -1,0 +1,20 @@
+{
+  "name": "@oraichain/bitcoin-bridge-relayer",
+  "version": "1.0.0",
+  "main": "build/index.js",
+  "files": [
+    "build/"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@oraichain/bitcoin-bridge-contracts-build": "workspace:^",
+    "@oraichain/bitcoin-bridge-contracts-sdk": "workspace:^",
+    "rpc-bitcoin": "^2.0.0"
+  },
+  "devDependencies": {
+    "@oraichain/cw-simulate": "^2.8.97"
+  }
+}
