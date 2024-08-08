@@ -24,7 +24,8 @@
     "@cosmjs/crypto": "0.31.3",
     "@cosmjs/proto-signing": "0.31.3",
     "@cosmjs/stargate": "0.31.3",
-    "@cosmjs/tendermint-rpc": "0.31.3"
+    "@cosmjs/tendermint-rpc": "0.31.3",
+    "joi": "^17.13.3"
   },
   "devDependencies": {
     "@babel/traverse": "7.24.1",

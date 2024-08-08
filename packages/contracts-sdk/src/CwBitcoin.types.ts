@@ -3,74 +3,124 @@ export interface InstantiateMsg {
   bridge_wasm_addr?: Addr | null;
   token_factory_addr: Addr;
 }
-export type ExecuteMsg = {
-  update_bitcoin_config: {
-    config: BitcoinConfig;
-  };
-} | {
-  update_checkpoint_config: {
-    config: CheckpointConfig;
-  };
-} | {
-  update_header_config: {
-    config: HeaderConfig;
-  };
-} | {
-  relay_headers: {
-    headers: WrappedHeader[];
-  };
-} | {
-  relay_deposit: {
-    btc_height: number;
-    btc_proof: Binary;
-    btc_tx: Binary;
-    btc_vout: number;
-    dest: Dest;
-    sigset_index: number;
-  };
-} | {
-  relay_checkpoint: {
-    btc_height: number;
-    btc_proof: Binary;
-    cp_index: number;
-  };
-} | {
-  withdraw_to_bitcoin: {
-    script_pubkey: Binary;
-  };
-} | {
-  submit_checkpoint_signature: {
-    btc_height: number;
-    checkpoint_index: number;
-    sigs: Signature[];
-    xpub: HexBinary;
-  };
-} | {
-  submit_recovery_signature: {
-    sigs: Signature[];
-    xpub: HexBinary;
-  };
-} | {
-  set_signatory_key: {
-    xpub: HexBinary;
-  };
-} | {
-  add_validators: {
-    addrs: string[];
-    infos: [number, [number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number]][];
-  };
-} | {
-  register_denom: {
-    metadata?: Metadata | null;
-    subdenom: string;
-  };
-};
+export type ExecuteMsg =
+  | {
+      update_bitcoin_config: {
+        config: BitcoinConfig;
+      };
+    }
+  | {
+      update_checkpoint_config: {
+        config: CheckpointConfig;
+      };
+    }
+  | {
+      update_header_config: {
+        config: HeaderConfig;
+      };
+    }
+  | {
+      relay_headers: {
+        headers: WrappedHeader[];
+      };
+    }
+  | {
+      relay_deposit: {
+        btc_height: number;
+        btc_proof: Binary;
+        btc_tx: Binary;
+        btc_vout: number;
+        dest: Dest;
+        sigset_index: number;
+      };
+    }
+  | {
+      relay_checkpoint: {
+        btc_height: number;
+        btc_proof: Binary;
+        cp_index: number;
+      };
+    }
+  | {
+      withdraw_to_bitcoin: {
+        script_pubkey: Binary;
+      };
+    }
+  | {
+      submit_checkpoint_signature: {
+        btc_height: number;
+        checkpoint_index: number;
+        sigs: Signature[];
+        xpub: HexBinary;
+      };
+    }
+  | {
+      submit_recovery_signature: {
+        sigs: Signature[];
+        xpub: HexBinary;
+      };
+    }
+  | {
+      set_signatory_key: {
+        xpub: HexBinary;
+      };
+    }
+  | {
+      add_validators: {
+        addrs: string[];
+        infos: [
+          number,
+          [
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number,
+            number
+          ]
+        ][];
+      };
+    }
+  | {
+      register_denom: {
+        metadata?: Metadata | null;
+        subdenom: string;
+      };
+    };
 export type Binary = string;
-export type Dest = {
-  address: Addr;
-} | {
-  ibc: IbcDest;
-};
+export type Dest =
+  | {
+      address: Addr;
+    }
+  | {
+      ibc: IbcDest;
+    };
 export type Signature = number[];
 export type HexBinary = string;
 export interface BitcoinConfig {
@@ -140,49 +190,98 @@ export interface DenomUnit {
   denom: string;
   exponent: number;
 }
-export type QueryMsg = {
-  header_height: {};
-} | {
-  deposit_fees: {
-    index?: number | null;
-  };
-} | {
-  completed_checkpoint_txs: {
-    limit: number;
-  };
-} | {
-  signed_recovery_txs: {};
-} | {
-  withdrawal_fees: {
-    address: string;
-    index?: number | null;
-  };
-} | {
-  sidechain_block_hash: {};
-} | {
-  checkpoint_by_index: {
-    index: number;
-  };
-} | {
-  signing_recovery_txs: {
-    xpub: HexBinary;
-  };
-} | {
-  signing_txs_at_checkpoint_index: {
-    checkpoint_index: number;
-    xpub: HexBinary;
-  };
-} | {
-  confirmed_index: {};
-} | {
-  building_index: {};
-} | {
-  completed_index: {};
-} | {
-  unhandled_confirmed_index: {};
-};
+export type QueryMsg =
+  | {
+      header_height: {};
+    }
+  | {
+      deposit_fees: {
+        index?: number | null;
+      };
+    }
+  | {
+      completed_checkpoint_txs: {
+        limit: number;
+      };
+    }
+  | {
+      signed_recovery_txs: {};
+    }
+  | {
+      withdrawal_fees: {
+        address: string;
+        index?: number | null;
+      };
+    }
+  | {
+      sidechain_block_hash: {};
+    }
+  | {
+      checkpoint_by_index: {
+        index: number;
+      };
+    }
+  | {
+      signing_recovery_txs: {
+        xpub: HexBinary;
+      };
+    }
+  | {
+      signing_txs_at_checkpoint_index: {
+        checkpoint_index: number;
+        xpub: HexBinary;
+      };
+    }
+  | {
+      confirmed_index: {};
+    }
+  | {
+      building_index: {};
+    }
+  | {
+      completed_index: {};
+    }
+  | {
+      unhandled_confirmed_index: {};
+    };
 export interface MigrateMsg {}
 export type Uint32 = number;
 export type Uint64 = number;
 export type ArrayOfBinary = Binary[];
-export type ArrayOfTupleOfArraySize_32OfUint8AndUint32 = [[number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number, number], number][];
+export type ArrayOfTupleOfArraySize32OfUint8AndUint32 = [
+  [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number
+  ],
+  number
+][];
