@@ -2,6 +2,7 @@ import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { WrappedHeader } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
 import { newWrappedHeader } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import { RPCClient } from "rpc-bitcoin";
+import { setTimeout } from "timers/promises";
 import { BlockHeader, VerbosedBlockHeader } from "../../@types";
 import { RELAY_HEADER_BATCH_SIZE } from "../../constants";
 
@@ -14,13 +15,37 @@ class RelayerService {
     this.cwBitcoinClient = cwBitcoinClient;
   }
 
+  // [RELAY HEADER]
   async relayHeader() {
-    let fullNodeHash = await this.btcClient.getbestblockhash();
-    let sideChainHash = await this.cwBitcoinClient.sidechainBlockHash();
-    console.log({ fullNodeHash }, { sideChainHash });
+    let lastHash = null;
 
-    if (fullNodeHash !== sideChainHash) {
-      this.relayHeaderBatch(fullNodeHash, sideChainHash);
+    while (true) {
+      let fullNodeHash = await this.btcClient.getbestblockhash();
+      let sideChainHash = await this.cwBitcoinClient.sidechainBlockHash();
+
+      if (fullNodeHash !== sideChainHash) {
+        try {
+          await this.relayHeaderBatch(fullNodeHash, sideChainHash);
+        } catch (err) {
+          console.log(err);
+        }
+        await setTimeout(100);
+        continue;
+      }
+
+      if (lastHash != fullNodeHash) {
+        lastHash = fullNodeHash;
+        const lastHashHeader: BlockHeader = await this.btcClient.getblockheader(
+          {
+            blockhash: lastHash,
+          }
+        );
+        console.log(
+          `Sidechain header state is up-to-date:\n\thash=${lastHashHeader.hash}\n\theight=${lastHashHeader.height}`
+        );
+      }
+
+      await setTimeout(100);
     }
   }
 
@@ -37,7 +62,23 @@ class RelayerService {
       return;
     }
     let startHeader = await this.commonAncestor(fullNodeHash, sideChainHash);
-    console.log({ startHeader });
+    let wrappedHeaders = await this.getHeaderBatch(startHeader.hash);
+
+    console.log(
+      `Relaying headers...\n\theight=${wrappedHeaders[0].height}\n\tbatches=${wrappedHeaders.length}`
+    );
+
+    const tx = await this.cwBitcoinClient.relayHeaders({
+      headers: [...wrappedHeaders],
+    });
+    console.log(`Relayed headers with tx hash: ${tx.transactionHash}`);
+
+    let currentSidechainBlockHash =
+      await this.cwBitcoinClient.sidechainBlockHash();
+    if (currentSidechainBlockHash === fullNodeHash) {
+      console.log("Relayed all headers");
+    }
+    return;
   }
 
   async getHeaderBatch(blockHash: string): Promise<WrappedHeader[]> {
@@ -107,6 +148,8 @@ class RelayerService {
 
     return leftHeader;
   }
+
+  // [RELAY_DEPOSIT]
 }
 
 export default RelayerService;
