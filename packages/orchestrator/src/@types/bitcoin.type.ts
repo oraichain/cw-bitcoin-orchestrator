@@ -14,3 +14,7 @@ export interface BlockHeader {
   nTx: number;
   previousblockhash: string;
 }
+
+export interface VerbosedBlockHeader extends BlockHeader {
+  nextblockhash: string;
+}

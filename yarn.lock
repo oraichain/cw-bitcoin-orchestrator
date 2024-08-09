@@ -1394,14 +1394,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@oraichain/bitcoin-bridge-relayer@workspace:packages/relayer":
+"@oraichain/bitcoin-bridge-orchestrator@workspace:packages/orchestrator":
   version: 0.0.0-use.local
-  resolution: "@oraichain/bitcoin-bridge-relayer@workspace:packages/relayer"
+  resolution: "@oraichain/bitcoin-bridge-orchestrator@workspace:packages/orchestrator"
   dependencies:
     "@oraichain/bitcoin-bridge-contracts-build": "workspace:^"
     "@oraichain/bitcoin-bridge-contracts-sdk": "workspace:^"
+    "@oraichain/bitcoin-bridge-wasm-sdk": "workspace:^"
     "@oraichain/cw-simulate": "npm:^2.8.97"
     rpc-bitcoin: "npm:^2.0.0"
+  languageName: unknown
+  linkType: soft
+
+"@oraichain/bitcoin-bridge-wasm-sdk@workspace:^, @oraichain/bitcoin-bridge-wasm-sdk@workspace:packages/bitcoin-bridge-wasm-sdk":
+  version: 0.0.0-use.local
+  resolution: "@oraichain/bitcoin-bridge-wasm-sdk@workspace:packages/bitcoin-bridge-wasm-sdk"
   languageName: unknown
   linkType: soft
 

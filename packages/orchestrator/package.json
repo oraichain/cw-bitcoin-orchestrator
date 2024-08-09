@@ -1,5 +1,5 @@
 {
-  "name": "@oraichain/bitcoin-bridge-relayer",
+  "name": "@oraichain/bitcoin-bridge-orchestrator",
   "version": "1.0.0",
   "main": "build/index.js",
   "files": [
@@ -12,6 +12,7 @@
   "dependencies": {
     "@oraichain/bitcoin-bridge-contracts-build": "workspace:^",
     "@oraichain/bitcoin-bridge-contracts-sdk": "workspace:^",
+    "@oraichain/bitcoin-bridge-wasm-sdk": "workspace:^",
     "rpc-bitcoin": "^2.0.0"
   },
   "devDependencies": {

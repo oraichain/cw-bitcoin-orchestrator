@@ -1,6 +1,9 @@
 import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import { WrappedHeader } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
+import { newWrappedHeader } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import { RPCClient } from "rpc-bitcoin";
-import { BlockHeader } from "src/@types";
+import { BlockHeader, VerbosedBlockHeader } from "../../@types";
+import { RELAY_HEADER_BATCH_SIZE } from "../../constants";
 
 class RelayerService {
   btcClient: RPCClient;
@@ -35,6 +38,39 @@ class RelayerService {
     }
     let startHeader = await this.commonAncestor(fullNodeHash, sideChainHash);
     console.log({ startHeader });
+  }
+
+  async getHeaderBatch(blockHash: string): Promise<WrappedHeader[]> {
+    let cursorHeader: VerbosedBlockHeader = await this.btcClient.getblockheader(
+      {
+        blockhash: blockHash,
+        verbose: true,
+      }
+    );
+    let wrappedHeaders = [];
+    for (let i = 0; i < RELAY_HEADER_BATCH_SIZE; i++) {
+      let nextHash = cursorHeader?.nextblockhash;
+
+      if (nextHash !== undefined) {
+        cursorHeader = await this.btcClient.getblockheader({
+          blockhash: nextHash,
+          verbose: true,
+        });
+        const wrappedHeader: WrappedHeader = newWrappedHeader(
+          {
+            bits: parseInt(cursorHeader.bits, 16),
+            merkle_root: cursorHeader.merkleroot,
+            nonce: cursorHeader.nonce,
+            prev_blockhash: cursorHeader.previousblockhash,
+            time: cursorHeader.time,
+            version: cursorHeader.version,
+          },
+          cursorHeader.height
+        );
+        wrappedHeaders = [...wrappedHeaders, wrappedHeader];
+      }
+    }
+    return wrappedHeaders;
   }
 
   async commonAncestor(leftHash: string, rightHash: string) {

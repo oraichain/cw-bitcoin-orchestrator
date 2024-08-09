@@ -1,0 +1,20 @@
+{
+  "name": "@oraichain/bitcoin-bridge-wasm-sdk",
+  "collaborators": [
+    "Oraichain Labs"
+  ],
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oraichain/bitcoin-bridge-cw.git"
+  },
+  "files": [
+    "wasm_bg.wasm",
+    "wasm.js",
+    "wasm.d.ts"
+  ],
+  "main": "wasm.js",
+  "homepage": "https://orai.io",
+  "types": "wasm.d.ts"
+}
