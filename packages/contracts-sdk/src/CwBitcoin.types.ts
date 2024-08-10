@@ -192,6 +192,15 @@ export interface DenomUnit {
 }
 export type QueryMsg =
   | {
+      bitcoin_config: {};
+    }
+  | {
+      checkpoint_config: {};
+    }
+  | {
+      header_config: {};
+    }
+  | {
       header_height: {};
     }
   | {

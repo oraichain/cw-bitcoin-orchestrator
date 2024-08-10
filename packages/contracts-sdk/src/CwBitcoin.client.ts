@@ -27,6 +27,9 @@ import {
 } from "./CwBitcoin.types";
 export interface CwBitcoinReadOnlyInterface {
   contractAddress: string;
+  bitcoinConfig: () => Promise<BitcoinConfig>;
+  checkpointConfig: () => Promise<CheckpointConfig>;
+  headerConfig: () => Promise<HeaderConfig>;
   headerHeight: () => Promise<Uint32>;
   depositFees: ({ index }: { index?: number }) => Promise<Uint64>;
   completedCheckpointTxs: ({
@@ -68,6 +71,9 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
   constructor(client: CosmWasmClient, contractAddress: string) {
     this.client = client;
     this.contractAddress = contractAddress;
+    this.bitcoinConfig = this.bitcoinConfig.bind(this);
+    this.checkpointConfig = this.checkpointConfig.bind(this);
+    this.headerConfig = this.headerConfig.bind(this);
     this.headerHeight = this.headerHeight.bind(this);
     this.depositFees = this.depositFees.bind(this);
     this.completedCheckpointTxs = this.completedCheckpointTxs.bind(this);
@@ -84,6 +90,21 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
     this.unhandledConfirmedIndex = this.unhandledConfirmedIndex.bind(this);
   }
 
+  bitcoinConfig = async (): Promise<BitcoinConfig> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      bitcoin_config: {},
+    });
+  };
+  checkpointConfig = async (): Promise<CheckpointConfig> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      checkpoint_config: {},
+    });
+  };
+  headerConfig = async (): Promise<HeaderConfig> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      header_config: {},
+    });
+  };
   headerHeight = async (): Promise<Uint32> => {
     return this.client.queryContractSmart(this.contractAddress, {
       header_height: {},

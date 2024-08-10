@@ -3,8 +3,8 @@ import {
   SigningCosmWasmClient,
 } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
-import env from "./configs/env";
-import { Network } from "./configs/networks";
+import env from "../configs/env";
+import { Network } from "../configs/networks";
 
 export const initQueryClient = async () => {
   const client = await CosmWasmClient.connect(env.cosmos.rpcUrl);

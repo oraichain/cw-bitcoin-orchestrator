@@ -12,6 +12,7 @@ const envVarsSchema = Joi.object()
     CW_BITCOIN_ADDRESS: Joi.string().error(
       new Error("CW_BITCOIN_ADDRESS is required")
     ),
+    DUCKDB_DIR_NAME: Joi.string().default("db.duckdb"),
   })
   .unknown();
 
@@ -34,5 +35,8 @@ export default {
     rpcUrl: envVars.COSMOS_RPC_URL,
     cwBitcoin: envVars.CW_BITCOIN_ADDRESS,
     mnemonic: envVars.MNEMONIC,
+  },
+  duckdb: {
+    name: envVars.DUCKDB_DIR_NAME,
   },
 };

@@ -2,17 +2,27 @@ import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { WrappedHeader } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
 import { newWrappedHeader } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import { RPCClient } from "rpc-bitcoin";
-import { setTimeout } from "timers/promises";
 import { BlockHeader, VerbosedBlockHeader } from "../../@types";
 import { RELAY_HEADER_BATCH_SIZE } from "../../constants";
+import { DuckDbNode } from "../db";
+import WatchedScriptsService from "../watched_scripts";
 
 class RelayerService {
   btcClient: RPCClient;
   cwBitcoinClient: CwBitcoinClient;
+  watchedScriptClient: WatchedScriptsService;
 
-  constructor(btcClient: RPCClient, cwBitcoinClient: CwBitcoinClient) {
+  constructor(
+    btcClient: RPCClient,
+    cwBitcoinClient: CwBitcoinClient,
+    db: DuckDbNode
+  ) {
     this.btcClient = btcClient;
     this.cwBitcoinClient = cwBitcoinClient;
+    this.watchedScriptClient = new WatchedScriptsService(
+      db,
+      this.cwBitcoinClient
+    );
   }
 
   // [RELAY HEADER]
@@ -29,7 +39,6 @@ class RelayerService {
         } catch (err) {
           console.log(err);
         }
-        await setTimeout(100);
         continue;
       }
 
@@ -44,8 +53,6 @@ class RelayerService {
           `Sidechain header state is up-to-date:\n\thash=${lastHashHeader.hash}\n\theight=${lastHashHeader.height}`
         );
       }
-
-      await setTimeout(100);
     }
   }
 
@@ -150,6 +157,7 @@ class RelayerService {
   }
 
   // [RELAY_DEPOSIT]
+  async relayDeposit() {}
 }
 
 export default RelayerService;

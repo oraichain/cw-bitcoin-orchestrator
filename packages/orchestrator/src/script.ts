@@ -2,7 +2,7 @@ import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { toBinaryBlockHeader } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import env from "./configs/env";
 import { WasmLocalConfig } from "./configs/networks";
-import { initSignerClient } from "./utils";
+import { initSignerClient } from "./utils/cosmos";
 
 // Set up testnet for testing
 const main = async () => {
