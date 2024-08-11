@@ -8,13 +8,15 @@ import { TableName } from "../../utils/db";
 
 export const sqlCommands = {
   create: {
-    [TableName.WatchedScripts]: `CREATE TABLE IF NOT EXISTS WatchedScripts
+    [TableName.WatchedScripts]: `CREATE TABLE IF NOT EXISTS ${TableName.WatchedScripts}
       (
-        address VARCHAR PRIMARY KEY,
+        script VARCHAR PRIMARY KEY,
+        address VARCHAR,
         dest VARCHAR,
-        sigsetIndex: BIGINT,
-        sigsetCreateTime: BIGINT,
-      )`,
+        sigsetIndex BIGINT,
+        sigsetCreateTime BIGINT,
+      )
+      `,
   },
 };
 
@@ -89,7 +91,7 @@ export class DuckDbNode extends DuckDB {
       fs.mkdirSync(relayerDirPath, { recursive: true });
     }
 
-    const dbPath = `${relayerDirPath}/${dbName}` || ":memory:";
+    const dbPath = dbName ? `${relayerDirPath}/${dbName}` : ":memory:";
     if (!DuckDbNode.instances) {
       let db = await Database.create(dbPath);
       await db.close(); // close to flush WAL file
@@ -196,6 +198,7 @@ export class DuckDbNode extends DuckDB {
     const query = _.trim(
       `UPDATE ${tableName} ${setDataClause} ${whereClauses}`
     );
+    console.log(query);
 
     return [query, [...overrideDataValues, ...whereValues]];
   }

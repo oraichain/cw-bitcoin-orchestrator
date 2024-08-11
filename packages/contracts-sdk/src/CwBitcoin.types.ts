@@ -112,6 +112,11 @@ export type ExecuteMsg =
         metadata?: Metadata | null;
         subdenom: string;
       };
+    }
+  | {
+      trigger_begin_block: {
+        hash: Binary;
+      };
     };
 export type Binary = string;
 export type Dest =
@@ -231,6 +236,9 @@ export type QueryMsg =
       };
     }
   | {
+      building_checkpoint: {};
+    }
+  | {
       signing_recovery_txs: {
         xpub: HexBinary;
       };
@@ -239,6 +247,11 @@ export type QueryMsg =
       signing_txs_at_checkpoint_index: {
         checkpoint_index: number;
         xpub: HexBinary;
+      };
+    }
+  | {
+      processed_outpoint: {
+        key: string;
       };
     }
   | {
@@ -254,9 +267,104 @@ export type QueryMsg =
       unhandled_confirmed_index: {};
     };
 export interface MigrateMsg {}
+export type Uint128 = string;
+export type CheckpointStatus = "building" | "signing" | "complete";
+export interface Checkpoint {
+  batches: Batch[];
+  deposits_enabled: boolean;
+  fee_rate: number;
+  fees_collected: number;
+  pending: [Dest, Coin][];
+  signed_at_btc_height?: number | null;
+  sigset: SignatorySet;
+  status: CheckpointStatus;
+}
+export interface Batch {
+  batch: BitcoinTx[];
+  signed_txs: number;
+}
+export interface BitcoinTx {
+  input: Input[];
+  lock_time: number;
+  output: Binary[];
+  signed_inputs: number;
+}
+export interface Input {
+  amount: number;
+  dest: number[];
+  est_witness_vsize: number;
+  prevout: Binary;
+  redeem_script: Binary;
+  script_pubkey: Binary;
+  signatures: ThresholdSig;
+  sigset_index: number;
+}
+export interface ThresholdSig {
+  len: number;
+  message: [
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number,
+    number
+  ];
+  signed: number;
+  sigs: [Pubkey, Share][];
+  threshold: number;
+}
+export interface Pubkey {
+  bytes: number[];
+}
+export interface Share {
+  power: number;
+  sig?: Signature | null;
+}
+export interface Coin {
+  amount: Uint128;
+  denom: string;
+}
+export interface SignatorySet {
+  create_time: number;
+  index: number;
+  possible_vp: number;
+  present_vp: number;
+  signatories: Signatory[];
+}
+export interface Signatory {
+  pubkey: Pubkey;
+  voting_power: number;
+}
 export type Uint32 = number;
-export type Uint64 = number;
 export type ArrayOfBinary = Binary[];
+export type Uint64 = number;
+export type Boolean = boolean;
 export type ArrayOfTupleOfArraySize32OfUint8AndUint32 = [
   [
     number,

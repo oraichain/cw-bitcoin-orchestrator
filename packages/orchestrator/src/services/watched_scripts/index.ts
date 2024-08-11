@@ -1,8 +1,18 @@
 import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import { Dest as SdkDest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
 import { TableName } from "../../utils/db";
 import { DuckDbNode } from "../db";
 
 export interface WatchedScriptsInterface {
+  script: string;
+  address: string;
+  dest: SdkDest;
+  sigsetIndex: number;
+  sigsetCreateTime: number;
+}
+
+export interface StoredWatchedScriptsInterface {
+  script: string;
   address: string;
   dest: string;
   sigsetIndex: number;
@@ -10,6 +20,7 @@ export interface WatchedScriptsInterface {
 }
 
 class WatchedScriptsService {
+  static instances: WatchedScriptsService;
   constructor(
     protected db: DuckDbNode,
     protected cwBitcoinClient: CwBitcoinClient
@@ -18,21 +29,28 @@ class WatchedScriptsService {
     this.cwBitcoinClient = cwBitcoinClient;
   }
 
-  async insertAddress(data: WatchedScriptsInterface) {
-    const address = await this.getAddress(data.address);
-    if (!address) {
-      await this.db.insert(TableName.WatchedScripts, data);
+  async insertScript(data: WatchedScriptsInterface) {
+    const script = await this.getScript(data.script);
+    if (!script) {
+      await this.db.insert(TableName.WatchedScripts, {
+        ...data,
+        dest: JSON.stringify(data.dest),
+      });
     }
   }
 
-  async getAddress(address: string): Promise<WatchedScriptsInterface> {
+  async getScript(script: string): Promise<WatchedScriptsInterface | null> {
     const data = await this.db.select(TableName.WatchedScripts, {
-      where: { address: address },
+      where: { script: script },
     });
-    return data.length > 0 ? data[0] : undefined;
+    if (data.length === 0) {
+      return null;
+    }
+    let scriptData = data[0] as StoredWatchedScriptsInterface;
+    return { ...scriptData, dest: JSON.parse(scriptData.dest) };
   }
 
-  async removeExpiredAddresses() {
+  async removeExpired() {
     // TODO: Implement this by a single sql
     const checkpointConfig = await this.cwBitcoinClient.checkpointConfig();
     const currentTime = Date.now();

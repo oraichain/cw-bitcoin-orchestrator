@@ -67,6 +67,16 @@ export function fromBinaryTransaction(value: string): Transaction;
 */
 export function commitmentBytes(dest: Dest): Uint8Array;
 /**
+* @param {Dest} dest
+* @returns {string}
+*/
+export function toReceiverAddr(dest: Dest): string;
+/**
+* @param {Dest} dest
+* @returns {string}
+*/
+export function toSourceAddr(dest: Dest): string;
+/**
 * @param {SignatorySet} sigset
 * @param {number} bridge_fee_rate
 * @param {number} miner_fee_rate

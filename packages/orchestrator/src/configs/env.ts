@@ -3,6 +3,8 @@ import Joi from "joi";
 
 const envVarsSchema = Joi.object()
   .keys({
+    NODE_ENV: Joi.string().error(new Error("NODE_ENV is required")),
+    PORT: Joi.number().default(8000),
     MNEMONIC: Joi.string().error(new Error("MNEMONIC is required")),
     BTC_RPC_PORT: Joi.number().default(3000),
     BTC_RPC_HOST: Joi.string().default("http://127.0.0.1"),
@@ -25,6 +27,10 @@ if (error) {
 }
 
 export default {
+  server: {
+    env: envVars.NODE_ENV,
+    port: envVars.PORT,
+  },
   bitcoin: {
     port: envVars.BTC_RPC_PORT,
     host: envVars.BTC_RPC_HOST,

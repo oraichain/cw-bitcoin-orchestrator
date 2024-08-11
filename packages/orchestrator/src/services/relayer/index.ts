@@ -1,16 +1,50 @@
 import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { WrappedHeader } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
-import { newWrappedHeader } from "@oraichain/bitcoin-bridge-wasm-sdk";
+import {
+  Deposit,
+  newWrappedHeader,
+  toReceiverAddr,
+} from "@oraichain/bitcoin-bridge-wasm-sdk";
 import { RPCClient } from "rpc-bitcoin";
-import { BlockHeader, VerbosedBlockHeader } from "../../@types";
-import { RELAY_HEADER_BATCH_SIZE } from "../../constants";
+import { setTimeout } from "timers/promises";
+import {
+  BitcoinBlock,
+  BitcoinTransaction,
+  BlockHeader,
+  VerbosedBlockHeader,
+} from "../../@types";
+import {
+  RELAY_DEPOSIT_BLOCKS_SIZE,
+  RELAY_DEPOSIT_ITERATION_DELAY,
+  RELAY_HEADER_BATCH_SIZE,
+  SCAN_MEMPOOL_CHUNK_DELAY,
+  SCAN_MEMPOOL_CHUNK_SIZE,
+} from "../../constants";
+import {
+  calculateOutpointKey,
+  decodeAddress,
+  ScriptPubkeyType,
+} from "../../utils/bitcoin";
+import { convertSdkDestToWasmDest } from "../../utils/dest";
+import { setNestedMap } from "../../utils/map";
 import { DuckDbNode } from "../db";
-import WatchedScriptsService from "../watched_scripts";
+import WatchedScriptsService, {
+  WatchedScriptsInterface,
+} from "../watched_scripts";
+
+interface RelayTxIdBody {
+  tx: BitcoinTransaction;
+  script: WatchedScriptsInterface;
+}
 
 class RelayerService {
+  static instances: RelayerService;
   btcClient: RPCClient;
   cwBitcoinClient: CwBitcoinClient;
   watchedScriptClient: WatchedScriptsService;
+  relayTxids: Map<string, RelayTxIdBody>;
+  // receiver -> bitcoin_address -> (txid, vout) -> Deposit
+  depositIndex: Map<string, Map<string, Map<[string, number], Deposit>>>;
 
   constructor(
     btcClient: RPCClient,
@@ -23,6 +57,12 @@ class RelayerService {
       db,
       this.cwBitcoinClient
     );
+    WatchedScriptsService.instances = this.watchedScriptClient;
+    this.relayTxids = new Map<string, RelayTxIdBody>();
+    this.depositIndex = new Map<
+      string,
+      Map<string, Map<[string, number], Deposit>>
+    >();
   }
 
   // [RELAY HEADER]
@@ -157,7 +197,187 @@ class RelayerService {
   }
 
   // [RELAY_DEPOSIT]
-  async relayDeposit() {}
+  async relayDeposit() {
+    let prevTip = null;
+    while (true) {
+      try {
+        console.log("Scanning mempool for deposit transactions...");
+
+        // Mempool handler
+        // await this.scanTxsFromMempools();
+
+        // Block handler
+        const tip = await this.cwBitcoinClient.sidechainBlockHash();
+        if (prevTip === tip) {
+          await setTimeout(RELAY_DEPOSIT_ITERATION_DELAY);
+          continue;
+        }
+        prevTip = prevTip || tip;
+        let startHeight = (await this.commonAncestor(tip, prevTip)).height;
+        let endHeader: BlockHeader = await this.btcClient.getblockheader({
+          blockhash: tip,
+          verbose: true,
+        });
+        let endHeight = endHeader.height;
+        let numBlocks = Math.max(
+          endHeight - startHeight,
+          RELAY_DEPOSIT_BLOCKS_SIZE
+        );
+
+        await this.scanDeposits(numBlocks);
+        prevTip = tip;
+
+        console.log("Waiting some seconds for next scan...");
+        await setTimeout(RELAY_DEPOSIT_ITERATION_DELAY);
+      } catch (err) {
+        console.log(err?.message);
+      }
+    }
+  }
+
+  async lastNBlocks(numBlocks: number, tip: string): Promise<BitcoinBlock[]> {
+    let blocks = [];
+    let hash = tip; // use for traversing backwards
+    for (let i = 0; i < numBlocks; i++) {
+      let block: BitcoinBlock = await this.btcClient.getblock({
+        blockhash: hash,
+      });
+      hash = block.previousblockhash;
+      blocks = [...blocks, block];
+    }
+    return blocks;
+  }
+
+  async scanDeposits(numBlocks: number) {
+    let tip = await this.cwBitcoinClient.sidechainBlockHash();
+    let blocks = await this.lastNBlocks(numBlocks, tip);
+    for (const block of blocks) {
+      let txs = block.tx;
+      for (const tx of txs) {
+        await this.maybeRelayDeposit(tx, block.hash, block.height);
+      }
+    }
+  }
+
+  async maybeRelayDeposit(
+    txid: string,
+    blockHash: string,
+    blockHeight: number
+  ) {
+    let tx: BitcoinTransaction = await this.btcClient.getrawtransaction({
+      txid: txid,
+      verbose: true,
+    });
+    const outputs = tx.vout;
+    for (let i = 0; i < outputs.length; i++) {
+      const output = outputs[i];
+      if (output.scriptPubKey.type != ScriptPubkeyType.Witness) continue;
+
+      const address = decodeAddress(output);
+      if (address !== output.scriptPubKey.address) continue;
+
+      const script = await this.watchedScriptClient.getScript(
+        output.scriptPubKey.hex
+      );
+
+      if (!script) continue;
+
+      const isExistOutpoint = await this.cwBitcoinClient.processedOutpoint({
+        key: calculateOutpointKey(txid, i),
+      });
+
+      if (isExistOutpoint) {
+        this.depositIndex.delete(
+          toReceiverAddr(convertSdkDestToWasmDest(script.dest))
+        );
+        continue;
+      }
+
+      this.depositIndex = setNestedMap(
+        this.depositIndex,
+        [
+          toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+          address,
+          [txid, i],
+        ],
+        {
+          txid,
+          vout: i,
+          height: blockHeight,
+          amount: output.value,
+        } as Deposit
+      );
+
+      const txProof = await this.btcClient.gettxoutproof({
+        txids: [txid],
+        blockhash: blockHash,
+      });
+      await this.cwBitcoinClient.relayDeposit({
+        btcProof: txProof,
+        btcHeight: blockHeight,
+        btcTx: txid,
+        btcVout: i,
+        dest: script.dest,
+        sigsetIndex: script.sigsetIndex,
+      });
+    }
+  }
+
+  async scanTxsFromMempools() {
+    let mempoolTxs = await this.btcClient.getrawmempool();
+    let idx = 0;
+    for (const txid of mempoolTxs) {
+      if (this.relayTxids.get(txid)) continue;
+
+      let tx: BitcoinTransaction = await this.btcClient.getrawtransaction({
+        txid: txid,
+        verbose: true,
+      });
+      const outputs = tx.vout;
+      for (let vout = 0; vout < outputs.length; vout++) {
+        let output = outputs[vout];
+        if (output.scriptPubKey.type != ScriptPubkeyType.Witness) {
+          continue;
+        }
+
+        const address = decodeAddress(output);
+
+        if (address !== output.scriptPubKey.address) continue;
+
+        const script = await this.watchedScriptClient.getScript(
+          output.scriptPubKey.hex
+        );
+
+        if (!script) continue;
+
+        this.relayTxids.set(txid, {
+          tx,
+          script,
+        });
+
+        this.depositIndex = setNestedMap(
+          this.depositIndex,
+          [
+            toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+            address,
+            [txid, vout],
+          ],
+          {
+            txid,
+            vout,
+            height: undefined,
+            amount: output.value,
+          } as Deposit
+        );
+      }
+      idx++;
+
+      if (idx == SCAN_MEMPOOL_CHUNK_SIZE) {
+        await setTimeout(SCAN_MEMPOOL_CHUNK_DELAY);
+        idx = 0;
+      }
+    }
+  }
 }
 
 export default RelayerService;

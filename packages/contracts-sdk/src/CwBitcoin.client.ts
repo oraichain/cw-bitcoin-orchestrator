@@ -4,7 +4,7 @@
  * and run the @oraichain/ts-codegen generate command to regenerate this file.
  */
 
-import { Coin, StdFee } from "@cosmjs/amino";
+import { StdFee } from "@cosmjs/amino";
 import {
   CosmWasmClient,
   ExecuteResult,
@@ -15,7 +15,10 @@ import {
   ArrayOfTupleOfArraySize32OfUint8AndUint32,
   Binary,
   BitcoinConfig,
+  Boolean,
+  Checkpoint,
   CheckpointConfig,
+  Coin,
   Dest,
   HeaderConfig,
   HexBinary,
@@ -46,7 +49,8 @@ export interface CwBitcoinReadOnlyInterface {
     index?: number;
   }) => Promise<Uint64>;
   sidechainBlockHash: () => Promise<HexBinary>;
-  checkpointByIndex: ({ index }: { index: number }) => Promise<Uint64>;
+  checkpointByIndex: ({ index }: { index: number }) => Promise<Checkpoint>;
+  buildingCheckpoint: () => Promise<Checkpoint>;
   signingRecoveryTxs: ({
     xpub,
   }: {
@@ -59,6 +63,7 @@ export interface CwBitcoinReadOnlyInterface {
     checkpointIndex: number;
     xpub: HexBinary;
   }) => Promise<ArrayOfTupleOfArraySize32OfUint8AndUint32>;
+  processedOutpoint: ({ key }: { key: string }) => Promise<Boolean>;
   confirmedIndex: () => Promise<Uint32>;
   buildingIndex: () => Promise<Uint32>;
   completedIndex: () => Promise<Uint32>;
@@ -81,9 +86,11 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
     this.withdrawalFees = this.withdrawalFees.bind(this);
     this.sidechainBlockHash = this.sidechainBlockHash.bind(this);
     this.checkpointByIndex = this.checkpointByIndex.bind(this);
+    this.buildingCheckpoint = this.buildingCheckpoint.bind(this);
     this.signingRecoveryTxs = this.signingRecoveryTxs.bind(this);
     this.signingTxsAtCheckpointIndex =
       this.signingTxsAtCheckpointIndex.bind(this);
+    this.processedOutpoint = this.processedOutpoint.bind(this);
     this.confirmedIndex = this.confirmedIndex.bind(this);
     this.buildingIndex = this.buildingIndex.bind(this);
     this.completedIndex = this.completedIndex.bind(this);
@@ -152,11 +159,20 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
       sidechain_block_hash: {},
     });
   };
-  checkpointByIndex = async ({ index }: { index: number }): Promise<Uint64> => {
+  checkpointByIndex = async ({
+    index,
+  }: {
+    index: number;
+  }): Promise<Checkpoint> => {
     return this.client.queryContractSmart(this.contractAddress, {
       checkpoint_by_index: {
         index,
       },
+    });
+  };
+  buildingCheckpoint = async (): Promise<Checkpoint> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      building_checkpoint: {},
     });
   };
   signingRecoveryTxs = async ({
@@ -181,6 +197,13 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
       signing_txs_at_checkpoint_index: {
         checkpoint_index: checkpointIndex,
         xpub,
+      },
+    });
+  };
+  processedOutpoint = async ({ key }: { key: string }): Promise<Boolean> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      processed_outpoint: {
+        key,
       },
     });
   };
@@ -354,6 +377,16 @@ export interface CwBitcoinInterface extends CwBitcoinReadOnlyInterface {
     _memo?: string,
     _funds?: Coin[]
   ) => Promise<ExecuteResult>;
+  triggerBeginBlock: (
+    {
+      hash,
+    }: {
+      hash: Binary;
+    },
+    _fee?: number | StdFee | "auto",
+    _memo?: string,
+    _funds?: Coin[]
+  ) => Promise<ExecuteResult>;
 }
 export class CwBitcoinClient
   extends CwBitcoinQueryClient
@@ -384,6 +417,7 @@ export class CwBitcoinClient
     this.setSignatoryKey = this.setSignatoryKey.bind(this);
     this.addValidators = this.addValidators.bind(this);
     this.registerDenom = this.registerDenom.bind(this);
+    this.triggerBeginBlock = this.triggerBeginBlock.bind(this);
   }
 
   updateBitcoinConfig = async (
@@ -694,6 +728,29 @@ export class CwBitcoinClient
         register_denom: {
           metadata,
           subdenom,
+        },
+      },
+      _fee,
+      _memo,
+      _funds
+    );
+  };
+  triggerBeginBlock = async (
+    {
+      hash,
+    }: {
+      hash: Binary;
+    },
+    _fee: number | StdFee | "auto" = "auto",
+    _memo?: string,
+    _funds?: Coin[]
+  ): Promise<ExecuteResult> => {
+    return await this.client.execute(
+      this.sender,
+      this.contractAddress,
+      {
+        trigger_begin_block: {
+          hash,
         },
       },
       _fee,
