@@ -21,6 +21,7 @@
     "duckdb-async": "^0.9.2",
     "express": "^4.19.2",
     "helmet": "^7.1.0",
+    "http-status": "^1.7.4",
     "morgan": "^1.10.0",
     "rpc-bitcoin": "^2.0.0",
     "winston": "^3.14.1",

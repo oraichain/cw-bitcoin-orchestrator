@@ -1,10 +1,13 @@
 import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { WrappedHeader } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
 import {
+  commitmentBytes,
   Deposit,
+  DepositInfo,
   newWrappedHeader,
   toReceiverAddr,
 } from "@oraichain/bitcoin-bridge-wasm-sdk";
+import * as btc from "bitcoinjs-lib";
 import { RPCClient } from "rpc-bitcoin";
 import { setTimeout } from "timers/promises";
 import {
@@ -23,6 +26,7 @@ import {
 import {
   calculateOutpointKey,
   decodeAddress,
+  redeemScript,
   ScriptPubkeyType,
 } from "../../utils/bitcoin";
 import { convertSdkDestToWasmDest } from "../../utils/dest";
@@ -312,14 +316,18 @@ class RelayerService {
         txids: [txid],
         blockhash: blockHash,
       });
-      await this.cwBitcoinClient.relayDeposit({
-        btcProof: txProof,
-        btcHeight: blockHeight,
-        btcTx: txid,
-        btcVout: i,
-        dest: script.dest,
-        sigsetIndex: script.sigsetIndex,
-      });
+      try {
+        await this.cwBitcoinClient.relayDeposit({
+          btcProof: txProof,
+          btcHeight: blockHeight,
+          btcTx: txid,
+          btcVout: i,
+          dest: script.dest,
+          sigsetIndex: script.sigsetIndex,
+        });
+      } catch (err) {
+        console.log(`[RELAY_DEPOSIT_FAILED] ${err?.message}`);
+      }
     }
   }
 
@@ -377,6 +385,51 @@ class RelayerService {
         idx = 0;
       }
     }
+  }
+
+  // [QUERY FUNCTIONS]
+  async getPendingDeposits(receiver: string): Promise<DepositInfo[]> {
+    const currentSidechainBlockHash =
+      await this.cwBitcoinClient.sidechainBlockHash();
+    const blockHeader: BlockHeader = await this.btcClient.getblockheader({
+      blockhash: currentSidechainBlockHash,
+    });
+    const currentBtcHeight = blockHeader.height;
+
+    const deposits: DepositInfo[] = [];
+
+    const addressMap = this.depositIndex.get(receiver);
+    if (addressMap) {
+      for (const addressMapValue of addressMap.values()) {
+        for (const deposit of addressMapValue.values()) {
+          const confirmations = deposit.height
+            ? currentBtcHeight - deposit.height + 1
+            : 0;
+          deposits.push({
+            deposit,
+            confirmations,
+          });
+        }
+      }
+    }
+
+    return deposits;
+  }
+
+  async getDepositAddress(receiver: string): Promise<string> {
+    const checkpoint = await this.cwBitcoinClient.buildingCheckpoint();
+    const checkpointConfig = await this.cwBitcoinClient.checkpointConfig();
+    const sigset = checkpoint.sigset;
+    const encodedDest = commitmentBytes({ Address: receiver });
+    const depositScript = redeemScript(
+      sigset,
+      Buffer.from(encodedDest),
+      checkpointConfig.sigset_threshold
+    );
+    return btc.payments.p2wsh({
+      redeem: { output: depositScript },
+      network: btc.networks.testnet,
+    }).address;
   }
 }
 

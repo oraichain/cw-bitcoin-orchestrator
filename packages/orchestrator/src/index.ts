@@ -8,6 +8,7 @@ import helmet from "helmet";
 import http from "http";
 import { RPCClient } from "rpc-bitcoin";
 import xss from "xss-clean";
+import bitcoinRoute from "./apis/routes/bitcoin.route";
 import env from "./configs/env";
 import morgan from "./configs/morgan";
 import { WasmLocalConfig } from "./configs/networks";
@@ -45,6 +46,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 const PORT = env.server.port;
+
+app.use("/api/bitcoin", bitcoinRoute);
 
 server.listen(PORT, async () => {
   console.log("[ACTIVE] Server is running on port " + PORT);

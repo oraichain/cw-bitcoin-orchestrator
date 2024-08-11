@@ -1,3 +1,5 @@
+import { Deposit } from "@oraichain/bitcoin-bridge-wasm-sdk";
+
 export interface BlockHeader {
   hash: string;
   confirmations: number;
@@ -73,4 +75,9 @@ export type BitcoinBlock = {
   size: number;
   weight: number;
   tx: string[]; // Array of transaction IDs
+};
+
+export type DepositInfo = {
+  deposit: Deposit;
+  confirmations: number;
 };
