@@ -5,11 +5,18 @@ import { Vout } from "../@types";
 
 export enum ScriptPubkeyType {
   Pubkey = "pubkeyhash",
-  Witness = "witness_v0_keyhash",
+  WitnessKeyHash = "witness_v0_keyhash",
+  WitnessScriptHash = "witness_v0_scripthash",
 }
 
 export function calculateOutpointKey(txid: string, vout: number): string {
   return `${txid}:${vout}`;
+}
+
+export function toScriptPubKeyP2WSH(redeemScript: Buffer) {
+  const redeemScriptHash = btc.crypto.sha256(redeemScript);
+  const scriptPubKey = btc.script.compile([btc.opcodes.OP_0, redeemScriptHash]);
+  return scriptPubKey;
 }
 
 export const decodeAddress = (output: Vout): string | null => {
@@ -17,9 +24,15 @@ export const decodeAddress = (output: Vout): string | null => {
 
   let address = null;
   switch (output.scriptPubKey.type) {
-    case ScriptPubkeyType.Witness:
+    case ScriptPubkeyType.WitnessKeyHash:
+      address = btc.payments.p2pkh({
+        output: scriptPubKeyBuffer,
+        network: btc.networks.testnet,
+      }).address;
+      break;
+    case ScriptPubkeyType.WitnessScriptHash:
       address = btc.payments.p2wsh({
-        redeem: { output: scriptPubKeyBuffer },
+        output: scriptPubKeyBuffer,
         network: btc.networks.testnet,
       }).address;
       break;

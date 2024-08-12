@@ -28,6 +28,7 @@ import {
   decodeAddress,
   redeemScript,
   ScriptPubkeyType,
+  toScriptPubKeyP2WSH,
 } from "../../utils/bitcoin";
 import { convertSdkDestToWasmDest } from "../../utils/dest";
 import { setNestedMap } from "../../utils/map";
@@ -205,12 +206,13 @@ class RelayerService {
     let prevTip = null;
     while (true) {
       try {
-        console.log("Scanning mempool for deposit transactions...");
+        // console.log("Scanning mempool for deposit transactions...");
 
         // Mempool handler
         // await this.scanTxsFromMempools();
 
         // Block handler
+        console.log("Scanning blocks for deposit transactions...");
         const tip = await this.cwBitcoinClient.sidechainBlockHash();
         if (prevTip === tip) {
           await setTimeout(RELAY_DEPOSIT_ITERATION_DELAY);
@@ -253,13 +255,22 @@ class RelayerService {
   }
 
   async scanDeposits(numBlocks: number) {
-    let tip = await this.cwBitcoinClient.sidechainBlockHash();
-    let blocks = await this.lastNBlocks(numBlocks, tip);
-    for (const block of blocks) {
-      let txs = block.tx;
-      for (const tx of txs) {
-        await this.maybeRelayDeposit(tx, block.hash, block.height);
+    try {
+      let tip = await this.cwBitcoinClient.sidechainBlockHash();
+      let blocks = await this.lastNBlocks(numBlocks, tip);
+      let i = 0;
+      for (const block of blocks) {
+        i++;
+        if (i < 11) {
+          continue;
+        }
+        let txs = block.tx;
+        for (const tx of txs) {
+          await this.maybeRelayDeposit(tx, block.hash, block.height);
+        }
       }
+    } catch (err) {
+      console.log(err?.message);
     }
   }
 
@@ -270,12 +281,27 @@ class RelayerService {
   ) {
     let tx: BitcoinTransaction = await this.btcClient.getrawtransaction({
       txid: txid,
+      blockhash: blockHash,
       verbose: true,
     });
+
+    if (
+      txid ==
+        "9b8bbd7b21a00a3b5aa039b8f614f6a13a1bb62ded48e6f59b625ffda2e031ed" ||
+      txid ==
+        "8621eac5e8658ffe9314a1d979d8dbd5bbc6ede59dcaa627a68e0f9ac41a9221" ||
+      txid ==
+        "35818f234070c7e67d45509d809ca975a8009c25a99d02624b6d8820bf6916d1" ||
+      txid == "bfa13a6bdd576b7bc076573568fe2b4998462d835a87fc7221524230fcc4587d"
+    ) {
+      console.log("Yup found me");
+    }
     const outputs = tx.vout;
     for (let i = 0; i < outputs.length; i++) {
       const output = outputs[i];
-      if (output.scriptPubKey.type != ScriptPubkeyType.Witness) continue;
+
+      if (output.scriptPubKey.type != ScriptPubkeyType.WitnessScriptHash)
+        continue;
 
       const address = decodeAddress(output);
       if (address !== output.scriptPubKey.address) continue;
@@ -317,73 +343,80 @@ class RelayerService {
         blockhash: blockHash,
       });
       try {
-        await this.cwBitcoinClient.relayDeposit({
-          btcProof: txProof,
+        console.log("Hex string: ", txProof);
+        console.log("Base64: ", Buffer.from(txProof, "hex").toString("base64"));
+        const tx = await this.cwBitcoinClient.relayDeposit({
           btcHeight: blockHeight,
-          btcTx: txid,
+          btcProof: Buffer.from(txProof, "hex").toString("base64"),
+          btcTx: Buffer.from(txid, "hex").toString("base64"),
           btcVout: i,
           dest: script.dest,
-          sigsetIndex: script.sigsetIndex,
+          sigsetIndex: Number(script.sigsetIndex),
         });
+        console.log(`Relayed deposit tx ${txid} at tx ${tx.transactionHash}`);
       } catch (err) {
-        console.log(`[RELAY_DEPOSIT_FAILED] ${err?.message}`);
+        console.log(`[RELAY_DEPOSIT_FAILED] ${err}`);
       }
     }
   }
 
   async scanTxsFromMempools() {
-    let mempoolTxs = await this.btcClient.getrawmempool();
-    let idx = 0;
-    for (const txid of mempoolTxs) {
-      if (this.relayTxids.get(txid)) continue;
+    try {
+      let mempoolTxs = await this.btcClient.getrawmempool();
+      let idx = 0;
+      for (const txid of mempoolTxs) {
+        if (this.relayTxids.get(txid)) continue;
 
-      let tx: BitcoinTransaction = await this.btcClient.getrawtransaction({
-        txid: txid,
-        verbose: true,
-      });
-      const outputs = tx.vout;
-      for (let vout = 0; vout < outputs.length; vout++) {
-        let output = outputs[vout];
-        if (output.scriptPubKey.type != ScriptPubkeyType.Witness) {
-          continue;
-        }
-
-        const address = decodeAddress(output);
-
-        if (address !== output.scriptPubKey.address) continue;
-
-        const script = await this.watchedScriptClient.getScript(
-          output.scriptPubKey.hex
-        );
-
-        if (!script) continue;
-
-        this.relayTxids.set(txid, {
-          tx,
-          script,
+        let tx: BitcoinTransaction = await this.btcClient.getrawtransaction({
+          txid: txid,
+          verbose: true,
         });
+        const outputs = tx.vout;
 
-        this.depositIndex = setNestedMap(
-          this.depositIndex,
-          [
-            toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
-            address,
-            [txid, vout],
-          ],
-          {
-            txid,
-            vout,
-            height: undefined,
-            amount: output.value,
-          } as Deposit
-        );
-      }
-      idx++;
+        for (let vout = 0; vout < outputs.length; vout++) {
+          let output = outputs[vout];
+          if (output.scriptPubKey.type != ScriptPubkeyType.WitnessScriptHash) {
+            continue;
+          }
 
-      if (idx == SCAN_MEMPOOL_CHUNK_SIZE) {
-        await setTimeout(SCAN_MEMPOOL_CHUNK_DELAY);
-        idx = 0;
+          const address = decodeAddress(output);
+          if (address !== output.scriptPubKey.address) continue;
+
+          const script = await this.watchedScriptClient.getScript(
+            output.scriptPubKey.hex
+          );
+
+          if (!script) continue;
+
+          this.relayTxids.set(txid, {
+            tx,
+            script,
+          });
+
+          this.depositIndex = setNestedMap(
+            this.depositIndex,
+            [
+              toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+              address,
+              [txid, vout],
+            ],
+            {
+              txid,
+              vout,
+              height: undefined,
+              amount: output.value,
+            } as Deposit
+          );
+        }
+        idx++;
+
+        if (idx == SCAN_MEMPOOL_CHUNK_SIZE) {
+          await setTimeout(SCAN_MEMPOOL_CHUNK_DELAY);
+          idx = 0;
+        }
       }
+    } catch (err) {
+      console.log(err?.message);
     }
   }
 
@@ -396,8 +429,7 @@ class RelayerService {
     });
     const currentBtcHeight = blockHeader.height;
 
-    const deposits: DepositInfo[] = [];
-
+    let deposits: DepositInfo[] = [];
     const addressMap = this.depositIndex.get(receiver);
     if (addressMap) {
       for (const addressMapValue of addressMap.values()) {
@@ -405,10 +437,13 @@ class RelayerService {
           const confirmations = deposit.height
             ? currentBtcHeight - deposit.height + 1
             : 0;
-          deposits.push({
-            deposit,
-            confirmations,
-          });
+          deposits = [
+            ...deposits,
+            {
+              deposit,
+              confirmations,
+            },
+          ];
         }
       }
     }
@@ -426,10 +461,21 @@ class RelayerService {
       Buffer.from(encodedDest),
       checkpointConfig.sigset_threshold
     );
-    return btc.payments.p2wsh({
+    let wsh = btc.payments.p2wsh({
       redeem: { output: depositScript },
       network: btc.networks.testnet,
-    }).address;
+    });
+    let address = wsh.address;
+
+    await this.watchedScriptClient.insertScript({
+      address,
+      script: toScriptPubKeyP2WSH(depositScript).toString("hex"),
+      dest: { address: receiver },
+      sigsetIndex: checkpoint.sigset.index,
+      sigsetCreateTime: checkpoint.sigset.create_time,
+    });
+
+    return address;
   }
 }
 

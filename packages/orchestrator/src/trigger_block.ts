@@ -11,14 +11,13 @@ class TriggerBlocks {
       Math.floor(Math.random() * 16).toString(16)
     ).join("");
     await this.cwBitcoinClient.triggerBeginBlock({
-      hash: hash,
+      hash: Buffer.from(hash, "hex").toString("base64"),
     });
   }
 
   async relay() {
     while (true) {
       await this.triggerBlocks();
-      console.log("[TEMP] Triggered new block...");
       await setTimeout(1000);
     }
   }
