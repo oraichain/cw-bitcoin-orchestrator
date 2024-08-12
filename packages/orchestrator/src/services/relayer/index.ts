@@ -206,10 +206,10 @@ class RelayerService {
     let prevTip = null;
     while (true) {
       try {
-        // console.log("Scanning mempool for deposit transactions...");
+        console.log("Scanning mempool for deposit transactions...");
 
         // Mempool handler
-        // await this.scanTxsFromMempools();
+        await this.scanTxsFromMempools();
 
         // Block handler
         console.log("Scanning blocks for deposit transactions...");
@@ -258,12 +258,7 @@ class RelayerService {
     try {
       let tip = await this.cwBitcoinClient.sidechainBlockHash();
       let blocks = await this.lastNBlocks(numBlocks, tip);
-      let i = 0;
       for (const block of blocks) {
-        i++;
-        if (i < 15) {
-          continue;
-        }
         let txs = block.tx;
         for (const tx of txs) {
           await this.maybeRelayDeposit(tx, block.hash, block.height);
