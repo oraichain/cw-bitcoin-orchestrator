@@ -560,6 +560,38 @@ module.exports.toSourceAddr = function(dest) {
 };
 
 /**
+* @param {string} raw_tx
+* @returns {Transaction}
+*/
+module.exports.decodeRawTx = function(raw_tx) {
+    const ptr0 = passStringToWasm0(raw_tx, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.decodeRawTx(ptr0, len0);
+    return takeObject(ret);
+};
+
+/**
+* @param {Xpub} xpub
+* @returns {string}
+*/
+module.exports.encodeXpub = function(xpub) {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.encodeXpub(retptr, addHeapObject(xpub));
+        var r0 = getInt32Memory0()[retptr / 4 + 0];
+        var r1 = getInt32Memory0()[retptr / 4 + 1];
+        deferred1_0 = r0;
+        deferred1_1 = r1;
+        return getStringFromWasm0(r0, r1);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+};
+
+/**
 * @param {SignatorySet} sigset
 * @param {number} bridge_fee_rate
 * @param {number} miner_fee_rate

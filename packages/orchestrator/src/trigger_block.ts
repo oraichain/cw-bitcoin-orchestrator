@@ -17,8 +17,10 @@ class TriggerBlocks {
 
   async relay() {
     while (true) {
-      await this.triggerBlocks();
-      await setTimeout(1000);
+      try {
+        await this.triggerBlocks();
+      } catch (err) {}
+      await setTimeout(1500);
     }
   }
 }

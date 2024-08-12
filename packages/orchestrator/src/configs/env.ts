@@ -10,7 +10,7 @@ const envVarsSchema = Joi.object()
     BTC_RPC_HOST: Joi.string().default("http://127.0.0.1"),
     BTC_RPC_USERNAME: Joi.string().default("satoshi"),
     BTC_RPC_PASSWORD: Joi.string().default("nakamoto"),
-    COSMOS_RPC_URL: Joi.string().default("https://rpc.orai.io/"),
+    COSMOS_RPC_URL: Joi.optional(),
     CW_BITCOIN_ADDRESS: Joi.string().error(
       new Error("CW_BITCOIN_ADDRESS is required")
     ),

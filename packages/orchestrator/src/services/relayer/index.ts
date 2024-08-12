@@ -2,9 +2,13 @@ import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { WrappedHeader } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
 import {
   commitmentBytes,
+  decodeRawTx,
   Deposit,
   DepositInfo,
+  fromBinaryMerkleBlock,
   newWrappedHeader,
+  toBinaryPartialMerkleTree,
+  toBinaryTransaction,
   toReceiverAddr,
 } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import * as btc from "bitcoinjs-lib";
@@ -30,6 +34,7 @@ import {
   ScriptPubkeyType,
   toScriptPubKeyP2WSH,
 } from "../../utils/bitcoin";
+import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { convertSdkDestToWasmDest } from "../../utils/dest";
 import { setNestedMap } from "../../utils/map";
 import { DuckDbNode } from "../db";
@@ -120,10 +125,12 @@ class RelayerService {
       `Relaying headers...\n\theight=${wrappedHeaders[0].height}\n\tbatches=${wrappedHeaders.length}`
     );
 
-    const tx = await this.cwBitcoinClient.relayHeaders({
-      headers: [...wrappedHeaders],
+    await wrappedExecuteTransaction(async () => {
+      const tx = await this.cwBitcoinClient.relayHeaders({
+        headers: [...wrappedHeaders],
+      });
+      console.log(`Relayed headers with tx hash: ${tx.transactionHash}`);
     });
-    console.log(`Relayed headers with tx hash: ${tx.transactionHash}`);
 
     let currentSidechainBlockHash =
       await this.cwBitcoinClient.sidechainBlockHash();
@@ -247,6 +254,7 @@ class RelayerService {
     for (let i = 0; i < numBlocks; i++) {
       let block: BitcoinBlock = await this.btcClient.getblock({
         blockhash: hash,
+        verbosity: 2,
       });
       hash = block.previousblockhash;
       blocks = [...blocks, block];
@@ -270,29 +278,12 @@ class RelayerService {
   }
 
   async maybeRelayDeposit(
-    txid: string,
+    tx: BitcoinTransaction,
     blockHash: string,
     blockHeight: number
   ) {
-    let tx: BitcoinTransaction = await this.btcClient.getrawtransaction({
-      txid: txid,
-      blockhash: blockHash,
-      verbose: true,
-    });
-
-    if (
-      txid ==
-        "9b8bbd7b21a00a3b5aa039b8f614f6a13a1bb62ded48e6f59b625ffda2e031ed" ||
-      txid ==
-        "8621eac5e8658ffe9314a1d979d8dbd5bbc6ede59dcaa627a68e0f9ac41a9221" ||
-      txid ==
-        "35818f234070c7e67d45509d809ca975a8009c25a99d02624b6d8820bf6916d1" ||
-      txid == "bfa13a6bdd576b7bc076573568fe2b4998462d835a87fc7221524230fcc4587d"
-    ) {
-      console.log("Yup found me");
-      console.log(txid);
-      console.log(blockHash);
-    }
+    const txid = tx.txid;
+    const rawTx = tx.hex;
     const outputs = tx.vout;
     for (let i = 0; i < outputs.length; i++) {
       const output = outputs[i];
@@ -320,7 +311,7 @@ class RelayerService {
         continue;
       }
 
-      this.depositIndex = setNestedMap(
+      setNestedMap(
         this.depositIndex,
         [
           toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
@@ -339,20 +330,25 @@ class RelayerService {
         txids: [txid],
         blockhash: blockHash,
       });
+
       try {
-        console.log("Hex string: ", txProof);
-        console.log("Base64: ", Buffer.from(txProof, "hex").toString("base64"));
-        const tx = await this.cwBitcoinClient.relayDeposit({
-          btcHeight: blockHeight,
-          btcProof: Buffer.from(txProof, "hex").toString("base64"),
-          btcTx: Buffer.from(txid, "hex").toString("base64"),
-          btcVout: i,
-          dest: script.dest,
-          sigsetIndex: Number(script.sigsetIndex),
+        await wrappedExecuteTransaction(async () => {
+          const tx = await this.cwBitcoinClient.relayDeposit({
+            btcHeight: blockHeight,
+            btcTx: toBinaryTransaction(decodeRawTx(rawTx)),
+            btcProof: toBinaryPartialMerkleTree(
+              fromBinaryMerkleBlock(
+                Buffer.from(txProof, "hex").toString("base64")
+              ).txn
+            ),
+            btcVout: i,
+            dest: script.dest,
+            sigsetIndex: Number(script.sigsetIndex),
+          });
+          console.log(`Relayed deposit tx ${txid} at tx ${tx.transactionHash}`);
         });
-        console.log(`Relayed deposit tx ${txid} at tx ${tx.transactionHash}`);
       } catch (err) {
-        console.log(`[RELAY_DEPOSIT_FAILED] ${err}`);
+        console.error(err);
       }
     }
   }
@@ -385,12 +381,13 @@ class RelayerService {
 
           if (!script) continue;
 
+          console.log(`Found pending deposit transaction ${txid}`);
           this.relayTxids.set(txid, {
             tx,
             script,
           });
 
-          this.depositIndex = setNestedMap(
+          setNestedMap(
             this.depositIndex,
             [
               toReceiverAddr(convertSdkDestToWasmDest(script.dest)),

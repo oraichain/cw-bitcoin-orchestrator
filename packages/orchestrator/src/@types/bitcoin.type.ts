@@ -74,7 +74,7 @@ export type BitcoinBlock = {
   strippedsize: number;
   size: number;
   weight: number;
-  tx: string[]; // Array of transaction IDs
+  tx: BitcoinTransaction[]; // Array of transaction IDs
 };
 
 export type DepositInfo = {
