@@ -261,7 +261,7 @@ class RelayerService {
       let i = 0;
       for (const block of blocks) {
         i++;
-        if (i < 11) {
+        if (i < 15) {
           continue;
         }
         let txs = block.tx;
@@ -295,6 +295,8 @@ class RelayerService {
       txid == "bfa13a6bdd576b7bc076573568fe2b4998462d835a87fc7221524230fcc4587d"
     ) {
       console.log("Yup found me");
+      console.log(txid);
+      console.log(blockHash);
     }
     const outputs = tx.vout;
     for (let i = 0; i < outputs.length; i++) {

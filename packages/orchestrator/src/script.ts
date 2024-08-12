@@ -1,6 +1,5 @@
 import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import * as crypto from "crypto";
-import HDKey from "hdkey";
 import { RPCClient } from "rpc-bitcoin";
 import env from "./configs/env";
 import { WasmLocalConfig } from "./configs/networks";
@@ -29,11 +28,20 @@ const main = async () => {
     pass: env.bitcoin.password,
   });
 
+  const proof = await btcClient.gettxoutproof({
+    txids: ["9b8bbd7b21a00a3b5aa039b8f614f6a13a1bb62ded48e6f59b625ffda2e031ed"],
+    blockhash:
+      "0000000000003263c0707b645f8647346f0b8e2c8243c9cb1c85aa764b84e552",
+  });
+  console.log(proof);
+
+  return;
+
   // Create xprivs (extended private keys)
-  const hdkey = HDKey.fromMasterSeed(createSeed(0));
+  // const hdkey = HDKey.fromMasterSeed(createSeed(0));
   // Create xpubs (extended public keys)
-  const xpub = hdkey.publicExtendedKey;
-  const xpriv = hdkey.privateExtendedKey;
+  // const xpub = hdkey.publicExtendedKey;
+  // const xpriv = hdkey.privateExtendedKey;
 
   // console.log({
   //   xpub,

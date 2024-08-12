@@ -2958,13 +2958,17 @@ __metadata:
     "@types/cookie-parser": "npm:^1"
     "@types/cors": "npm:^2.8.17"
     "@types/express": "npm:^4.17.21"
+    "@types/hdkey": "npm:^2"
     bitcoinjs-lib: "npm:^6.0.1"
+    bs58check: "npm:^4.0.0"
     compression: "npm:^1.7.4"
     cookie-parser: "npm:^1.4.6"
     cors: "npm:^2.8.5"
     duckdb-async: "npm:^0.9.2"
     express: "npm:^4.19.2"
+    hdkey: "npm:^2.1.0"
     helmet: "npm:^7.1.0"
+    http-status: "npm:^1.7.4"
     morgan: "npm:^1.10.0"
     rpc-bitcoin: "npm:^2.0.0"
     winston: "npm:^3.14.1"
@@ -3737,6 +3741,15 @@ __metadata:
   dependencies:
     "@types/node": "npm:*"
   checksum: 10c0/235d2fc69741448e853333b7c3d1180a966dd2b8972c8cbcd6b2a0c6cd7f8d582ab2b8e58219dbc62cce8f1b40aa317ff78ea2201cdd8249da5025adebed6f0b
+  languageName: node
+  linkType: hard
+
+"@types/hdkey@npm:^2":
+  version: 2.0.3
+  resolution: "@types/hdkey@npm:2.0.3"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/beb0b83d31f93aa313eb286b504a62597090a06ad0d34f35711e13569f8d8e0b9f2974a9e5c8dc15e029b1f26e325f34f39633ffea5b54b53ec0c92923d17ecf
   languageName: node
   linkType: hard
 
@@ -4870,6 +4883,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"base-x@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "base-x@npm:5.0.0"
+  checksum: 10c0/8787a582737a77f7c3d14b92de4812843af99fc62da8792f961e13c56958dc545e9ddab55f726d63987dded9eb732dc7de465730fa3db159c0de14a95067c74a
+  languageName: node
+  linkType: hard
+
 "base64-js@npm:^1.3.0, base64-js@npm:^1.3.1":
   version: 1.5.1
   resolution: "base64-js@npm:1.5.1"
@@ -5123,6 +5143,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bs58@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "bs58@npm:6.0.0"
+  dependencies:
+    base-x: "npm:^5.0.0"
+  checksum: 10c0/61910839746625ee4f69369f80e2634e2123726caaa1da6b3bcefcf7efcd9bdca86603360fed9664ffdabe0038c51e542c02581c72ca8d44f60329fe1a6bc8f4
+  languageName: node
+  linkType: hard
+
 "bs58check@npm:^2.1.2":
   version: 2.1.2
   resolution: "bs58check@npm:2.1.2"
@@ -5141,6 +5170,16 @@ __metadata:
     "@noble/hashes": "npm:^1.2.0"
     bs58: "npm:^5.0.0"
   checksum: 10c0/a01f62351d17cea5f6607f75f6b4b79d3473d018c52f1dfa6f449751062bb079ebfd556ea81c453de657102ab8c5a6b78620161f21ae05f0e5a43543e0447700
+  languageName: node
+  linkType: hard
+
+"bs58check@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "bs58check@npm:4.0.0"
+  dependencies:
+    "@noble/hashes": "npm:^1.2.0"
+    bs58: "npm:^6.0.0"
+  checksum: 10c0/a4e695202711daffa157ada2044bb55ff21adcfe22c92ede12111d55570e170dd4cb8cd058db12980dca6bd51733f17f7534cddc19ea1f7dfa9852583f888eea
   languageName: node
   linkType: hard
 
@@ -8421,6 +8460,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"hdkey@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "hdkey@npm:2.1.0"
+  dependencies:
+    bs58check: "npm:^2.1.2"
+    ripemd160: "npm:^2.0.2"
+    safe-buffer: "npm:^5.1.1"
+    secp256k1: "npm:^4.0.0"
+  checksum: 10c0/cefa0d3bae5b9e848fcb5dfe603451514bdc22119b5f7752e2a443285976302793306fa02309416992b1038ab0c52a41e477638bb87a89dd0a9938846d9bb0fb
+  languageName: node
+  linkType: hard
+
 "helmet@npm:^7.1.0":
   version: 7.1.0
   resolution: "helmet@npm:7.1.0"
@@ -8554,6 +8605,13 @@ __metadata:
   version: 2.3.0
   resolution: "http-status-codes@npm:2.3.0"
   checksum: 10c0/c2412188929e8eed6623eef468c62d0c3c082919c03e9b74fd79cfd060d11783dba44603e38a3cee52d26563fe32005913eaf6120aa8ba907da1238f3eaad5fe
+  languageName: node
+  linkType: hard
+
+"http-status@npm:^1.7.4":
+  version: 1.7.4
+  resolution: "http-status@npm:1.7.4"
+  checksum: 10c0/7b550096af22c8330218d1ff3d0736d3d5c84b90f499fdd16b2f7fc74895b18d7ff1e35ca4cb2ce138617347826480da5460ba6ae90eef0783e2c67a49471f10
   languageName: node
   linkType: hard
 
@@ -13003,7 +13061,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ripemd160@npm:^2.0.0, ripemd160@npm:^2.0.1":
+"ripemd160@npm:^2.0.0, ripemd160@npm:^2.0.1, ripemd160@npm:^2.0.2":
   version: 2.0.2
   resolution: "ripemd160@npm:2.0.2"
   dependencies:
@@ -13270,7 +13328,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"secp256k1@npm:^4.0.1, secp256k1@npm:^4.0.3":
+"secp256k1@npm:^4.0.0, secp256k1@npm:^4.0.1, secp256k1@npm:^4.0.3":
   version: 4.0.3
   resolution: "secp256k1@npm:4.0.3"
   dependencies:
