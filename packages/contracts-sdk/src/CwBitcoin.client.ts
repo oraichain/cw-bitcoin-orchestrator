@@ -21,9 +21,9 @@ import {
   Coin,
   Dest,
   HeaderConfig,
-  HexBinary,
   Metadata,
   Signature,
+  String,
   Uint32,
   Uint64,
   WrappedHeader,
@@ -48,20 +48,20 @@ export interface CwBitcoinReadOnlyInterface {
     address: string;
     index?: number;
   }) => Promise<Uint64>;
-  sidechainBlockHash: () => Promise<HexBinary>;
+  sidechainBlockHash: () => Promise<String>;
   checkpointByIndex: ({ index }: { index: number }) => Promise<Checkpoint>;
   buildingCheckpoint: () => Promise<Checkpoint>;
   signingRecoveryTxs: ({
     xpub,
   }: {
-    xpub: HexBinary;
+    xpub: String;
   }) => Promise<ArrayOfTupleOfArraySize32OfUint8AndUint32>;
   signingTxsAtCheckpointIndex: ({
     checkpointIndex,
     xpub,
   }: {
     checkpointIndex: number;
-    xpub: HexBinary;
+    xpub: String;
   }) => Promise<ArrayOfTupleOfArraySize32OfUint8AndUint32>;
   processedOutpoint: ({ key }: { key: string }) => Promise<Boolean>;
   confirmedIndex: () => Promise<Uint32>;
@@ -154,7 +154,7 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
       },
     });
   };
-  sidechainBlockHash = async (): Promise<HexBinary> => {
+  sidechainBlockHash = async (): Promise<String> => {
     return this.client.queryContractSmart(this.contractAddress, {
       sidechain_block_hash: {},
     });
@@ -178,7 +178,7 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
   signingRecoveryTxs = async ({
     xpub,
   }: {
-    xpub: HexBinary;
+    xpub: String;
   }): Promise<ArrayOfTupleOfArraySize32OfUint8AndUint32> => {
     return this.client.queryContractSmart(this.contractAddress, {
       signing_recovery_txs: {
@@ -191,7 +191,7 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
     xpub,
   }: {
     checkpointIndex: number;
-    xpub: HexBinary;
+    xpub: String;
   }): Promise<ArrayOfTupleOfArraySize32OfUint8AndUint32> => {
     return this.client.queryContractSmart(this.contractAddress, {
       signing_txs_at_checkpoint_index: {
@@ -325,7 +325,7 @@ export interface CwBitcoinInterface extends CwBitcoinReadOnlyInterface {
       btcHeight: number;
       checkpointIndex: number;
       sigs: Signature[];
-      xpub: HexBinary;
+      xpub: String;
     },
     _fee?: number | StdFee | "auto",
     _memo?: string,
@@ -337,7 +337,7 @@ export interface CwBitcoinInterface extends CwBitcoinReadOnlyInterface {
       xpub,
     }: {
       sigs: Signature[];
-      xpub: HexBinary;
+      xpub: String;
     },
     _fee?: number | StdFee | "auto",
     _memo?: string,
@@ -347,7 +347,7 @@ export interface CwBitcoinInterface extends CwBitcoinReadOnlyInterface {
     {
       xpub,
     }: {
-      xpub: HexBinary;
+      xpub: String;
     },
     _fee?: number | StdFee | "auto",
     _memo?: string,
@@ -614,7 +614,7 @@ export class CwBitcoinClient
       btcHeight: number;
       checkpointIndex: number;
       sigs: Signature[];
-      xpub: HexBinary;
+      xpub: String;
     },
     _fee: number | StdFee | "auto" = "auto",
     _memo?: string,
@@ -642,7 +642,7 @@ export class CwBitcoinClient
       xpub,
     }: {
       sigs: Signature[];
-      xpub: HexBinary;
+      xpub: String;
     },
     _fee: number | StdFee | "auto" = "auto",
     _memo?: string,
@@ -666,7 +666,7 @@ export class CwBitcoinClient
     {
       xpub,
     }: {
-      xpub: HexBinary;
+      xpub: String;
     },
     _fee: number | StdFee | "auto" = "auto",
     _memo?: string,

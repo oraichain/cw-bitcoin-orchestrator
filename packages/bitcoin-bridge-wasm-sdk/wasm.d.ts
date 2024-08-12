@@ -62,6 +62,16 @@ export function toBinaryTransaction(inner: Transaction): string;
 */
 export function fromBinaryTransaction(value: string): Transaction;
 /**
+* @param {MerkleBlock} inner
+* @returns {string}
+*/
+export function toBinaryMerkleBlock(inner: MerkleBlock): string;
+/**
+* @param {string} value
+* @returns {MerkleBlock}
+*/
+export function fromBinaryMerkleBlock(value: string): MerkleBlock;
+/**
 * @param {Dest} dest
 * @returns {Uint8Array}
 */
@@ -142,6 +152,19 @@ export interface WrappedHeader {
     header: Adapter<BlockHeader>;
 }
 
+export interface IbcDest {
+    source_port: string;
+    source_channel: string;
+    timeout_timestamp: number;
+    memo: string;
+}
+
+export type Dest = { Address: string } | { Ibc: IbcDest };
+
+export interface Xpub {
+    key: ExtendedPubKey;
+}
+
 export interface DepositsQuery {
     receiver: string;
 }
@@ -215,15 +238,6 @@ export interface Share {
 
 export type Shares = [Pubkey, Share][];
 
-export type Dest = { Address: string } | { Ibc: IbcDest };
-
-export interface IbcDest {
-    source_port: string;
-    source_channel: string;
-    timeout_timestamp: number;
-    memo: string;
-}
-
 export interface DepositIndex {
     receiver_index: { [key: string]: { [key: string]: { [key: string]: Deposit } } };
 }
@@ -244,11 +258,31 @@ export type Uint128 = number[];
 
 export type Uint256 = number[];
 
+export interface MerkleBlock {
+    header: BlockHeader;
+    txn: PartialMerkleTree;
+}
+
 export interface PartialMerkleTree {
     num_transactions: number;
     bits: boolean[];
     hashes: TxMerkleNode[];
 }
+
+export type ChildNumber = { Normal: { index: number } } | { Hardened: { index: number } };
+
+export interface ExtendedPubKey {
+    network: Network;
+    depth: number;
+    parent_fingerprint: Fingerprint;
+    child_number: ChildNumber;
+    public_key: number[];
+    chain_code: ChainCode;
+}
+
+export type Fingerprint = [number, number, number, number];
+
+export type ChainCode = number[];
 
 export interface Address {
     payload: Payload;

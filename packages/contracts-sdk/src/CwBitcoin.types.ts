@@ -51,18 +51,18 @@ export type ExecuteMsg =
         btc_height: number;
         checkpoint_index: number;
         sigs: Signature[];
-        xpub: HexBinary;
+        xpub: String;
       };
     }
   | {
       submit_recovery_signature: {
         sigs: Signature[];
-        xpub: HexBinary;
+        xpub: String;
       };
     }
   | {
       set_signatory_key: {
-        xpub: HexBinary;
+        xpub: String;
       };
     }
   | {
@@ -125,7 +125,7 @@ export type Dest =
       ibc: IbcDest;
     };
 export type Signature = number[];
-export type HexBinary = string;
+export type String = string;
 export interface BitcoinConfig {
   capacity_limit: number;
   fee_pool_reward_split: [number, number];
@@ -238,13 +238,13 @@ export type QueryMsg =
     }
   | {
       signing_recovery_txs: {
-        xpub: HexBinary;
+        xpub: String;
       };
     }
   | {
       signing_txs_at_checkpoint_index: {
         checkpoint_index: number;
-        xpub: HexBinary;
+        xpub: String;
       };
     }
   | {

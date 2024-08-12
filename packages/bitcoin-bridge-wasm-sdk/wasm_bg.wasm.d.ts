@@ -13,6 +13,8 @@ export function toBinaryPartialMerkleTree(a: number, b: number): void;
 export function fromBinaryPartialMerkleTree(a: number, b: number, c: number): void;
 export function toBinaryTransaction(a: number, b: number): void;
 export function fromBinaryTransaction(a: number, b: number, c: number): void;
+export function toBinaryMerkleBlock(a: number, b: number): void;
+export function fromBinaryMerkleBlock(a: number, b: number, c: number): void;
 export function commitmentBytes(a: number, b: number): void;
 export function toReceiverAddr(a: number, b: number): void;
 export function toSourceAddr(a: number, b: number): void;
