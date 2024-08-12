@@ -68,43 +68,41 @@ export type ExecuteMsg =
   | {
       add_validators: {
         addrs: string[];
-        infos: [
+        consensus_keys: [
           number,
-          [
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number,
-            number
-          ]
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number,
+          number
         ][];
+        voting_powers: number[];
       };
     }
   | {

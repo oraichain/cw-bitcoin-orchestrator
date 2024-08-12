@@ -356,10 +356,12 @@ export interface CwBitcoinInterface extends CwBitcoinReadOnlyInterface {
   addValidators: (
     {
       addrs,
-      infos,
+      consensusKeys,
+      votingPowers,
     }: {
       addrs: string[];
-      infos: number[][];
+      consensusKeys: number[][];
+      votingPowers: number[];
     },
     _fee?: number | StdFee | "auto",
     _memo?: string,
@@ -686,10 +688,12 @@ export class CwBitcoinClient
   addValidators = async (
     {
       addrs,
-      infos,
+      consensusKeys,
+      votingPowers,
     }: {
       addrs: string[];
-      infos: number[][];
+      consensusKeys: number[][];
+      votingPowers: number[];
     },
     _fee: number | StdFee | "auto" = "auto",
     _memo?: string,
@@ -701,7 +705,8 @@ export class CwBitcoinClient
       {
         add_validators: {
           addrs,
-          infos,
+          consensus_keys: consensusKeys,
+          voting_powers: votingPowers,
         },
       },
       _fee,
