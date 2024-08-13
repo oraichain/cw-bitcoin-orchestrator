@@ -1,5 +1,4 @@
 import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
-import { encodeXpub } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import BIP32Factory from "bip32";
 import * as btc from "bitcoinjs-lib";
 import * as crypto from "crypto";
@@ -81,25 +80,28 @@ const main = async () => {
   const xpriv = node.toBase58();
   const xpub = node.neutered().toBase58();
 
-  let signTxs = await cwBitcoinClient.signingTxsAtCheckpointIndex({
-    xpub: encodeXpub({ key: xpub }),
-    checkpointIndex: 0,
-  });
-  for (const signTx of signTxs) {
-    const [msg, sigsetIndex] = signTx;
-    const node = bip32.fromBase58(xpriv, btc.networks.testnet);
-    const key = node.derive(sigsetIndex);
-    const sig = key.sign(Buffer.from(msg));
+  // let signTxs = await cwBitcoinClient.signingTxsAtCheckpointIndex({
+  //   xpub: encodeXpub({ key: xpub }),
+  //   checkpointIndex: 2,
+  // });
+  // let sigs = [];
+  // for (const signTx of signTxs) {
+  //   const [msg, sigsetIndex] = signTx;
+  //   const node = bip32.fromBase58(xpriv, btc.networks.testnet);
+  //   const key = node.derive(sigsetIndex);
+  //   const sig = key.sign(Buffer.from(msg));
+  //   sigs = [...sigs, Array.from(sig)];
+  // }
 
-    const tx = await cwBitcoinClient.submitCheckpointSignature({
-      btcHeight,
-      checkpointIndex: 0,
-      sigs: [Array.from(sig)],
-      xpub: encodeXpub({ key: xpub }),
-    });
-    console.log(tx.transactionHash);
-  }
-  console.log(signTxs);
+  // await wrappedExecuteTransaction(async () => {
+  //   const tx = await cwBitcoinClient.submitCheckpointSignature({
+  //     btcHeight,
+  //     checkpointIndex: 2,
+  //     sigs,
+  //     xpub: encodeXpub({ key: xpub }),
+  //   });
+  //   console.log(tx.transactionHash);
+  // });
 
   // const array = new Uint8Array(32);
   // let tx = await cwBitcoinClient.addValidators({

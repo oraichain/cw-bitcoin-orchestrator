@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "dev": "npm run build; node build/index.js"
+    "dev": "npm run build; node --max-old-space-size=8192 build/index.js"
   },
   "license": "MIT",
   "dependencies": {

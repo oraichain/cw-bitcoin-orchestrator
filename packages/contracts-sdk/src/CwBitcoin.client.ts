@@ -35,12 +35,7 @@ export interface CwBitcoinReadOnlyInterface {
   headerConfig: () => Promise<HeaderConfig>;
   headerHeight: () => Promise<Uint32>;
   depositFees: ({ index }: { index?: number }) => Promise<Uint64>;
-  completedCheckpointTxs: ({
-    limit,
-  }: {
-    limit: number;
-  }) => Promise<ArrayOfBinary>;
-  signedRecoveryTxs: () => Promise<ArrayOfBinary>;
+  checkpointFees: ({ index }: { index?: number }) => Promise<Uint64>;
   withdrawalFees: ({
     address,
     index,
@@ -48,6 +43,12 @@ export interface CwBitcoinReadOnlyInterface {
     address: string;
     index?: number;
   }) => Promise<Uint64>;
+  completedCheckpointTxs: ({
+    limit,
+  }: {
+    limit: number;
+  }) => Promise<ArrayOfBinary>;
+  signedRecoveryTxs: () => Promise<ArrayOfBinary>;
   sidechainBlockHash: () => Promise<String>;
   checkpointByIndex: ({ index }: { index: number }) => Promise<Checkpoint>;
   buildingCheckpoint: () => Promise<Checkpoint>;
@@ -81,9 +82,10 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
     this.headerConfig = this.headerConfig.bind(this);
     this.headerHeight = this.headerHeight.bind(this);
     this.depositFees = this.depositFees.bind(this);
+    this.checkpointFees = this.checkpointFees.bind(this);
+    this.withdrawalFees = this.withdrawalFees.bind(this);
     this.completedCheckpointTxs = this.completedCheckpointTxs.bind(this);
     this.signedRecoveryTxs = this.signedRecoveryTxs.bind(this);
-    this.withdrawalFees = this.withdrawalFees.bind(this);
     this.sidechainBlockHash = this.sidechainBlockHash.bind(this);
     this.checkpointByIndex = this.checkpointByIndex.bind(this);
     this.buildingCheckpoint = this.buildingCheckpoint.bind(this);
@@ -124,20 +126,11 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
       },
     });
   };
-  completedCheckpointTxs = async ({
-    limit,
-  }: {
-    limit: number;
-  }): Promise<ArrayOfBinary> => {
+  checkpointFees = async ({ index }: { index?: number }): Promise<Uint64> => {
     return this.client.queryContractSmart(this.contractAddress, {
-      completed_checkpoint_txs: {
-        limit,
+      checkpoint_fees: {
+        index,
       },
-    });
-  };
-  signedRecoveryTxs = async (): Promise<ArrayOfBinary> => {
-    return this.client.queryContractSmart(this.contractAddress, {
-      signed_recovery_txs: {},
     });
   };
   withdrawalFees = async ({
@@ -152,6 +145,22 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
         address,
         index,
       },
+    });
+  };
+  completedCheckpointTxs = async ({
+    limit,
+  }: {
+    limit: number;
+  }): Promise<ArrayOfBinary> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      completed_checkpoint_txs: {
+        limit,
+      },
+    });
+  };
+  signedRecoveryTxs = async (): Promise<ArrayOfBinary> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      signed_recovery_txs: {},
     });
   };
   sidechainBlockHash = async (): Promise<String> => {

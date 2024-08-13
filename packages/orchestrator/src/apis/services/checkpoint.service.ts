@@ -14,6 +14,33 @@ const getCheckpoint = async (index: number | undefined) => {
   return queryClient.checkpointByIndex({ index });
 };
 
+const getDepositFee = async (index: number | undefined) => {
+  const client = await initQueryClient(
+    env.cosmos.rpcUrl || WasmLocalConfig.rpcEndpoint
+  );
+  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  return queryClient.depositFees({ index });
+};
+
+const getWithdrawFee = async (index: number | undefined, address: string) => {
+  const client = await initQueryClient(
+    env.cosmos.rpcUrl || WasmLocalConfig.rpcEndpoint
+  );
+  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  return queryClient.withdrawalFees({ address, index });
+};
+
+const getCheckpointFee = async (index: number | undefined) => {
+  const client = await initQueryClient(
+    env.cosmos.rpcUrl || WasmLocalConfig.rpcEndpoint
+  );
+  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  return queryClient.checkpointFees({ index });
+};
+
 export default {
   getCheckpoint,
+  getDepositFee,
+  getWithdrawFee,
+  getCheckpointFee,
 };

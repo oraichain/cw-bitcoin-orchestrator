@@ -212,18 +212,23 @@ export type QueryMsg =
       };
     }
   | {
-      completed_checkpoint_txs: {
-        limit: number;
+      checkpoint_fees: {
+        index?: number | null;
       };
-    }
-  | {
-      signed_recovery_txs: {};
     }
   | {
       withdrawal_fees: {
         address: string;
         index?: number | null;
       };
+    }
+  | {
+      completed_checkpoint_txs: {
+        limit: number;
+      };
+    }
+  | {
+      signed_recovery_txs: {};
     }
   | {
       sidechain_block_hash: {};
@@ -360,8 +365,8 @@ export interface Signatory {
   voting_power: number;
 }
 export type Uint32 = number;
-export type ArrayOfBinary = Binary[];
 export type Uint64 = number;
+export type ArrayOfBinary = Binary[];
 export type Boolean = boolean;
 export type ArrayOfTupleOfArraySize32OfUint8AndUint32 = [
   [

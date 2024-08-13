@@ -21,8 +21,8 @@ import {
   VerbosedBlockHeader,
 } from "../../@types";
 import {
+  ITERATION_DELAY,
   RELAY_DEPOSIT_BLOCKS_SIZE,
-  RELAY_DEPOSIT_ITERATION_DELAY,
   RELAY_HEADER_BATCH_SIZE,
   SCAN_MEMPOOL_CHUNK_DELAY,
   SCAN_MEMPOOL_CHUNK_SIZE,
@@ -37,6 +37,7 @@ import {
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { convertSdkDestToWasmDest } from "../../utils/dest";
 import { setNestedMap } from "../../utils/map";
+import { RelayerInterface } from "../common/relayer.interface";
 import { DuckDbNode } from "../db";
 import WatchedScriptsService, {
   WatchedScriptsInterface,
@@ -47,7 +48,7 @@ interface RelayTxIdBody {
   script: WatchedScriptsInterface;
 }
 
-class RelayerService {
+class RelayerService implements RelayerInterface {
   static instances: RelayerService;
   btcClient: RPCClient;
   cwBitcoinClient: CwBitcoinClient;
@@ -75,8 +76,19 @@ class RelayerService {
     >();
   }
 
+  async relay() {
+    await Promise.all([
+      this.relayHeader(),
+      this.relayDeposit(),
+      this.relayRecoveryDeposits(),
+      this.relayCheckpoints(),
+      this.relayCheckpointConf(),
+    ]);
+  }
+
   // [RELAY HEADER]
   async relayHeader() {
+    console.log("Starting header relay...");
     let lastHash = null;
 
     while (true) {
@@ -210,6 +222,7 @@ class RelayerService {
 
   // [RELAY_DEPOSIT]
   async relayDeposit() {
+    console.log("Starting deposit relay...");
     let prevTip = null;
     while (true) {
       try {
@@ -222,7 +235,7 @@ class RelayerService {
         console.log("Scanning blocks for deposit transactions...");
         const tip = await this.cwBitcoinClient.sidechainBlockHash();
         if (prevTip === tip) {
-          await setTimeout(RELAY_DEPOSIT_ITERATION_DELAY);
+          await setTimeout(ITERATION_DELAY);
           continue;
         }
         prevTip = prevTip || tip;
@@ -241,7 +254,7 @@ class RelayerService {
         prevTip = tip;
 
         console.log("Waiting some seconds for next scan...");
-        await setTimeout(RELAY_DEPOSIT_ITERATION_DELAY);
+        await setTimeout(ITERATION_DELAY);
       } catch (err) {
         console.log(err?.message);
       }
@@ -304,7 +317,7 @@ class RelayerService {
         key: calculateOutpointKey(txid, i),
       });
 
-      if (isExistOutpoint) {
+      if (isExistOutpoint === true) {
         this.depositIndex.delete(
           toReceiverAddr(convertSdkDestToWasmDest(script.dest))
         );
@@ -335,12 +348,14 @@ class RelayerService {
         await wrappedExecuteTransaction(async () => {
           const tx = await this.cwBitcoinClient.relayDeposit({
             btcHeight: blockHeight,
-            btcTx: toBinaryTransaction(decodeRawTx(rawTx)),
-            btcProof: toBinaryPartialMerkleTree(
-              fromBinaryMerkleBlock(
-                Buffer.from(txProof, "hex").toString("base64")
-              ).txn
-            ),
+            btcTx: Buffer.from(
+              toBinaryTransaction(decodeRawTx(rawTx))
+            ).toString("base64"),
+            btcProof: Buffer.from(
+              toBinaryPartialMerkleTree(
+                fromBinaryMerkleBlock(Buffer.from(txProof, "hex")).txn
+              )
+            ).toString("base64"),
             btcVout: i,
             dest: script.dest,
             sigsetIndex: Number(script.sigsetIndex),
@@ -411,6 +426,68 @@ class RelayerService {
       }
     } catch (err) {
       console.log(err?.message);
+    }
+  }
+
+  // [RELAY RECOVERY DEPOSITS]
+  async relayRecoveryDeposits() {
+    console.log("Starting recovery deposit relay...");
+    const relayed = {};
+    while (true) {
+      try {
+        const txs = await this.cwBitcoinClient.signedRecoveryTxs();
+        for (const recoveryTx of txs) {
+          if (relayed[recoveryTx]) continue;
+
+          const tx = await this.btcClient.sendrawtransaction({
+            hexstring: Buffer.from(recoveryTx, "base64").toString("hex"),
+          });
+          relayed[recoveryTx] = true;
+          console.log(`Relayed recovery tx ${tx}`);
+        }
+      } catch (err) {
+        console.log(err?.message);
+      }
+      await setTimeout(ITERATION_DELAY);
+    }
+  }
+
+  // [RELAY CHECKPOINT]
+  async relayCheckpoints() {
+    console.log("Starting checkpoint relay...");
+    const relayed = {};
+    while (true) {
+      try {
+        const checkpoints = await this.cwBitcoinClient.completedCheckpointTxs({
+          limit: 1100,
+        });
+        for (const checkpoint of checkpoints) {
+          if (relayed[checkpoint]) continue;
+
+          try {
+            const tx = await this.btcClient.sendrawtransaction({
+              hexstring: Buffer.from(checkpoint, "base64").toString("hex"),
+            });
+            relayed[checkpoint] = true;
+            console.log(`Relayed checkpoint tx ${tx}`);
+          } catch (err) {}
+        }
+      } catch (err) {
+        console.log(err?.message);
+      }
+      await setTimeout(ITERATION_DELAY);
+    }
+  }
+
+  // [RELAY CHECKPOINT CONFIRM]
+  async relayCheckpointConf() {
+    console.log("Starting checkpoint confirm relay...");
+    while (true) {
+      try {
+      } catch (err) {
+        console.log(err?.message);
+      }
+      await setTimeout(ITERATION_DELAY);
     }
   }
 

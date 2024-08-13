@@ -17,6 +17,7 @@ export const wrappedExecuteTransaction = async (fn: () => Promise<void>) => {
         continue;
       } else {
         console.log(`[UNEXPECTED ERROR] ${message}`);
+        break;
       }
     }
   }

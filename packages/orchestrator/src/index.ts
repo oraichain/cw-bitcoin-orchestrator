@@ -87,9 +87,5 @@ server.listen(PORT, async () => {
     DuckDbNode.instances
   );
   RelayerService.instances = relayerService;
-  await Promise.all([
-    relayerService.relayHeader(),
-    relayerService.relayDeposit(),
-    triggerBlock.relay(),
-  ]);
+  await Promise.all([relayerService.relay(), triggerBlock.relay()]);
 });
