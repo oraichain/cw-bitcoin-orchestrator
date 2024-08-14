@@ -11,6 +11,7 @@ import {
   SigningCosmWasmClient,
 } from "@cosmjs/cosmwasm-stargate";
 import {
+  Addr,
   ArrayOfBinary,
   ArrayOfTupleOfArraySize32OfUint8AndUint32,
   Binary,
@@ -22,6 +23,8 @@ import {
   Dest,
   HeaderConfig,
   Metadata,
+  NullableString,
+  NullableUint32,
   Signature,
   String,
   Uint32,
@@ -33,6 +36,7 @@ export interface CwBitcoinReadOnlyInterface {
   bitcoinConfig: () => Promise<BitcoinConfig>;
   checkpointConfig: () => Promise<CheckpointConfig>;
   headerConfig: () => Promise<HeaderConfig>;
+  signatoryKey: ({ addr }: { addr: Addr }) => Promise<NullableString>;
   headerHeight: () => Promise<Uint32>;
   depositFees: ({ index }: { index?: number }) => Promise<Uint64>;
   checkpointFees: ({ index }: { index?: number }) => Promise<Uint64>;
@@ -49,6 +53,7 @@ export interface CwBitcoinReadOnlyInterface {
     limit: number;
   }) => Promise<ArrayOfBinary>;
   signedRecoveryTxs: () => Promise<ArrayOfBinary>;
+  checkpointTx: ({ index }: { index?: number }) => Promise<Binary>;
   sidechainBlockHash: () => Promise<String>;
   checkpointByIndex: ({ index }: { index: number }) => Promise<Checkpoint>;
   buildingCheckpoint: () => Promise<Checkpoint>;
@@ -65,10 +70,10 @@ export interface CwBitcoinReadOnlyInterface {
     xpub: String;
   }) => Promise<ArrayOfTupleOfArraySize32OfUint8AndUint32>;
   processedOutpoint: ({ key }: { key: string }) => Promise<Boolean>;
-  confirmedIndex: () => Promise<Uint32>;
+  confirmedIndex: () => Promise<NullableUint32>;
   buildingIndex: () => Promise<Uint32>;
   completedIndex: () => Promise<Uint32>;
-  unhandledConfirmedIndex: () => Promise<Uint32>;
+  unhandledConfirmedIndex: () => Promise<NullableUint32>;
 }
 export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
   client: CosmWasmClient;
@@ -80,12 +85,14 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
     this.bitcoinConfig = this.bitcoinConfig.bind(this);
     this.checkpointConfig = this.checkpointConfig.bind(this);
     this.headerConfig = this.headerConfig.bind(this);
+    this.signatoryKey = this.signatoryKey.bind(this);
     this.headerHeight = this.headerHeight.bind(this);
     this.depositFees = this.depositFees.bind(this);
     this.checkpointFees = this.checkpointFees.bind(this);
     this.withdrawalFees = this.withdrawalFees.bind(this);
     this.completedCheckpointTxs = this.completedCheckpointTxs.bind(this);
     this.signedRecoveryTxs = this.signedRecoveryTxs.bind(this);
+    this.checkpointTx = this.checkpointTx.bind(this);
     this.sidechainBlockHash = this.sidechainBlockHash.bind(this);
     this.checkpointByIndex = this.checkpointByIndex.bind(this);
     this.buildingCheckpoint = this.buildingCheckpoint.bind(this);
@@ -112,6 +119,13 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
   headerConfig = async (): Promise<HeaderConfig> => {
     return this.client.queryContractSmart(this.contractAddress, {
       header_config: {},
+    });
+  };
+  signatoryKey = async ({ addr }: { addr: Addr }): Promise<NullableString> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      signatory_key: {
+        addr,
+      },
     });
   };
   headerHeight = async (): Promise<Uint32> => {
@@ -161,6 +175,13 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
   signedRecoveryTxs = async (): Promise<ArrayOfBinary> => {
     return this.client.queryContractSmart(this.contractAddress, {
       signed_recovery_txs: {},
+    });
+  };
+  checkpointTx = async ({ index }: { index?: number }): Promise<Binary> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      checkpoint_tx: {
+        index,
+      },
     });
   };
   sidechainBlockHash = async (): Promise<String> => {
@@ -216,7 +237,7 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
       },
     });
   };
-  confirmedIndex = async (): Promise<Uint32> => {
+  confirmedIndex = async (): Promise<NullableUint32> => {
     return this.client.queryContractSmart(this.contractAddress, {
       confirmed_index: {},
     });
@@ -231,7 +252,7 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
       completed_index: {},
     });
   };
-  unhandledConfirmedIndex = async (): Promise<Uint32> => {
+  unhandledConfirmedIndex = async (): Promise<NullableUint32> => {
     return this.client.queryContractSmart(this.contractAddress, {
       unhandled_confirmed_index: {},
     });
@@ -388,6 +409,16 @@ export interface CwBitcoinInterface extends CwBitcoinReadOnlyInterface {
     _memo?: string,
     _funds?: Coin[]
   ) => Promise<ExecuteResult>;
+  changeBtcAdmin: (
+    {
+      newAdmin,
+    }: {
+      newAdmin: string;
+    },
+    _fee?: number | StdFee | "auto",
+    _memo?: string,
+    _funds?: Coin[]
+  ) => Promise<ExecuteResult>;
   triggerBeginBlock: (
     {
       hash,
@@ -428,6 +459,7 @@ export class CwBitcoinClient
     this.setSignatoryKey = this.setSignatoryKey.bind(this);
     this.addValidators = this.addValidators.bind(this);
     this.registerDenom = this.registerDenom.bind(this);
+    this.changeBtcAdmin = this.changeBtcAdmin.bind(this);
     this.triggerBeginBlock = this.triggerBeginBlock.bind(this);
   }
 
@@ -742,6 +774,29 @@ export class CwBitcoinClient
         register_denom: {
           metadata,
           subdenom,
+        },
+      },
+      _fee,
+      _memo,
+      _funds
+    );
+  };
+  changeBtcAdmin = async (
+    {
+      newAdmin,
+    }: {
+      newAdmin: string;
+    },
+    _fee: number | StdFee | "auto" = "auto",
+    _memo?: string,
+    _funds?: Coin[]
+  ): Promise<ExecuteResult> => {
+    return await this.client.execute(
+      this.sender,
+      this.contractAddress,
+      {
+        change_btc_admin: {
+          new_admin: newAdmin,
         },
       },
       _fee,

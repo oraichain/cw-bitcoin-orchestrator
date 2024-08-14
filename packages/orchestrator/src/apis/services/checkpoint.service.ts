@@ -38,9 +38,28 @@ const getCheckpointFee = async (index: number | undefined) => {
   return queryClient.checkpointFees({ index });
 };
 
+const getStoreCheckpointIndexes = async () => {
+  const client = await initQueryClient(
+    env.cosmos.rpcUrl || WasmLocalConfig.rpcEndpoint
+  );
+  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  const [completedIndex, confirmedIndex, firstUnconfirmedIndex] =
+    await Promise.all([
+      queryClient.completedIndex(),
+      queryClient.confirmedIndex(),
+      queryClient.unhandledConfirmedIndex(),
+    ]);
+  return {
+    completedIndex,
+    confirmedIndex,
+    firstUnconfirmedIndex,
+  };
+};
+
 export default {
   getCheckpoint,
   getDepositFee,
   getWithdrawFee,
   getCheckpointFee,
+  getStoreCheckpointIndexes,
 };

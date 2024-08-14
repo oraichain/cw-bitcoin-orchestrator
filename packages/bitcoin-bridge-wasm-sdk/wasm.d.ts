@@ -142,6 +142,11 @@ export function toSourceAddr(dest: Dest): string;
 */
 export function decodeRawTx(raw_tx: string): Transaction;
 /**
+* @param {Transaction} tx
+* @returns {string}
+*/
+export function getBitcoinTransactionTxid(tx: Transaction): string;
+/**
 * @param {Xpub} xpub
 * @returns {string}
 */

@@ -29,6 +29,7 @@ export function commitmentBytes(a: number, b: number): void;
 export function toReceiverAddr(a: number, b: number): void;
 export function toSourceAddr(a: number, b: number): void;
 export function decodeRawTx(a: number, b: number): number;
+export function getBitcoinTransactionTxid(a: number, b: number): void;
 export function encodeXpub(a: number, b: number): void;
 export function newRawSignatorySet(a: number, b: number, c: number, d: number): number;
 export function newSignatorySet(a: number, b: number, c: number, d: number, e: number): void;

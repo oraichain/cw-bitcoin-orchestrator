@@ -112,6 +112,11 @@ export type ExecuteMsg =
       };
     }
   | {
+      change_btc_admin: {
+        new_admin: string;
+      };
+    }
+  | {
       trigger_begin_block: {
         hash: Binary;
       };
@@ -204,6 +209,11 @@ export type QueryMsg =
       header_config: {};
     }
   | {
+      signatory_key: {
+        addr: Addr;
+      };
+    }
+  | {
       header_height: {};
     }
   | {
@@ -229,6 +239,11 @@ export type QueryMsg =
     }
   | {
       signed_recovery_txs: {};
+    }
+  | {
+      checkpoint_tx: {
+        index?: number | null;
+      };
     }
   | {
       sidechain_block_hash: {};
@@ -367,7 +382,9 @@ export interface Signatory {
 export type Uint32 = number;
 export type Uint64 = number;
 export type ArrayOfBinary = Binary[];
+export type NullableUint32 = number | null;
 export type Boolean = boolean;
+export type NullableString = String | null;
 export type ArrayOfTupleOfArraySize32OfUint8AndUint32 = [
   [
     number,
