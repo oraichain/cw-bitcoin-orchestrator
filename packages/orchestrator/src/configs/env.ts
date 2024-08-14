@@ -10,6 +10,7 @@ const envVarsSchema = Joi.object()
     BTC_RPC_HOST: Joi.string().default("http://127.0.0.1"),
     BTC_RPC_USERNAME: Joi.string().default("satoshi"),
     BTC_RPC_PASSWORD: Joi.string().default("nakamoto"),
+    BTC_NETWORK: Joi.string().default("testnet"),
     COSMOS_RPC_URL: Joi.optional(),
     CW_BITCOIN_ADDRESS: Joi.string().error(
       new Error("CW_BITCOIN_ADDRESS is required")
@@ -36,6 +37,7 @@ export default {
     host: envVars.BTC_RPC_HOST,
     username: envVars.BTC_RPC_USERNAME,
     password: envVars.BTC_RPC_PASSWORD,
+    network: envVars.BTC_NETWORK,
   },
   cosmos: {
     rpcUrl: envVars.COSMOS_RPC_URL,

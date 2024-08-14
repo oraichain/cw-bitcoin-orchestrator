@@ -2,11 +2,22 @@ import { SignatorySet } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBi
 import * as btc from "bitcoinjs-lib";
 import { Buffer } from "buffer";
 import { Vout } from "../@types";
+import env from "../configs/env";
 
 export enum ScriptPubkeyType {
   Pubkey = "pubkeyhash",
   WitnessKeyHash = "witness_v0_keyhash",
   WitnessScriptHash = "witness_v0_scripthash",
+}
+
+export function getCurrentNetwork() {
+  if (env.bitcoin.network === "mainnet") {
+    return btc.networks.bitcoin;
+  }
+  if (env.bitcoin.network === "testnet") {
+    return btc.networks.testnet;
+  }
+  throw new Error("Invalid network");
 }
 
 export function calculateOutpointKey(txid: string, vout: number): string {
@@ -27,13 +38,13 @@ export const decodeAddress = (output: Vout): string | null => {
     case ScriptPubkeyType.WitnessKeyHash:
       address = btc.payments.p2pkh({
         output: scriptPubKeyBuffer,
-        network: btc.networks.testnet,
+        network: getCurrentNetwork(),
       }).address;
       break;
     case ScriptPubkeyType.WitnessScriptHash:
       address = btc.payments.p2wsh({
         output: scriptPubKeyBuffer,
-        network: btc.networks.testnet,
+        network: getCurrentNetwork(),
       }).address;
       break;
     case ScriptPubkeyType.Pubkey:
@@ -41,7 +52,7 @@ export const decodeAddress = (output: Vout): string | null => {
       const pubKeyHash = decodedScript[2] as Buffer;
       address = btc.payments.p2pkh({
         hash: pubKeyHash,
-        network: btc.networks.testnet,
+        network: getCurrentNetwork(),
       }).address;
       break;
     default:

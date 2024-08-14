@@ -15,6 +15,7 @@ import morgan from "./configs/morgan";
 import { WasmLocalConfig } from "./configs/networks";
 import { DuckDbNode } from "./services/db";
 import RelayerService from "./services/relayer";
+import SignerService from "./services/signer";
 import TriggerBlocks from "./trigger_block";
 import { initSignerClient } from "./utils/cosmos";
 
@@ -87,5 +88,12 @@ server.listen(PORT, async () => {
     DuckDbNode.instances
   );
   RelayerService.instances = relayerService;
-  await Promise.all([relayerService.relay(), triggerBlock.relay()]);
+
+  const signerService = new SignerService(btcClient, cwBitcoinClient);
+
+  await Promise.all([
+    relayerService.relay(),
+    signerService.relay(),
+    triggerBlock.relay(),
+  ]);
 });

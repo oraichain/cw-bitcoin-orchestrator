@@ -32,6 +32,7 @@ import {
 import {
   calculateOutpointKey,
   decodeAddress,
+  getCurrentNetwork,
   redeemScript,
   ScriptPubkeyType,
   toScriptPubKeyP2WSH,
@@ -656,7 +657,7 @@ class RelayerService implements RelayerInterface {
     );
     let wsh = btc.payments.p2wsh({
       redeem: { output: depositScript },
-      network: btc.networks.testnet,
+      network: getCurrentNetwork(),
     });
     let address = wsh.address;
 
