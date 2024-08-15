@@ -26,7 +26,7 @@ import {
   ITERATION_DELAY,
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
-  SCAN_MEMPOOL_CHUNK_DELAY,
+  RETRY_DELAY,
   SCAN_MEMPOOL_CHUNK_SIZE,
 } from "../../constants";
 import {
@@ -37,6 +37,7 @@ import {
   ScriptPubkeyType,
   toScriptPubKeyP2WSH,
 } from "../../utils/bitcoin";
+import { retry } from "../../utils/catchAsync";
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { convertSdkDestToWasmDest } from "../../utils/dest";
 import { setNestedMap } from "../../utils/map";
@@ -96,15 +97,13 @@ class RelayerService implements RelayerInterface {
 
     while (true) {
       try {
-        let fullNodeHash = await this.btcClient.getbestblockhash();
-        let sideChainHash = await this.cwBitcoinClient.sidechainBlockHash();
+        let [fullNodeHash, sideChainHash] = await Promise.all([
+          this.btcClient.getbestblockhash(),
+          this.cwBitcoinClient.sidechainBlockHash(),
+        ]);
 
         if (fullNodeHash !== sideChainHash) {
-          try {
-            await this.relayHeaderBatch(fullNodeHash, sideChainHash);
-          } catch (err) {
-            console.log(err);
-          }
+          await this.relayHeaderBatch(fullNodeHash, sideChainHash);
           continue;
         }
 
@@ -125,12 +124,23 @@ class RelayerService implements RelayerInterface {
   }
 
   async relayHeaderBatch(fullNodeHash: string, sideChainHash: string) {
-    let fullNodeInfo: BlockHeader = await this.btcClient.getblockheader({
-      blockhash: fullNodeHash,
-    });
-    let sideChainInfo: BlockHeader = await this.btcClient.getblockheader({
-      blockhash: sideChainHash,
-    });
+    let [fullNodeInfo, sideChainInfo]: [BlockHeader, BlockHeader] = (
+      await retry(
+        () =>
+          this.btcClient.batch([
+            {
+              method: "getblockheader",
+              params: [fullNodeHash],
+            },
+            {
+              method: "getblockheader",
+              params: [sideChainHash],
+            },
+          ]),
+        10,
+        RETRY_DELAY
+      )
+    ).map((item) => item.result);
 
     if (fullNodeInfo.height < sideChainInfo.height) {
       console.log!("Full node is still syncing with real running node!");
@@ -159,21 +169,29 @@ class RelayerService implements RelayerInterface {
   }
 
   async getHeaderBatch(blockHash: string): Promise<WrappedHeader[]> {
-    let cursorHeader: VerbosedBlockHeader = await this.btcClient.getblockheader(
-      {
-        blockhash: blockHash,
-        verbose: true,
-      }
+    let cursorHeader: VerbosedBlockHeader = await retry(
+      () =>
+        this.btcClient.getblockheader({
+          blockhash: blockHash,
+          verbose: true,
+        }),
+      10,
+      RETRY_DELAY
     );
     let wrappedHeaders = [];
     for (let i = 0; i < RELAY_HEADER_BATCH_SIZE; i++) {
       let nextHash = cursorHeader?.nextblockhash;
 
       if (nextHash !== undefined) {
-        cursorHeader = await this.btcClient.getblockheader({
-          blockhash: nextHash,
-          verbose: true,
-        });
+        cursorHeader = await retry(
+          () =>
+            this.btcClient.getblockheader({
+              blockhash: nextHash,
+              verbose: true,
+            }),
+          10,
+          RETRY_DELAY
+        );
         const wrappedHeader: WrappedHeader = newWrappedHeader(
           {
             bits: parseInt(cursorHeader.bits, 16),
@@ -192,12 +210,23 @@ class RelayerService implements RelayerInterface {
   }
 
   async commonAncestor(leftHash: string, rightHash: string) {
-    let leftHeader: BlockHeader = await this.btcClient.getblockheader({
-      blockhash: leftHash,
-    });
-    let rightHeader: BlockHeader = await this.btcClient.getblockheader({
-      blockhash: rightHash,
-    });
+    let [leftHeader, rightHeader]: [BlockHeader, BlockHeader] = (
+      await retry(
+        () =>
+          this.btcClient.batch([
+            {
+              method: "getblockheader",
+              params: [leftHash],
+            },
+            {
+              method: "getblockheader",
+              params: [rightHash],
+            },
+          ]),
+        10,
+        RETRY_DELAY
+      )
+    ).map((item) => item.result);
 
     while (leftHeader.hash !== rightHeader.hash) {
       if (
@@ -212,14 +241,24 @@ class RelayerService implements RelayerInterface {
         return leftHeader;
       } else if (leftHeader.height > rightHeader.height) {
         let prev = leftHeader.previousblockhash;
-        leftHeader = await this.btcClient.getblockheader({
-          blockhash: prev,
-        });
+        leftHeader = await retry(
+          () =>
+            this.btcClient.getblockheader({
+              blockhash: prev,
+            }),
+          10,
+          RETRY_DELAY
+        );
       } else {
         let prev = rightHeader.previousblockhash;
-        rightHeader = await this.btcClient.getblockheader({
-          blockhash: prev,
-        });
+        rightHeader = await retry(
+          () =>
+            this.btcClient.getblockheader({
+              blockhash: prev,
+            }),
+          10,
+          RETRY_DELAY
+        );
       }
     }
 
@@ -240,10 +279,13 @@ class RelayerService implements RelayerInterface {
         // Block handler
         console.log("Scanning blocks for deposit transactions...");
         const tip = await this.cwBitcoinClient.sidechainBlockHash();
+
         if (prevTip === tip) {
-          await setTimeout(ITERATION_DELAY);
-          continue;
+          throw new Error(
+            "Current tip block is scanned for relaying. Waiting for next header..."
+          );
         }
+
         prevTip = prevTip || tip;
         let startHeight = (await this.commonAncestor(tip, prevTip)).height;
         let endHeader: BlockHeader = await this.btcClient.getblockheader({
@@ -260,10 +302,120 @@ class RelayerService implements RelayerInterface {
         prevTip = tip;
 
         console.log("Waiting some seconds for next scan...");
-        await setTimeout(ITERATION_DELAY);
       } catch (err) {
         console.log(`[RELAY_DEPOSIT] ${err?.message}`);
       }
+      await setTimeout(ITERATION_DELAY);
+    }
+  }
+
+  async scanTxsFromMempools() {
+    try {
+      let mempoolTxs = await this.btcClient.getrawmempool();
+      let detailMempoolTxs: BitcoinTransaction[] = await retry(
+        async () => {
+          return (
+            await this.btcClient.batch([
+              ...mempoolTxs.map((txid: string) => ({
+                method: "getrawtransaction",
+                params: [txid, true],
+              })),
+            ])
+          ).map((item) => item.result);
+        },
+        10,
+        RETRY_DELAY
+      );
+
+      for (const tx of detailMempoolTxs) {
+        let txid = tx.txid;
+        if (this.relayTxids.get(txid)) continue;
+
+        const outputs = tx.vout;
+
+        for (let vout = 0; vout < outputs.length; vout++) {
+          let output = outputs[vout];
+          if (output.scriptPubKey.type != ScriptPubkeyType.WitnessScriptHash) {
+            continue;
+          }
+
+          const address = decodeAddress(output);
+          if (address !== output.scriptPubKey.address) continue;
+
+          const script = await this.watchedScriptClient.getScript(
+            output.scriptPubKey.hex
+          );
+
+          if (!script) continue;
+
+          console.log(`Found pending deposit transaction ${txid}`);
+          this.relayTxids.set(txid, {
+            tx,
+            script,
+          });
+
+          setNestedMap(
+            this.depositIndex,
+            [
+              toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+              address,
+              [txid, vout],
+            ],
+            {
+              txid,
+              vout,
+              height: undefined,
+              amount: output.value,
+            } as Deposit
+          );
+        }
+      }
+    } catch (err) {
+      console.log(`[SCAN_TX_FROM_MEMPOOL] ${err?.message}`);
+    }
+  }
+
+  async scanDeposits(numBlocks: number) {
+    try {
+      let tip = await this.cwBitcoinClient.sidechainBlockHash();
+      let blocks = await this.lastNBlocks(numBlocks, tip);
+      for (const block of blocks) {
+        let txs = block.tx;
+        let chunks = Math.ceil(txs.length / SCAN_MEMPOOL_CHUNK_SIZE);
+        for (let i = 0; i < chunks; i++) {
+          let chunkTxs = txs.slice(
+            i * SCAN_MEMPOOL_CHUNK_SIZE,
+            (i + 1) * SCAN_MEMPOOL_CHUNK_SIZE
+          );
+          let txProofs = await retry(
+            async () => {
+              const result = await this.btcClient.batch(
+                chunkTxs.map((tx) => ({
+                  method: "gettxoutproof",
+                  params: [[tx.txid], block.hash],
+                }))
+              );
+              return result.map((item) => item.result);
+            },
+            10,
+            RETRY_DELAY
+          );
+
+          for (let j = 0; j < txProofs.length; j++) {
+            let tx = chunkTxs[j];
+            let txProof = txProofs[j];
+            try {
+              await this.maybeRelayDeposit(tx, block.height, txProof);
+            } catch (err) {
+              console.log(
+                `[MAYBE_RELAY_DEPOSIT] ${err?.message} at tx ${tx.txid}`
+              );
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.log(`[SCAN_DEPOSITS] ${err?.message}`);
     }
   }
 
@@ -281,25 +433,10 @@ class RelayerService implements RelayerInterface {
     return blocks;
   }
 
-  async scanDeposits(numBlocks: number) {
-    try {
-      let tip = await this.cwBitcoinClient.sidechainBlockHash();
-      let blocks = await this.lastNBlocks(numBlocks, tip);
-      for (const block of blocks) {
-        let txs = block.tx;
-        for (const tx of txs) {
-          await this.maybeRelayDeposit(tx, block.hash, block.height);
-        }
-      }
-    } catch (err) {
-      console.log(`[SCAN_DEPOSITS] ${err?.message}`);
-    }
-  }
-
   async maybeRelayDeposit(
     tx: BitcoinTransaction,
-    blockHash: string,
-    blockHeight: number
+    blockHeight: number,
+    txProof: string
   ) {
     const txid = tx.txid;
     const rawTx = tx.hex;
@@ -345,93 +482,23 @@ class RelayerService implements RelayerInterface {
         } as Deposit
       );
 
-      const txProof = await this.btcClient.gettxoutproof({
-        txids: [txid],
-        blockhash: blockHash,
+      await wrappedExecuteTransaction(async () => {
+        const tx = await this.cwBitcoinClient.relayDeposit({
+          btcHeight: blockHeight,
+          btcTx: Buffer.from(toBinaryTransaction(decodeRawTx(rawTx))).toString(
+            "base64"
+          ),
+          btcProof: Buffer.from(
+            toBinaryPartialMerkleTree(
+              fromBinaryMerkleBlock(Buffer.from(txProof, "hex")).txn
+            )
+          ).toString("base64"),
+          btcVout: i,
+          dest: script.dest,
+          sigsetIndex: Number(script.sigsetIndex),
+        });
+        console.log(`Relayed deposit tx ${txid} at tx ${tx.transactionHash}`);
       });
-
-      try {
-        await wrappedExecuteTransaction(async () => {
-          const tx = await this.cwBitcoinClient.relayDeposit({
-            btcHeight: blockHeight,
-            btcTx: Buffer.from(
-              toBinaryTransaction(decodeRawTx(rawTx))
-            ).toString("base64"),
-            btcProof: Buffer.from(
-              toBinaryPartialMerkleTree(
-                fromBinaryMerkleBlock(Buffer.from(txProof, "hex")).txn
-              )
-            ).toString("base64"),
-            btcVout: i,
-            dest: script.dest,
-            sigsetIndex: Number(script.sigsetIndex),
-          });
-          console.log(`Relayed deposit tx ${txid} at tx ${tx.transactionHash}`);
-        });
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  }
-
-  async scanTxsFromMempools() {
-    try {
-      let mempoolTxs = await this.btcClient.getrawmempool();
-      let idx = 0;
-      for (const txid of mempoolTxs) {
-        if (this.relayTxids.get(txid)) continue;
-
-        let tx: BitcoinTransaction = await this.btcClient.getrawtransaction({
-          txid: txid,
-          verbose: true,
-        });
-        const outputs = tx.vout;
-
-        for (let vout = 0; vout < outputs.length; vout++) {
-          let output = outputs[vout];
-          if (output.scriptPubKey.type != ScriptPubkeyType.WitnessScriptHash) {
-            continue;
-          }
-
-          const address = decodeAddress(output);
-          if (address !== output.scriptPubKey.address) continue;
-
-          const script = await this.watchedScriptClient.getScript(
-            output.scriptPubKey.hex
-          );
-
-          if (!script) continue;
-
-          console.log(`Found pending deposit transaction ${txid}`);
-          this.relayTxids.set(txid, {
-            tx,
-            script,
-          });
-
-          setNestedMap(
-            this.depositIndex,
-            [
-              toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
-              address,
-              [txid, vout],
-            ],
-            {
-              txid,
-              vout,
-              height: undefined,
-              amount: output.value,
-            } as Deposit
-          );
-        }
-        idx++;
-
-        if (idx == SCAN_MEMPOOL_CHUNK_SIZE) {
-          await setTimeout(SCAN_MEMPOOL_CHUNK_DELAY);
-          idx = 0;
-        }
-      }
-    } catch (err) {
-      console.log(`[SCAN_TX_FROM_MEMPOOL] ${err?.message}`);
     }
   }
 
@@ -499,15 +566,17 @@ class RelayerService implements RelayerInterface {
           ]);
 
         if (!unconfirmedIndex) {
-          await setTimeout(ITERATION_DELAY);
-          continue;
+          throw new Error(
+            "No unconfirmed checkpoint index. Waiting for next scan..."
+          );
         }
 
         let unconfIndex = Math.max(unconfirmedIndex, lastCompletedIndex - 5);
 
         if (confirmedIndex !== null && confirmedIndex == unconfIndex) {
-          await setTimeout(ITERATION_DELAY);
-          continue;
+          throw new Error(
+            "Unconfirmed checkpoint index is confirmed. Waiting for next scan..."
+          );
         }
 
         let [tx, btcHeight, minConfs] = await Promise.all([
@@ -532,8 +601,9 @@ class RelayerService implements RelayerInterface {
         let txid = getBitcoinTransactionTxid(tx);
 
         if (relayed[txid]) {
-          await setTimeout(ITERATION_DELAY);
-          continue;
+          throw new Error(
+            `Checkpoint confirm with tx ${txid} is already relayed`
+          );
         }
 
         let maybeConf = await this.scanForTxid(txid, 100, 200);
@@ -568,7 +638,9 @@ class RelayerService implements RelayerInterface {
           relayed[txid] = true;
         }
       } catch (err) {
-        console.log(`[RELAY_CHECKPOINT_CONF] ${err?.message}`);
+        if (!err?.message.includes("Waiting for next scan...")) {
+          console.log(`[RELAY_CHECKPOINT_CONF] ${err?.message}`);
+        }
       }
       await setTimeout(ITERATION_DELAY);
     }

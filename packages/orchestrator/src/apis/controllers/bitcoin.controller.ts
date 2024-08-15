@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
-import catchAsync from "../../utils/catchAsync";
+import { catchAsync } from "../../utils/catchAsync";
 import bitcoinService from "../services/bitcoin.service";
 
 const getPendingDeposits = catchAsync(async (req: Request, res: Response) => {

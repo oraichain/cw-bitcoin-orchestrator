@@ -283,6 +283,11 @@ export type QueryMsg =
     }
   | {
       unhandled_confirmed_index: {};
+    }
+  | {
+      change_rates: {
+        interval: number;
+      };
     };
 export interface MigrateMsg {}
 export type Uint128 = string;
@@ -380,6 +385,10 @@ export interface Signatory {
   voting_power: number;
 }
 export type Uint32 = number;
+export interface ChangeRates {
+  sigset_change: number;
+  withdrawal: number;
+}
 export type Uint64 = number;
 export type ArrayOfBinary = Binary[];
 export type NullableUint32 = number | null;

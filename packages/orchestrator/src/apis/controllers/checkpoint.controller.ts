@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import httpStatus from "http-status";
-import catchAsync from "../../utils/catchAsync";
+import { catchAsync } from "../../utils/catchAsync";
 import checkpointService from "../services/checkpoint.service";
 
 const getCheckpoint = catchAsync(async (req: Request, res: Response) => {

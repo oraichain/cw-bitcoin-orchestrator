@@ -16,6 +16,10 @@ const envVarsSchema = Joi.object()
       new Error("CW_BITCOIN_ADDRESS is required")
     ),
     DUCKDB_DIR_NAME: Joi.string().default("db.duckdb"),
+    MAX_WITHDRAWAL_RATE: Joi.number().default(0.1),
+    SIGSET_CHANGE_RATE: Joi.number().default(0.1),
+    MIN_BLOCKS_PER_CHECKPOINT: Joi.number().default(6),
+    LEGITIMATE_CHECKPOINT_INTERVAL: Joi.number().default(24 * 60 * 60),
   })
   .unknown();
 
@@ -46,5 +50,11 @@ export default {
   },
   duckdb: {
     name: envVars.DUCKDB_DIR_NAME,
+  },
+  signer: {
+    maxWithdrawalRate: envVars.MAX_WITHDRAWAL_RATE,
+    sigsetChangeRate: envVars.SIGSET_CHANGE_RATE,
+    minBlocksPerCheckpoint: envVars.MIN_BLOCKS_PER_CHECKPOINT,
+    legitimateCheckpointInterval: envVars.LEGITIMATE_CHECKPOINT_INTERVAL,
   },
 };

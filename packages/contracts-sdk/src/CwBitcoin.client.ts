@@ -17,6 +17,7 @@ import {
   Binary,
   BitcoinConfig,
   Boolean,
+  ChangeRates,
   Checkpoint,
   CheckpointConfig,
   Coin,
@@ -74,6 +75,7 @@ export interface CwBitcoinReadOnlyInterface {
   buildingIndex: () => Promise<Uint32>;
   completedIndex: () => Promise<Uint32>;
   unhandledConfirmedIndex: () => Promise<NullableUint32>;
+  changeRates: ({ interval }: { interval: number }) => Promise<ChangeRates>;
 }
 export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
   client: CosmWasmClient;
@@ -104,6 +106,7 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
     this.buildingIndex = this.buildingIndex.bind(this);
     this.completedIndex = this.completedIndex.bind(this);
     this.unhandledConfirmedIndex = this.unhandledConfirmedIndex.bind(this);
+    this.changeRates = this.changeRates.bind(this);
   }
 
   bitcoinConfig = async (): Promise<BitcoinConfig> => {
@@ -255,6 +258,17 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
   unhandledConfirmedIndex = async (): Promise<NullableUint32> => {
     return this.client.queryContractSmart(this.contractAddress, {
       unhandled_confirmed_index: {},
+    });
+  };
+  changeRates = async ({
+    interval,
+  }: {
+    interval: number;
+  }): Promise<ChangeRates> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      change_rates: {
+        interval,
+      },
     });
   };
 }
