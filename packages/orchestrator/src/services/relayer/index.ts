@@ -40,7 +40,7 @@ import {
 import { retry } from "../../utils/catchAsync";
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { convertSdkDestToWasmDest } from "../../utils/dest";
-import { setNestedMap } from "../../utils/map";
+import { getTxidKey, setNestedMap } from "../../utils/map";
 import { RelayerInterface } from "../common/relayer.interface";
 import { DuckDbNode } from "../db";
 import WatchedScriptsService, {
@@ -59,7 +59,7 @@ class RelayerService implements RelayerInterface {
   watchedScriptClient: WatchedScriptsService;
   relayTxids: Map<string, RelayTxIdBody>;
   // receiver -> bitcoin_address -> (txid, vout) -> Deposit
-  depositIndex: Map<string, Map<string, Map<[string, number], Deposit>>>;
+  depositIndex: Map<string, Map<string, Map<string, Deposit>>>;
 
   constructor(
     btcClient: RPCClient,
@@ -74,10 +74,7 @@ class RelayerService implements RelayerInterface {
     );
     WatchedScriptsService.instances = this.watchedScriptClient;
     this.relayTxids = new Map<string, RelayTxIdBody>();
-    this.depositIndex = new Map<
-      string,
-      Map<string, Map<[string, number], Deposit>>
-    >();
+    this.depositIndex = new Map<string, Map<string, Map<string, Deposit>>>();
   }
 
   async relay() {
@@ -303,7 +300,9 @@ class RelayerService implements RelayerInterface {
 
         console.log("Waiting some seconds for next scan...");
       } catch (err) {
-        console.log(`[RELAY_DEPOSIT] ${err?.message}`);
+        if (!err?.message.includes("Waiting for next header...")) {
+          console.log(`[RELAY_DEPOSIT] ${err?.message}`);
+        }
       }
       await setTimeout(ITERATION_DELAY);
     }
@@ -363,7 +362,7 @@ class RelayerService implements RelayerInterface {
             [
               toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
               address,
-              [txid, vout],
+              getTxidKey(txid, vout),
             ],
             {
               txid,
@@ -465,32 +464,24 @@ class RelayerService implements RelayerInterface {
       });
 
       if (isExistOutpoint === true) {
-        console.log(
-          "Removing deposit index item ",
-          toReceiverAddr(convertSdkDestToWasmDest(script.dest))
+        setNestedMap(
+          this.depositIndex,
+          [
+            toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+            address,
+            getTxidKey(txid, i),
+          ],
+          undefined
         );
-        let btcMap = this.depositIndex.get(
-          toReceiverAddr(convertSdkDestToWasmDest(script.dest))
-        );
-        if (btcMap) {
-          let addrMap = btcMap.get(address);
-          if (addrMap) {
-            addrMap.delete([txid, i]);
-          }
-        }
         continue;
       }
 
-      console.log(
-        "Adding deposit index item ",
-        toReceiverAddr(convertSdkDestToWasmDest(script.dest))
-      );
       setNestedMap(
         this.depositIndex,
         [
           toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
           address,
-          [txid, i],
+          getTxidKey(txid, i),
         ],
         {
           txid,
@@ -721,6 +712,8 @@ class RelayerService implements RelayerInterface {
     if (addressMap) {
       for (const addressMapValue of addressMap.values()) {
         for (const deposit of addressMapValue.values()) {
+          if (!deposit) continue;
+
           const confirmations = deposit.height
             ? currentBtcHeight - deposit.height + 1
             : 0;

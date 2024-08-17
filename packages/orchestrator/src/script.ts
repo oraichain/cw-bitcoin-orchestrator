@@ -1,4 +1,3 @@
-import { coin } from "@cosmjs/amino";
 import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import BIP32Factory from "bip32";
 import * as btc from "bitcoinjs-lib";
@@ -40,25 +39,13 @@ const main = async () => {
   const blockchainInfo = await btcClient.getblockchaininfo();
   const btcHeight = blockchainInfo.blocks;
 
-  // const tx = await cwBitcoinClient.updateConfig({
-  //   owner: sender,
-  //   relayerFee: "0",
-  //   relayerFeeReceiver: "orai1rchnkdpsxzhquu63y6r4j4t57pnc9w8ehdhedx",
-  //   relayerFeeToken: {
-  //     native_token: {
-  //       denom: "orai",
-  //     },
-  //   },
-  //   swapRouterContract: null,
-  //   tokenFactoryAddr:
-  //     "orai1x85d7sktyv3ke4re90cj4nf6205a94tm4kly2dhyn3dwyhq4t56qvyrseh",
-  //   tokenFee: {
-  //     nominator: 1,
-  //     denominator: 3,
-  //   },
-  //   tokenFeeReceiver: "orai1rchnkdpsxzhquu63y6r4j4t57pnc9w8ehdhedx",
-  // });
-  // console.log(tx.transactionHash);
+  const tx = await cwBitcoinClient.updateConfig({
+    tokenFee: {
+      nominator: 1,
+      denominator: 1000,
+    },
+  });
+  console.log(tx.transactionHash);
 
   // console.log(
   //   await btcClient.batch([
@@ -81,16 +68,16 @@ const main = async () => {
   // console.log(sender);
 
   // register denom
-  const txRd = await cwBitcoinClient.registerDenom(
-    {
-      subdenom: "obtc",
-      metadata: null,
-    },
-    "auto",
-    "",
-    [coin(10000000, "orai")]
-  );
-  console.log("Register denom:", txRd.transactionHash);
+  // const txRd = await cwBitcoinClient.registerDenom(
+  //   {
+  //     subdenom: "obtc",
+  //     metadata: null,
+  //   },
+  //   "auto",
+  //   "",
+  //   [coin(10000000, "orai")]
+  // );
+  // console.log("Register denom:", txRd.transactionHash);
 
   // Create xprivs (extended private keys)
   // const hdkey = HDKey.fromMasterSeed(createSeed(0));

@@ -67,12 +67,15 @@ class SignerService implements RelayerInterface {
           let currentHeight = sidechainHeader.height;
 
           // Fetch latest signed checkpoint height
-          let previousCheckpoint = await this.cwBitcoinClient.checkpointByIndex(
-            {
-              index: previousIndex - 1,
-            }
-          );
-          let signedAtBtcHeight = previousCheckpoint.signed_at_btc_height;
+          let signedAtBtcHeight = undefined;
+
+          if (previousIndex - 1 >= 0) {
+            let previousCheckpoint =
+              await this.cwBitcoinClient.checkpointByIndex({
+                index: previousIndex - 1,
+              });
+            signedAtBtcHeight = previousCheckpoint.signed_at_btc_height;
+          }
 
           // Validate "circuit breaker" mechanism
           if (signedAtBtcHeight !== null && signedAtBtcHeight !== undefined) {

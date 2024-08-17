@@ -3,6 +3,7 @@ export function setNestedMap(
   keys: any[],
   value: any
 ): Map<any, any> {
+  console.log(keys);
   let currentMap = map;
   for (let i = 0; i < keys.length - 1; i++) {
     if (!currentMap.has(keys[i])) {
@@ -12,4 +13,8 @@ export function setNestedMap(
   }
   currentMap.set(keys[keys.length - 1], value);
   return currentMap;
+}
+
+export function getTxidKey(txid: string, vout: number): string {
+  return `${txid}:${vout}`;
 }
