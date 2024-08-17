@@ -43,6 +43,12 @@ class SignerService implements RelayerInterface {
         const btcHeight = blockchainInfo.blocks;
         let buildingIndex = await this.cwBitcoinClient.buildingIndex();
         let previousIndex = buildingIndex - 1;
+
+        if (previousIndex < 0) {
+          await setTimeout(ITERATION_DELAY * 10);
+          continue;
+        }
+
         let checkpoint = await this.cwBitcoinClient.checkpointByIndex({
           index: previousIndex,
         });

@@ -14,6 +14,7 @@ import {
   Addr,
   ArrayOfBinary,
   ArrayOfTupleOfArraySize32OfUint8AndUint32,
+  AssetInfo,
   Binary,
   BitcoinConfig,
   Boolean,
@@ -26,8 +27,10 @@ import {
   Metadata,
   NullableString,
   NullableUint32,
+  Ratio,
   Signature,
   String,
+  Uint128,
   Uint32,
   Uint64,
   WrappedHeader,
@@ -275,6 +278,30 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
 export interface CwBitcoinInterface extends CwBitcoinReadOnlyInterface {
   contractAddress: string;
   sender: string;
+  updateConfig: (
+    {
+      owner,
+      relayerFee,
+      relayerFeeReceiver,
+      relayerFeeToken,
+      swapRouterContract,
+      tokenFactoryAddr,
+      tokenFee,
+      tokenFeeReceiver,
+    }: {
+      owner?: Addr;
+      relayerFee?: Uint128;
+      relayerFeeReceiver?: Addr;
+      relayerFeeToken?: AssetInfo;
+      swapRouterContract?: Addr;
+      tokenFactoryAddr?: Addr;
+      tokenFee?: Ratio;
+      tokenFeeReceiver?: Addr;
+    },
+    _fee?: number | StdFee | "auto",
+    _memo?: string,
+    _funds?: Coin[]
+  ) => Promise<ExecuteResult>;
   updateBitcoinConfig: (
     {
       config,
@@ -461,6 +488,7 @@ export class CwBitcoinClient
     this.client = client;
     this.sender = sender;
     this.contractAddress = contractAddress;
+    this.updateConfig = this.updateConfig.bind(this);
     this.updateBitcoinConfig = this.updateBitcoinConfig.bind(this);
     this.updateCheckpointConfig = this.updateCheckpointConfig.bind(this);
     this.updateHeaderConfig = this.updateHeaderConfig.bind(this);
@@ -477,6 +505,50 @@ export class CwBitcoinClient
     this.triggerBeginBlock = this.triggerBeginBlock.bind(this);
   }
 
+  updateConfig = async (
+    {
+      owner,
+      relayerFee,
+      relayerFeeReceiver,
+      relayerFeeToken,
+      swapRouterContract,
+      tokenFactoryAddr,
+      tokenFee,
+      tokenFeeReceiver,
+    }: {
+      owner?: Addr;
+      relayerFee?: Uint128;
+      relayerFeeReceiver?: Addr;
+      relayerFeeToken?: AssetInfo;
+      swapRouterContract?: Addr;
+      tokenFactoryAddr?: Addr;
+      tokenFee?: Ratio;
+      tokenFeeReceiver?: Addr;
+    },
+    _fee: number | StdFee | "auto" = "auto",
+    _memo?: string,
+    _funds?: Coin[]
+  ): Promise<ExecuteResult> => {
+    return await this.client.execute(
+      this.sender,
+      this.contractAddress,
+      {
+        update_config: {
+          owner,
+          relayer_fee: relayerFee,
+          relayer_fee_receiver: relayerFeeReceiver,
+          relayer_fee_token: relayerFeeToken,
+          swap_router_contract: swapRouterContract,
+          token_factory_addr: tokenFactoryAddr,
+          token_fee: tokenFee,
+          token_fee_receiver: tokenFeeReceiver,
+        },
+      },
+      _fee,
+      _memo,
+      _funds
+    );
+  };
   updateBitcoinConfig = async (
     {
       config,

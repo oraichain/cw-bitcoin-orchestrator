@@ -354,6 +354,10 @@ class RelayerService implements RelayerInterface {
             script,
           });
 
+          console.log(
+            "Adding deposit index item ",
+            toReceiverAddr(convertSdkDestToWasmDest(script.dest))
+          );
           setNestedMap(
             this.depositIndex,
             [
@@ -461,12 +465,26 @@ class RelayerService implements RelayerInterface {
       });
 
       if (isExistOutpoint === true) {
-        this.depositIndex.delete(
+        console.log(
+          "Removing deposit index item ",
           toReceiverAddr(convertSdkDestToWasmDest(script.dest))
         );
+        let btcMap = this.depositIndex.get(
+          toReceiverAddr(convertSdkDestToWasmDest(script.dest))
+        );
+        if (btcMap) {
+          let addrMap = btcMap.get(address);
+          if (addrMap) {
+            addrMap.delete([txid, i]);
+          }
+        }
         continue;
       }
 
+      console.log(
+        "Adding deposit index item ",
+        toReceiverAddr(convertSdkDestToWasmDest(script.dest))
+      );
       setNestedMap(
         this.depositIndex,
         [
@@ -638,7 +656,10 @@ class RelayerService implements RelayerInterface {
           relayed[txid] = true;
         }
       } catch (err) {
-        if (!err?.message.includes("Waiting for next scan...")) {
+        if (
+          !err?.message.includes("Waiting for next scan...") &&
+          !err?.message.includes("No completed checkpoints yet")
+        ) {
           console.log(`[RELAY_CHECKPOINT_CONF] ${err?.message}`);
         }
       }

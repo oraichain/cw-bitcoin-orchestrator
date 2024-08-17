@@ -1,3 +1,4 @@
+import { coin } from "@cosmjs/amino";
 import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import BIP32Factory from "bip32";
 import * as btc from "bitcoinjs-lib";
@@ -39,17 +40,37 @@ const main = async () => {
   const blockchainInfo = await btcClient.getblockchaininfo();
   const btcHeight = blockchainInfo.blocks;
 
-  console.log(
-    await btcClient.batch([
-      {
-        method: "gettxoutproof",
-        params: [
-          ["dee372a44c2e37f26a960135ca7ca0ec7c0955ba45675045f6baaf482fe56c5c"],
-          "000000000000000431bbd2b25dc902e35b4d4784bc613b9fe1375a06e2610da9",
-        ],
-      },
-    ])
-  );
+  // const tx = await cwBitcoinClient.updateConfig({
+  //   owner: sender,
+  //   relayerFee: "0",
+  //   relayerFeeReceiver: "orai1rchnkdpsxzhquu63y6r4j4t57pnc9w8ehdhedx",
+  //   relayerFeeToken: {
+  //     native_token: {
+  //       denom: "orai",
+  //     },
+  //   },
+  //   swapRouterContract: null,
+  //   tokenFactoryAddr:
+  //     "orai1x85d7sktyv3ke4re90cj4nf6205a94tm4kly2dhyn3dwyhq4t56qvyrseh",
+  //   tokenFee: {
+  //     nominator: 1,
+  //     denominator: 3,
+  //   },
+  //   tokenFeeReceiver: "orai1rchnkdpsxzhquu63y6r4j4t57pnc9w8ehdhedx",
+  // });
+  // console.log(tx.transactionHash);
+
+  // console.log(
+  //   await btcClient.batch([
+  //     {
+  //       method: "gettxoutproof",
+  //       params: [
+  //         ["dee372a44c2e37f26a960135ca7ca0ec7c0955ba45675045f6baaf482fe56c5c"],
+  //         "000000000000000431bbd2b25dc902e35b4d4784bc613b9fe1375a06e2610da9",
+  //       ],
+  //     },
+  //   ])
+  // );
 
   // console.log(
   //   await cwBitcoinClient.signatoryKey({
@@ -60,16 +81,16 @@ const main = async () => {
   // console.log(sender);
 
   // register denom
-  // const txRd = await cwBitcoinClient.registerDenom(
-  //   {
-  //     subdenom: "obtc",
-  //     metadata: null,
-  //   },
-  //   "auto",
-  //   "",
-  //   [coin(10000000, "orai")]
-  // );
-  // console.log("Register denom:", txRd.transactionHash);
+  const txRd = await cwBitcoinClient.registerDenom(
+    {
+      subdenom: "obtc",
+      metadata: null,
+    },
+    "auto",
+    "",
+    [coin(10000000, "orai")]
+  );
+  console.log("Register denom:", txRd.transactionHash);
 
   // Create xprivs (extended private keys)
   // const hdkey = HDKey.fromMasterSeed(createSeed(0));
@@ -143,16 +164,18 @@ const main = async () => {
   //     max_target: 0x1d00ffff,
   //     retargeting: true,
   //     min_difficulty_blocks: true,
-  //     trusted_header: toBinaryBlockHeader({
-  //       version: 536870912,
-  //       prev_blockhash:
-  //         "000000000000001f6d8dc4976552a596eff2eb0df15b0d9ee61a55091a2050c2",
-  //       merkle_root:
-  //         "03a2f5712c4c44daafa6475007de611b91be9738fc005788b7072153d651f36f",
-  //       time: 1705736135,
-  //       bits: 422015362,
-  //       nonce: 3433041756,
-  //     }),
+  //     trusted_header: Buffer.from(
+  //       toBinaryBlockHeader({
+  //         version: 536870912,
+  //         prev_blockhash:
+  //           "000000000000001f6d8dc4976552a596eff2eb0df15b0d9ee61a55091a2050c2",
+  //         merkle_root:
+  //           "03a2f5712c4c44daafa6475007de611b91be9738fc005788b7072153d651f36f",
+  //         time: 1705736135,
+  //         bits: 422015362,
+  //         nonce: 3433041756,
+  //       })
+  //     ).toString("base64"),
   //   },
   // });
   // console.log(tx.transactionHash);

@@ -1,9 +1,37 @@
+export type Uint128 = string;
 export type Addr = string;
+export type AssetInfo =
+  | {
+      token: {
+        contract_addr: Addr;
+      };
+    }
+  | {
+      native_token: {
+        denom: string;
+      };
+    };
 export interface InstantiateMsg {
-  bridge_wasm_addr?: Addr | null;
+  relayer_fee: Uint128;
+  relayer_fee_receiver: Addr;
+  relayer_fee_token: AssetInfo;
+  swap_router_contract?: Addr | null;
   token_factory_addr: Addr;
+  token_fee_receiver: Addr;
 }
 export type ExecuteMsg =
+  | {
+      update_config: {
+        owner?: Addr | null;
+        relayer_fee?: Uint128 | null;
+        relayer_fee_receiver?: Addr | null;
+        relayer_fee_token?: AssetInfo | null;
+        swap_router_contract?: Addr | null;
+        token_factory_addr?: Addr | null;
+        token_fee?: Ratio | null;
+        token_fee_receiver?: Addr | null;
+      };
+    }
   | {
       update_bitcoin_config: {
         config: BitcoinConfig;
@@ -131,6 +159,10 @@ export type Dest =
     };
 export type Signature = number[];
 export type String = string;
+export interface Ratio {
+  denominator: number;
+  nominator: number;
+}
 export interface BitcoinConfig {
   capacity_limit: number;
   fee_pool_reward_split: [number, number];
@@ -290,7 +322,6 @@ export type QueryMsg =
       };
     };
 export interface MigrateMsg {}
-export type Uint128 = string;
 export type CheckpointStatus = "building" | "signing" | "complete";
 export interface Checkpoint {
   batches: Batch[];
