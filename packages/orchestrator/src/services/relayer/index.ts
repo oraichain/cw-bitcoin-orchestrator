@@ -27,7 +27,6 @@ import {
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
   RETRY_DELAY,
-  SCAN_MEMPOOL_CHUNK_SIZE,
 } from "../../constants";
 import {
   calculateOutpointKey,
@@ -353,10 +352,6 @@ class RelayerService implements RelayerInterface {
             script,
           });
 
-          console.log(
-            "Adding deposit index item ",
-            toReceiverAddr(convertSdkDestToWasmDest(script.dest))
-          );
           setNestedMap(
             this.depositIndex,
             [
@@ -383,43 +378,41 @@ class RelayerService implements RelayerInterface {
       let tip = await this.cwBitcoinClient.sidechainBlockHash();
       let blocks = await this.lastNBlocks(numBlocks, tip);
       for (const block of blocks) {
-        let txs = block.tx;
-        let chunks = Math.ceil(txs.length / SCAN_MEMPOOL_CHUNK_SIZE);
-        for (let i = 0; i < chunks; i++) {
-          let chunkTxs = txs.slice(
-            i * SCAN_MEMPOOL_CHUNK_SIZE,
-            (i + 1) * SCAN_MEMPOOL_CHUNK_SIZE
-          );
-          let txProofs = await retry(
-            async () => {
-              const result = await this.btcClient.batch(
-                chunkTxs.map((tx) => ({
-                  method: "gettxoutproof",
-                  params: [[tx.txid], block.hash],
-                }))
-              );
-              return result.map((item) => item.result);
-            },
-            10,
-            RETRY_DELAY
-          );
-
-          for (let j = 0; j < txProofs.length; j++) {
-            let tx = chunkTxs[j];
-            let txProof = txProofs[j];
-            try {
-              await this.maybeRelayDeposit(tx, block.height, txProof);
-            } catch (err) {
-              console.log(
-                `[MAYBE_RELAY_DEPOSIT] ${err?.message} at tx ${tx.txid}`
-              );
-            }
+        let txs = await this.filterDepositTxs(block.tx);
+        for (const tx of txs) {
+          try {
+            await this.maybeRelayDeposit(tx, block.height, block.hash);
+          } catch (err) {
+            console.log(
+              `[MAYBE_RELAY_DEPOSIT] ${err?.message} at tx ${tx.txid}`
+            );
           }
         }
       }
     } catch (err) {
       console.log(`[SCAN_DEPOSITS] ${err?.message}`);
     }
+  }
+
+  async filterDepositTxs(txs: BitcoinTransaction[]) {
+    let results = await Promise.all(
+      txs.map(async (tx) => {
+        let outputs = tx.vout;
+        for (let i = 0; i < outputs.length; i++) {
+          let output = outputs[i];
+          if (output.scriptPubKey.type == ScriptPubkeyType.WitnessScriptHash) {
+            let script = await this.watchedScriptClient.getScript(
+              output.scriptPubKey.hex
+            );
+            if (script) {
+              return true;
+            }
+          }
+        }
+        return false;
+      })
+    );
+    return txs.filter((_, i) => results[i]);
   }
 
   async lastNBlocks(numBlocks: number, tip: string): Promise<BitcoinBlock[]> {
@@ -439,7 +432,7 @@ class RelayerService implements RelayerInterface {
   async maybeRelayDeposit(
     tx: BitcoinTransaction,
     blockHeight: number,
-    txProof: string
+    blockHash: string
   ) {
     const txid = tx.txid;
     const rawTx = tx.hex;
@@ -490,6 +483,11 @@ class RelayerService implements RelayerInterface {
           amount: output.value,
         } as Deposit
       );
+
+      const txProof = await this.btcClient.gettxoutproof({
+        txids: [txid],
+        blockhash: blockHash,
+      });
 
       await wrappedExecuteTransaction(async () => {
         const tx = await this.cwBitcoinClient.relayDeposit({
