@@ -705,26 +705,23 @@ class RelayerService implements RelayerInterface {
     });
     const currentBtcHeight = blockHeader.height;
 
-    let deposits: DepositInfo[] = [];
     const addressMap = this.depositIndex.get(receiver);
-    if (addressMap) {
-      for (const addressMapValue of addressMap.values()) {
-        for (const deposit of addressMapValue.values()) {
-          if (!deposit) continue;
+    if (!addressMap) return [];
 
-          const confirmations = deposit.height
-            ? currentBtcHeight - deposit.height + 1
-            : 0;
-          deposits = [
-            ...deposits,
-            {
+    const deposits = Array.from(addressMap.values()).flatMap(
+      (addressMapValue) =>
+        Array.from(addressMapValue.values())
+          .filter((deposit) => deposit) // Filter out falsy values
+          .map((deposit) => {
+            const confirmations = deposit.height
+              ? currentBtcHeight - deposit.height + 1
+              : 0;
+            return {
               deposit,
               confirmations,
-            },
-          ];
-        }
-      }
-    }
+            };
+          })
+    );
 
     return deposits;
   }
