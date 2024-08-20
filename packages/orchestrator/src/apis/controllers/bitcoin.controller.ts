@@ -4,6 +4,14 @@ import httpStatus from "http-status";
 import { catchAsync } from "../../utils/catchAsync";
 import bitcoinService from "../services/bitcoin.service";
 
+const getConfig = catchAsync(async (req: Request, res: Response) => {
+  const data = await bitcoinService.getConfig();
+  res.status(httpStatus.OK).json({
+    message: "Get bitcoin config successfully",
+    data,
+  });
+});
+
 const getPendingDeposits = catchAsync(async (req: Request, res: Response) => {
   const { address } = req.query;
   const data = await bitcoinService.getPendingDeposits(address as string);
@@ -13,28 +21,22 @@ const getPendingDeposits = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getDepositAddress = catchAsync(async (req: Request, res: Response) => {
-  const { address } = req.params;
-  const data = await bitcoinService.getDepositAddress(address as string);
+const submitDepositAddress = catchAsync(async (req: Request, res: Response) => {
+  const { deposit_addr: depositAddr, sigset_index: sigsetIndex } = req.query;
+  const { dest } = req.body;
+  const data = await bitcoinService.submitDepositAddress(
+    depositAddr as string,
+    parseInt(sigsetIndex as string),
+    dest as Dest
+  );
   res.status(httpStatus.OK).json({
     message: "Get deposit address successfully",
     data,
   });
 });
 
-const generateDepositAddress = catchAsync(
-  async (req: Request, res: Response) => {
-    const { dest } = req.body;
-    const data = await bitcoinService.generateDepositAddress(dest as Dest);
-    res.status(httpStatus.OK).json({
-      message: "Get deposit address successfully",
-      data,
-    });
-  }
-);
-
 export default {
+  getConfig,
   getPendingDeposits,
-  getDepositAddress,
-  generateDepositAddress,
+  submitDepositAddress,
 };

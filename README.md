@@ -15,6 +15,7 @@
 | [@oraichain/contracts-sdk](https://github.com/oraichain/cw-bitcoin-orchestrator/tree/master/packages/contracts-sdk)     | Storing production Bitcoin Bridge CW contract client and types in TypeScript to simplify contract interaction.      |
 | [@oraichain/orchestrator](https://github.com/oraichain/cw-bitcoin-orchestrator/tree/master/packages/orchestrator)       | A program responsible for relaying packets and submitting signatures between Bitcoin and Oraichain.                 |
 | [@oraichain/wasm-sdk](https://github.com/oraichain/cw-bitcoin-orchestrator/tree/master/packages/wasm-sdk)               | A program responsible for encoding and decoding correct type data of Cosmwasm contract between Rust and Typescript. |
+| [@oraichain/lib-js](https://github.com/oraichain/cw-bitcoin-orchestrator/tree/master/packages/lib-js)                   | A program responsible for creating deposit address for client.                                                      |
 
 ## 🛠 Developing
 
