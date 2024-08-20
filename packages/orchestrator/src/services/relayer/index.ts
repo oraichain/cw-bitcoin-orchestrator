@@ -3,6 +3,7 @@ import {
   Dest,
   WrappedHeader,
 } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
+import { redeemScript } from "@oraichain/bitcoin-bridge-lib-js";
 import {
   commitmentBytes,
   decodeRawTx,
@@ -25,6 +26,7 @@ import {
   BlockHeader,
   VerbosedBlockHeader,
 } from "../../@types";
+import env from "../../configs/env";
 import {
   ITERATION_DELAY,
   RELAY_DEPOSIT_BLOCKS_SIZE,
@@ -35,7 +37,6 @@ import {
   calculateOutpointKey,
   decodeAddress,
   getCurrentNetwork,
-  redeemScript,
   ScriptPubkeyType,
   toScriptPubKeyP2WSH,
 } from "../../utils/bitcoin";
@@ -729,9 +730,20 @@ class RelayerService implements RelayerInterface {
     return deposits;
   }
 
-  async generateDepositAddress(dest: Dest): Promise<string> {
-    const checkpoint = await this.cwBitcoinClient.buildingCheckpoint();
+  async submitDepositAddress(
+    depositAddr: string,
+    checkpointIndex: number,
+    dest: Dest
+  ): Promise<void> {
+    const checkpoint = await (checkpointIndex
+      ? this.cwBitcoinClient.checkpointByIndex({
+          index: checkpointIndex,
+        })
+      : this.cwBitcoinClient.buildingCheckpoint());
+
     const checkpointConfig = await this.cwBitcoinClient.checkpointConfig();
+    const bitcoinConfig = await this.cwBitcoinClient.bitcoinConfig();
+
     const sigset = checkpoint.sigset;
     const encodedDest = commitmentBytes(convertSdkDestToWasmDest(dest));
     const depositScript = redeemScript(
@@ -745,6 +757,22 @@ class RelayerService implements RelayerInterface {
     });
     let address = wsh.address;
 
+    if (address !== depositAddr) {
+      throw new Error(
+        `Generated address ${address} does not match the expected address ${depositAddr}`
+      );
+    }
+
+    let currentTime = Math.floor(Date.now() / 1000);
+    if (
+      currentTime + env.deposit.depositBuffer >=
+      sigset.create_time + bitcoinConfig.max_deposit_age
+    ) {
+      throw new Error(
+        "Sigset no longer accepting deposits. Unable to generate deposit address"
+      );
+    }
+
     await this.watchedScriptClient.insertScript({
       address,
       script: toScriptPubKeyP2WSH(depositScript).toString("hex"),
@@ -752,8 +780,6 @@ class RelayerService implements RelayerInterface {
       sigsetIndex: checkpoint.sigset.index,
       sigsetCreateTime: checkpoint.sigset.create_time,
     });
-
-    return address;
   }
 }
 

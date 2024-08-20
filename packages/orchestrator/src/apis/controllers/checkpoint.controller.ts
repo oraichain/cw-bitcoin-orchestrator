@@ -3,6 +3,14 @@ import httpStatus from "http-status";
 import { catchAsync } from "../../utils/catchAsync";
 import checkpointService from "../services/checkpoint.service";
 
+const getConfig = catchAsync(async (req: Request, res: Response) => {
+  const data = await checkpointService.getConfig();
+  res.status(httpStatus.OK).json({
+    message: "Get checkpoint config successfully",
+    data,
+  });
+});
+
 const getCheckpoint = catchAsync(async (req: Request, res: Response) => {
   const { index } = req.query;
   const data = await checkpointService.getCheckpoint(
@@ -59,6 +67,7 @@ const getStoreCheckpointIndexes = catchAsync(
 );
 
 export default {
+  getConfig,
   getCheckpoint,
   getDepositFee,
   getWithdrawFee,

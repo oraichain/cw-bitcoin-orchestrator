@@ -20,6 +20,7 @@ const envVarsSchema = Joi.object()
     SIGSET_CHANGE_RATE: Joi.number().default(0.1),
     MIN_BLOCKS_PER_CHECKPOINT: Joi.number().default(6),
     LEGITIMATE_CHECKPOINT_INTERVAL: Joi.number().default(24 * 60 * 60),
+    DEPOSIT_BUFFER: Joi.number().error(new Error("DEPOSIT_BUFFER is required")),
   })
   .unknown();
 
@@ -56,5 +57,8 @@ export default {
     sigsetChangeRate: envVars.SIGSET_CHANGE_RATE,
     minBlocksPerCheckpoint: envVars.MIN_BLOCKS_PER_CHECKPOINT,
     legitimateCheckpointInterval: envVars.LEGITIMATE_CHECKPOINT_INTERVAL,
+  },
+  deposit: {
+    depositBuffer: envVars.DEPOSIT_BUFFER,
   },
 };
