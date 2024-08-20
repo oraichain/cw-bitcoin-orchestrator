@@ -135,7 +135,7 @@ const main = async () => {
   //   votingPowers: [10],
   // });
   // console.log("Add validators:", tx.transactionHash);
-  // let tx = await cwBitcoinClient.setSignatoryKey({
+  // tx = await cwBitcoinClient.setSignatoryKey({
   //   xpub: encodeXpub({ key: xpub }),
   // });
   // console.log("Set signatory key:", tx.transactionHash);

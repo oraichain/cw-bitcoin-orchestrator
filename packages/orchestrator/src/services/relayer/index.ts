@@ -1,5 +1,8 @@
 import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
-import { WrappedHeader } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
+import {
+  Dest,
+  WrappedHeader,
+} from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
 import {
   commitmentBytes,
   decodeRawTx,
@@ -572,7 +575,7 @@ class RelayerService implements RelayerInterface {
             this.cwBitcoinClient.completedIndex(),
           ]);
 
-        if (!unconfirmedIndex) {
+        if (unconfirmedIndex === null) {
           throw new Error(
             "No unconfirmed checkpoint index. Waiting for next scan..."
           );
@@ -726,11 +729,11 @@ class RelayerService implements RelayerInterface {
     return deposits;
   }
 
-  async getDepositAddress(receiver: string): Promise<string> {
+  async generateDepositAddress(dest: Dest): Promise<string> {
     const checkpoint = await this.cwBitcoinClient.buildingCheckpoint();
     const checkpointConfig = await this.cwBitcoinClient.checkpointConfig();
     const sigset = checkpoint.sigset;
-    const encodedDest = commitmentBytes({ Address: receiver });
+    const encodedDest = commitmentBytes(convertSdkDestToWasmDest(dest));
     const depositScript = redeemScript(
       sigset,
       Buffer.from(encodedDest),
@@ -745,7 +748,7 @@ class RelayerService implements RelayerInterface {
     await this.watchedScriptClient.insertScript({
       address,
       script: toScriptPubKeyP2WSH(depositScript).toString("hex"),
-      dest: { address: receiver },
+      dest,
       sigsetIndex: checkpoint.sigset.index,
       sigsetCreateTime: checkpoint.sigset.create_time,
     });

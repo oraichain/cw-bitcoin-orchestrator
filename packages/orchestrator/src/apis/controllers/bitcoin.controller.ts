@@ -1,3 +1,4 @@
+import { Dest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
 import { Request, Response } from "express";
 import httpStatus from "http-status";
 import { catchAsync } from "../../utils/catchAsync";
@@ -21,4 +22,19 @@ const getDepositAddress = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-export default { getPendingDeposits, getDepositAddress };
+const generateDepositAddress = catchAsync(
+  async (req: Request, res: Response) => {
+    const { dest } = req.body;
+    const data = await bitcoinService.generateDepositAddress(dest as Dest);
+    res.status(httpStatus.OK).json({
+      message: "Get deposit address successfully",
+      data,
+    });
+  }
+);
+
+export default {
+  getPendingDeposits,
+  getDepositAddress,
+  generateDepositAddress,
+};

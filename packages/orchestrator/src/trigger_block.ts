@@ -19,7 +19,9 @@ class TriggerBlocks {
     while (true) {
       try {
         await this.triggerBlocks();
-      } catch (err) {}
+      } catch (err) {
+        console.log(err?.message);
+      }
       await setTimeout(1500);
     }
   }

@@ -1,5 +1,5 @@
-export type Uint128 = string;
 export type Addr = string;
+export type Uint128 = string;
 export type AssetInfo =
   | {
       token: {
@@ -12,6 +12,7 @@ export type AssetInfo =
       };
     };
 export interface InstantiateMsg {
+  osor_entry_point_contract?: Addr | null;
   relayer_fee: Uint128;
   relayer_fee_receiver: Addr;
   relayer_fee_token: AssetInfo;

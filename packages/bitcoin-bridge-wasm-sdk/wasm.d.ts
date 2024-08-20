@@ -220,6 +220,8 @@ export interface WrappedHeader {
 export interface IbcDest {
     source_port: string;
     source_channel: string;
+    receiver: string;
+    sender: string;
     timeout_timestamp: number;
     memo: string;
 }

@@ -56,49 +56,15 @@ class SignerService implements RelayerInterface {
         if (checkpoint.status === "signing") {
           await this.checkChangeRate();
 
-          // Fetch current block
-          let sidechainBlockHash =
-            await this.cwBitcoinClient.sidechainBlockHash();
-          let sidechainHeader: BlockHeader =
-            await this.btcClient.getblockheader({
-              blockhash: sidechainBlockHash,
-              verbose: true,
-            });
-          let currentHeight = sidechainHeader.height;
-
-          // Fetch latest signed checkpoint height
-          let signedAtBtcHeight = undefined;
-
-          if (previousIndex - 1 >= 0) {
-            let previousCheckpoint =
-              await this.cwBitcoinClient.checkpointByIndex({
-                index: previousIndex - 1,
-              });
-            signedAtBtcHeight = previousCheckpoint.signed_at_btc_height;
-          }
-
-          // Validate "circuit breaker" mechanism
-          if (signedAtBtcHeight !== null && signedAtBtcHeight !== undefined) {
-            let delta =
-              signedAtBtcHeight +
-              env.signer.minBlocksPerCheckpoint -
-              currentHeight;
-
-            if (delta > 0) {
-              throw new Error(
-                `Checkpoint is too recent, ${delta} more Bitcoin block${
-                  delta > 1 ? "s" : ""
-                } required`
-              );
-            }
-          }
-
           let signTxs = await this.cwBitcoinClient.signingTxsAtCheckpointIndex({
             xpub: encodeXpub({ key: xpub }),
             checkpointIndex: previousIndex,
           });
 
           if (signTxs.length > 0) {
+            // Fetch latest signed checkpoint height
+            await this.circuitBreaker(previousIndex);
+
             let sigs = [];
             for (const signTx of signTxs) {
               const [msg, sigsetIndex] = signTx;
@@ -125,6 +91,38 @@ class SignerService implements RelayerInterface {
       }
 
       await setTimeout(ITERATION_DELAY * 10);
+    }
+  }
+
+  async circuitBreaker(previousIndex: number) {
+    // Fetch current block
+    let sidechainBlockHash = await this.cwBitcoinClient.sidechainBlockHash();
+    let sidechainHeader: BlockHeader = await this.btcClient.getblockheader({
+      blockhash: sidechainBlockHash,
+      verbose: true,
+    });
+    let currentHeight = sidechainHeader.height;
+
+    let signedAtBtcHeight = undefined;
+
+    if (previousIndex - 1 >= 0) {
+      let previousCheckpoint = await this.cwBitcoinClient.checkpointByIndex({
+        index: previousIndex - 1,
+      });
+      signedAtBtcHeight = previousCheckpoint.signed_at_btc_height;
+    }
+
+    // Validate "circuit breaker" mechanism
+    if (signedAtBtcHeight !== null && signedAtBtcHeight !== undefined) {
+      let delta =
+        signedAtBtcHeight + env.signer.minBlocksPerCheckpoint - currentHeight;
+      if (delta > 0) {
+        throw new Error(
+          `Checkpoint is too recent, ${delta} more Bitcoin block${
+            delta > 1 ? "s" : ""
+          } required`
+        );
+      }
     }
   }
 

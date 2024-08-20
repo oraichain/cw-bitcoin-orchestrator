@@ -35,6 +35,8 @@ export function convertSdkDestToWasmDest(dest: SdkDest): WasmDest {
         source_channel: dest.ibc.source_channel,
         source_port: dest.ibc.source_port,
         timeout_timestamp: dest.ibc.timeout_timestamp,
+        sender: dest.ibc.sender,
+        receiver: dest.ibc.receiver,
       },
     };
   }
