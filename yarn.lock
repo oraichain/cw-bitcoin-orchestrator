@@ -2835,6 +2835,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@oraichain/bitcoin-bridge-lib-js@workspace:packages/lib-js":
+  version: 0.0.0-use.local
+  resolution: "@oraichain/bitcoin-bridge-lib-js@workspace:packages/lib-js"
+  dependencies:
+    "@oraichain/bitcoin-bridge-wasm-sdk": "workspace:^"
+  languageName: unknown
+  linkType: soft
+
 "@oraichain/bitcoin-bridge-orchestrator@workspace:packages/orchestrator":
   version: 0.0.0-use.local
   resolution: "@oraichain/bitcoin-bridge-orchestrator@workspace:packages/orchestrator"
@@ -2869,9 +2877,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@oraichain/bitcoin-bridge-wasm-sdk@workspace:^, @oraichain/bitcoin-bridge-wasm-sdk@workspace:packages/bitcoin-bridge-wasm-sdk":
+"@oraichain/bitcoin-bridge-wasm-sdk@workspace:^, @oraichain/bitcoin-bridge-wasm-sdk@workspace:packages/wasm-sdk":
   version: 0.0.0-use.local
-  resolution: "@oraichain/bitcoin-bridge-wasm-sdk@workspace:packages/bitcoin-bridge-wasm-sdk"
+  resolution: "@oraichain/bitcoin-bridge-wasm-sdk@workspace:packages/wasm-sdk"
   languageName: unknown
   linkType: soft
 
