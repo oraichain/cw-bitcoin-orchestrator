@@ -1,4 +1,5 @@
 import { CwBitcoinQueryClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import { fromBinaryTransaction } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import env from "../../configs/env";
 import { initQueryClient } from "../../utils/cosmos";
 
@@ -11,10 +12,22 @@ const getConfig = async () => {
 const getCheckpoint = async (index: number | undefined) => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
   const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
-  if (index === undefined) {
-    return queryClient.buildingCheckpoint();
-  }
-  return queryClient.checkpointByIndex({ index });
+  const [checkpoint, checkpointTx] = await Promise.all([
+    (async () => {
+      if (index === undefined) {
+        return queryClient.buildingCheckpoint();
+      }
+      return queryClient.checkpointByIndex({ index });
+    })(),
+    queryClient.checkpointTx({ index }),
+  ]);
+  let checkpointTransaction = fromBinaryTransaction(
+    Buffer.from(checkpointTx, "base64")
+  );
+  return {
+    ...checkpoint,
+    transaction: checkpointTransaction,
+  };
 };
 
 const getDepositFee = async (index: number | undefined) => {
