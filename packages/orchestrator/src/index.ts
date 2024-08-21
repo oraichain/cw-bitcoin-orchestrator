@@ -13,7 +13,7 @@ import bitcoinRoute from "./apis/routes/bitcoin.route";
 import checkpointRoute from "./apis/routes/checkpoint.route";
 import env from "./configs/env";
 import morgan from "./configs/morgan";
-import { WasmLocalConfig } from "./configs/networks";
+import { OraichainConfig } from "./configs/networks";
 import { DuckDbNode } from "./services/db";
 import RelayerService from "./services/relayer";
 import SignerService from "./services/signer";
@@ -73,9 +73,9 @@ server.listen(PORT, async () => {
     pass: env.bitcoin.password,
   });
 
-  const { rpcEndpoint, prefix, gasPrice } = WasmLocalConfig;
+  const { prefix, gasPrice } = OraichainConfig;
   const { sender, client } = await initSignerClient(
-    env.cosmos.rpcUrl || rpcEndpoint,
+    env.cosmos.rpcUrl,
     prefix,
     gasPrice
   );
@@ -99,6 +99,6 @@ server.listen(PORT, async () => {
   await Promise.all([
     relayerService.relay(),
     signerService.relay(),
-    // triggerBlock.relay(),
+    env.server.env === "development" ? triggerBlock.relay() : undefined,
   ]);
 });

@@ -18,9 +18,9 @@ function createSeed(num: number): Buffer {
 
 // Set up testnet for testing
 const main = async () => {
-  const { rpcEndpoint, prefix, gasPrice } = WasmLocalConfig;
+  const { prefix, gasPrice } = WasmLocalConfig;
   const { sender, client } = await initSignerClient(
-    rpcEndpoint,
+    env.cosmos.rpcUrl,
     prefix,
     gasPrice
   );

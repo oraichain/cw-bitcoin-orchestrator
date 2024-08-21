@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import Joi from "joi";
 
 dotenv.config({
-  path: `${process.cwd()}/.env.${process.env.NODE_ENV}`,
+  path: `.env.${process.env.NODE_ENV}`,
 });
 
 const envVarsSchema = Joi.object()
