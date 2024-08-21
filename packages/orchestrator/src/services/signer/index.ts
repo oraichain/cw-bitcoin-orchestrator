@@ -27,6 +27,13 @@ class SignerService implements RelayerInterface {
   async relay() {
     let { xpriv, xpub } = await this.loadOrGenerateXpriv();
 
+    await this.startRelay({
+      xpriv,
+      xpub,
+    });
+  }
+
+  async startRelay({ xpriv, xpub }: { xpriv: string; xpub: string }) {
     await Promise.all([
       this.startSigningCheckpoint(xpriv, xpub),
       this.startRecoveryTxSigning(xpriv, xpub),
