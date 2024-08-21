@@ -1,6 +1,6 @@
 {
   "name": "@oraichain/bitcoin-bridge-lib-js",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "build/index.js",
   "license": "MIT",
   "scripts": {
@@ -11,13 +11,13 @@
     "data/"
   ],
   "dependencies": {
-    "@oraichain/bitcoin-bridge-contracts-sdk": "^1.0.4",
-    "@oraichain/bitcoin-bridge-wasm-sdk": "^1.0.4",
+    "@oraichain/bitcoin-bridge-contracts-sdk": "^1.0.5",
+    "@oraichain/bitcoin-bridge-wasm-sdk": "^1.0.5",
     "bitcoinjs-lib": "^6.0.1"
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
-  "gitHead": "1f0b4fb173cf63f114b1d98e02f8a8d73de9bf8f"
+  "gitHead": "66afebb77d5dbb27e96c96a8deabe716c7970f95"
 }
