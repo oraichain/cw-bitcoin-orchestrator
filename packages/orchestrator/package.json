@@ -1,6 +1,6 @@
 {
   "name": "@oraichain/bitcoin-bridge-orchestrator",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "build/index.js",
   "files": [
     "build/"
@@ -11,10 +11,10 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@oraichain/bitcoin-bridge-contracts-build": "^1.0.2",
-    "@oraichain/bitcoin-bridge-contracts-sdk": "^1.0.2",
-    "@oraichain/bitcoin-bridge-lib-js": "^1.0.2",
-    "@oraichain/bitcoin-bridge-wasm-sdk": "^1.0.2",
+    "@oraichain/bitcoin-bridge-contracts-build": "^1.0.3",
+    "@oraichain/bitcoin-bridge-contracts-sdk": "^1.0.3",
+    "@oraichain/bitcoin-bridge-lib-js": "^1.0.3",
+    "@oraichain/bitcoin-bridge-wasm-sdk": "^1.0.3",
     "bip32": "^4.0.0",
     "bitcoinjs-lib": "^6.0.1",
     "compression": "^1.7.4",
@@ -42,5 +42,5 @@
     "@types/hdkey": "^2",
     "@types/tiny-secp256k1": "^2.0.1"
   },
-  "gitHead": "7fb9706290650e0286a7a74654efb14929938b2b"
+  "gitHead": "0c6b287d5335eac7f86e766b6c9dcbbf77fe70ba"
 }

@@ -1,6 +1,6 @@
 {
   "name": "@oraichain/bitcoin-bridge-contracts-sdk",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "build/index.js",
   "files": [
     "build/",
@@ -14,5 +14,5 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
-  "gitHead": "7fb9706290650e0286a7a74654efb14929938b2b"
+  "gitHead": "0c6b287d5335eac7f86e766b6c9dcbbf77fe70ba"
 }
