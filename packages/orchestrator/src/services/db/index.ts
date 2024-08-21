@@ -4,6 +4,7 @@ import fs from "fs";
 import _ from "lodash";
 import os from "os";
 import path from "path";
+import env from "../../configs/env";
 import { TableName } from "../../utils/db";
 
 export const sqlCommands = {
@@ -85,7 +86,7 @@ export class DuckDbNode extends DuckDB {
 
   static async create(dbName?: string): Promise<DuckDbNode> {
     const homeDir = os.homedir();
-    const relayerDirPath = path.join(homeDir, ".oraibtc-relayer");
+    const relayerDirPath = path.join(homeDir, env.server.storageDirName);
 
     if (!fs.existsSync(relayerDirPath)) {
       fs.mkdirSync(relayerDirPath, { recursive: true });

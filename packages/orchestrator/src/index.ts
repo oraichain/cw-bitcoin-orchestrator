@@ -6,6 +6,8 @@ import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import http from "http";
+import os from "os";
+import path from "path";
 import { RPCClient } from "rpc-bitcoin";
 import xss from "xss-clean";
 import bitcoinRoute from "./apis/routes/bitcoin.route";
@@ -53,7 +55,11 @@ app.use("/api/bitcoin", bitcoinRoute);
 app.use("/api/checkpoint", checkpointRoute);
 
 server.listen(PORT, async () => {
+  const homeDir = os.homedir();
+  const relayerDirPath = path.join(homeDir, env.server.storageDirName);
+
   console.log("[ACTIVE] Server is running on port " + PORT);
+  console.log("Orchestrator is storing data at " + relayerDirPath);
   console.log("Initilizing DuckDB...");
   await DuckDbNode.create(env.duckdb.name);
   console.log("Initilized DuckDB!");

@@ -21,6 +21,7 @@ const envVarsSchema = Joi.object()
     MIN_BLOCKS_PER_CHECKPOINT: Joi.number().default(6),
     LEGITIMATE_CHECKPOINT_INTERVAL: Joi.number().default(24 * 60 * 60),
     DEPOSIT_BUFFER: Joi.number().error(new Error("DEPOSIT_BUFFER is required")),
+    STORAGE_DIR_NAME: Joi.string().default(".oraibtc-relayer"),
   })
   .unknown();
 
@@ -36,6 +37,7 @@ export default {
   server: {
     env: envVars.NODE_ENV,
     port: envVars.PORT,
+    storageDirName: envVars.STORAGE_DIR_NAME,
   },
   bitcoin: {
     port: envVars.BTC_RPC_PORT,

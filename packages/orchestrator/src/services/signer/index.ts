@@ -192,7 +192,10 @@ class SignerService implements RelayerInterface {
 
   async loadOrGenerateXpriv(): Promise<{ xpriv: string; xpub: string }> {
     const homeDir = os.homedir();
-    const signerDirPath = path.join(homeDir, ".oraibtc-relayer/signer");
+    const signerDirPath = path.join(
+      homeDir,
+      `${env.server.storageDirName}/signer`
+    );
     if (!fs.existsSync(signerDirPath)) {
       fs.mkdirSync(signerDirPath, { recursive: true });
     }
