@@ -99,6 +99,6 @@ server.listen(PORT, async () => {
   await Promise.all([
     relayerService.relay(),
     signerService.relay(),
-    triggerBlock.relay(),
+    // triggerBlock.relay(),
   ]);
 });
