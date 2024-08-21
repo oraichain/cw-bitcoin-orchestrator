@@ -141,8 +141,8 @@ export type ExecuteMsg =
       };
     }
   | {
-      change_btc_admin: {
-        new_admin: string;
+      change_btc_denom_owner: {
+        new_owner: string;
       };
     }
   | {

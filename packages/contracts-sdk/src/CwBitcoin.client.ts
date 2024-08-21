@@ -450,11 +450,11 @@ export interface CwBitcoinInterface extends CwBitcoinReadOnlyInterface {
     _memo?: string,
     _funds?: Coin[]
   ) => Promise<ExecuteResult>;
-  changeBtcAdmin: (
+  changeBtcDenomOwner: (
     {
-      newAdmin,
+      newOwner,
     }: {
-      newAdmin: string;
+      newOwner: string;
     },
     _fee?: number | StdFee | "auto",
     _memo?: string,
@@ -501,7 +501,7 @@ export class CwBitcoinClient
     this.setSignatoryKey = this.setSignatoryKey.bind(this);
     this.addValidators = this.addValidators.bind(this);
     this.registerDenom = this.registerDenom.bind(this);
-    this.changeBtcAdmin = this.changeBtcAdmin.bind(this);
+    this.changeBtcDenomOwner = this.changeBtcDenomOwner.bind(this);
     this.triggerBeginBlock = this.triggerBeginBlock.bind(this);
   }
 
@@ -867,11 +867,11 @@ export class CwBitcoinClient
       _funds
     );
   };
-  changeBtcAdmin = async (
+  changeBtcDenomOwner = async (
     {
-      newAdmin,
+      newOwner,
     }: {
-      newAdmin: string;
+      newOwner: string;
     },
     _fee: number | StdFee | "auto" = "auto",
     _memo?: string,
@@ -881,8 +881,8 @@ export class CwBitcoinClient
       this.sender,
       this.contractAddress,
       {
-        change_btc_admin: {
-          new_admin: newAdmin,
+        change_btc_denom_owner: {
+          new_owner: newOwner,
         },
       },
       _fee,
