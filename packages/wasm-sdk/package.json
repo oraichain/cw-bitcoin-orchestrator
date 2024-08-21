@@ -3,7 +3,7 @@
   "collaborators": [
     "Oraichain Labs"
   ],
-  "version": "1.0.5",
+  "version": "1.0.6",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -18,5 +18,5 @@
   "main": "wasm.js",
   "homepage": "https://orai.io",
   "types": "wasm.d.ts",
-  "gitHead": "66afebb77d5dbb27e96c96a8deabe716c7970f95"
+  "gitHead": "0930aa2923a4ed3d2af06b1614f33e6999aac6a5"
 }
