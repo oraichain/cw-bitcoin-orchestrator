@@ -1,6 +1,6 @@
 {
   "name": "@oraichain/bitcoin-bridge-lib-js",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "main": "build/index.js",
   "license": "MIT",
   "scripts": {
@@ -19,5 +19,5 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
-  "gitHead": "0930aa2923a4ed3d2af06b1614f33e6999aac6a5"
+  "gitHead": "05c7687658d24ec69993c3f13d4d77615fb9995d"
 }
