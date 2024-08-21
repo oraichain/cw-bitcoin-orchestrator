@@ -32,10 +32,12 @@ class SignerService implements RelayerInterface {
     });
 
     if (signatoryKey === null) {
-      const tx = await this.cwBitcoinClient.setSignatoryKey({
-        xpub: encodeXpub({ key: xpub }),
+      await wrappedExecuteTransaction(async () => {
+        const tx = await this.cwBitcoinClient.setSignatoryKey({
+          xpub: encodeXpub({ key: xpub }),
+        });
+        console.log(`Setting signatory key at: ${tx.transactionHash}`);
       });
-      console.log(`Setting signatory key at: ${tx.transactionHash}`);
     }
 
     await this.startRelay({
