@@ -2,7 +2,6 @@ import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import "dotenv/config";
 import express, { NextFunction, Request, Response } from "express";
 import helmet from "helmet";
 import http from "http";
