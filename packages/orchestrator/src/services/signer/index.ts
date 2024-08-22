@@ -223,7 +223,7 @@ class SignerService implements RelayerInterface {
       fs.writeFileSync(xprivPath, xpriv);
     } else {
       const fileContent = fs.readFileSync(xprivPath, "utf-8");
-      node = bip32.fromBase58(fileContent, getCurrentNetwork());
+      node = bip32.fromBase58(fileContent.trim(), getCurrentNetwork());
     }
     let xpriv = node.toBase58();
     let xpub = node.neutered().toBase58();
