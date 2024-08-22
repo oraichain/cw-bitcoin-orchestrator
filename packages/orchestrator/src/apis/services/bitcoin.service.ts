@@ -28,7 +28,12 @@ const submitDepositAddress = async (
 const getValueLocked = async () => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
   const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
-  return queryClient.valueLocked();
+  try {
+    const valueLocked = await queryClient.valueLocked();
+    return valueLocked;
+  } catch (err) {
+    return 0;
+  }
 };
 
 const getCheckpointQueue = async () => {
