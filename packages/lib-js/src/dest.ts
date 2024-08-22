@@ -1,5 +1,15 @@
 import { Dest as SdkDest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
-import { Dest as WasmDest } from "@oraichain/bitcoin-bridge-wasm-sdk";
+
+export interface IbcDest {
+  source_port: string;
+  source_channel: string;
+  receiver: string;
+  sender: string;
+  timeout_timestamp: number;
+  memo: string;
+}
+
+export type WasmDest = { Address: string } | { Ibc: IbcDest };
 
 export function convertWasmDestToSdkDest(
   dest: WasmDest,
