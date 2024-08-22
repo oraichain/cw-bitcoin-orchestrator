@@ -43,9 +43,18 @@ const getValueLocked = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getCheckpointQueue = catchAsync(async (req: Request, res: Response) => {
+  const data = await bitcoinService.getCheckpointQueue();
+  res.status(httpStatus.OK).json({
+    message: "Get checkpoint queue successfully",
+    data,
+  });
+});
+
 export default {
   getConfig,
   getPendingDeposits,
   submitDepositAddress,
   getValueLocked,
+  getCheckpointQueue,
 };

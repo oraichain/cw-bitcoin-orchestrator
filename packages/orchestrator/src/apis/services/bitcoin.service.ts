@@ -31,9 +31,34 @@ const getValueLocked = async () => {
   return queryClient.valueLocked();
 };
 
+const getCheckpointQueue = async () => {
+  const client = await initQueryClient(env.cosmos.rpcUrl);
+  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  try {
+    const [buildingIndex, confirmedIndex, firstUnconfirmedIndex] =
+      await Promise.all([
+        queryClient.buildingIndex(),
+        queryClient.confirmedIndex(),
+        queryClient.unhandledConfirmedIndex(),
+      ]);
+    return {
+      index: buildingIndex,
+      first_unhandled_confirmed_cp_index: firstUnconfirmedIndex,
+      confirmed_index: confirmedIndex,
+    };
+  } catch (err) {
+    return {
+      index: 0,
+      first_unhandled_confirmed_cp_index: 0,
+      confirmed_index: 0,
+    };
+  }
+};
+
 export default {
   getConfig,
   getPendingDeposits,
   submitDepositAddress,
   getValueLocked,
+  getCheckpointQueue,
 };

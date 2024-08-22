@@ -56,21 +56,10 @@ const getCheckpointFee = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getStoreCheckpointIndexes = catchAsync(
-  async (req: Request, res: Response) => {
-    const data = await checkpointService.getStoreCheckpointIndexes();
-    res.status(httpStatus.OK).json({
-      message: "Get completed index successfully",
-      data,
-    });
-  }
-);
-
 export default {
   getConfig,
   getCheckpoint,
   getDepositFee,
   getWithdrawFee,
   getCheckpointFee,
-  getStoreCheckpointIndexes,
 };
