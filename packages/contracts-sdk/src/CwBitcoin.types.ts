@@ -72,7 +72,7 @@ export type ExecuteMsg =
     }
   | {
       withdraw_to_bitcoin: {
-        script_pubkey: Binary;
+        btc_address: string;
       };
     }
   | {

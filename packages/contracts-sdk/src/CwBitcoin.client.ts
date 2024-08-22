@@ -385,9 +385,9 @@ export interface CwBitcoinInterface extends CwBitcoinReadOnlyInterface {
   ) => Promise<ExecuteResult>;
   withdrawToBitcoin: (
     {
-      scriptPubkey,
+      btcAddress,
     }: {
-      scriptPubkey: Binary;
+      btcAddress: string;
     },
     _fee?: number | StdFee | "auto",
     _memo?: string,
@@ -717,9 +717,9 @@ export class CwBitcoinClient
   };
   withdrawToBitcoin = async (
     {
-      scriptPubkey,
+      btcAddress,
     }: {
-      scriptPubkey: Binary;
+      btcAddress: string;
     },
     _fee: number | StdFee | "auto" = "auto",
     _memo?: string,
@@ -730,7 +730,7 @@ export class CwBitcoinClient
       this.contractAddress,
       {
         withdraw_to_bitcoin: {
-          script_pubkey: scriptPubkey,
+          btc_address: btcAddress,
         },
       },
       _fee,

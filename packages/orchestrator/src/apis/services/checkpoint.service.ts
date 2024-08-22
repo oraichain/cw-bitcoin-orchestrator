@@ -1,5 +1,8 @@
 import { CwBitcoinQueryClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
-import { fromBinaryTransaction } from "@oraichain/bitcoin-bridge-wasm-sdk";
+import {
+  fromBinaryTransaction,
+  getBitcoinTransactionTxid,
+} from "@oraichain/bitcoin-bridge-wasm-sdk";
 import env from "../../configs/env";
 import { initQueryClient } from "../../utils/cosmos";
 
@@ -26,7 +29,10 @@ const getCheckpoint = async (index: number | undefined) => {
   );
   return {
     ...checkpoint,
-    transaction: checkpointTransaction,
+    transaction: {
+      data: checkpointTransaction,
+      hash: getBitcoinTransactionTxid(checkpointTransaction),
+    },
   };
 };
 
