@@ -42,5 +42,5 @@
     "@types/hdkey": "^2",
     "@types/tiny-secp256k1": "^2.0.1"
   },
-  "gitHead": "ea33fd5d403ce5d245bd6e55abe14445e1d38401"
+  "gitHead": "c4a037e2a36e22bbf1008b67ab4a000718c8ea7c"
 }
