@@ -79,6 +79,7 @@ export interface CwBitcoinReadOnlyInterface {
   completedIndex: () => Promise<Uint32>;
   unhandledConfirmedIndex: () => Promise<NullableUint32>;
   changeRates: ({ interval }: { interval: number }) => Promise<ChangeRates>;
+  valueLocked: () => Promise<Uint64>;
 }
 export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
   client: CosmWasmClient;
@@ -110,6 +111,7 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
     this.completedIndex = this.completedIndex.bind(this);
     this.unhandledConfirmedIndex = this.unhandledConfirmedIndex.bind(this);
     this.changeRates = this.changeRates.bind(this);
+    this.valueLocked = this.valueLocked.bind(this);
   }
 
   bitcoinConfig = async (): Promise<BitcoinConfig> => {
@@ -272,6 +274,11 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
       change_rates: {
         interval,
       },
+    });
+  };
+  valueLocked = async (): Promise<Uint64> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      value_locked: {},
     });
   };
 }

@@ -321,6 +321,9 @@ export type QueryMsg =
       change_rates: {
         interval: number;
       };
+    }
+  | {
+      value_locked: {};
     };
 export interface MigrateMsg {}
 export type CheckpointStatus = "building" | "signing" | "complete";

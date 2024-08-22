@@ -35,8 +35,17 @@ const submitDepositAddress = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getValueLocked = catchAsync(async (req: Request, res: Response) => {
+  const data = await bitcoinService.getValueLocked();
+  res.status(httpStatus.OK).json({
+    message: "Get value locked successfully",
+    data,
+  });
+});
+
 export default {
   getConfig,
   getPendingDeposits,
   submitDepositAddress,
+  getValueLocked,
 };

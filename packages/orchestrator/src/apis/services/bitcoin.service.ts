@@ -25,8 +25,15 @@ const submitDepositAddress = async (
   return [];
 };
 
+const getValueLocked = async () => {
+  const client = await initQueryClient(env.cosmos.rpcUrl);
+  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  return queryClient.valueLocked();
+};
+
 export default {
   getConfig,
   getPendingDeposits,
   submitDepositAddress,
+  getValueLocked,
 };

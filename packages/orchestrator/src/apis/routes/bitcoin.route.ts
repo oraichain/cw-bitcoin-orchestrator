@@ -5,5 +5,6 @@ const router = express.Router();
 router.get("/config", bitcoinController.getConfig);
 router.get("/pending_deposits", bitcoinController.getPendingDeposits);
 router.post("/deposit", bitcoinController.submitDepositAddress);
+router.get("/value_locked", bitcoinController.getValueLocked);
 
 export default router;
