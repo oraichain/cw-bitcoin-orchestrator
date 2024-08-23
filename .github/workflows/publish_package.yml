@@ -1,0 +1,50 @@
+name: Publish Contracts SDK
+
+on:
+  push:
+    tags:
+      - "publish_[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18.19.1"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install && yarn build
+
+      - name: Add github info
+        run: |
+          git config --global user.email "github@orai.io"
+          git config --global user.name "github"
+
+      - name: Authenticate with private NPM package
+        run: echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
+
+      - name: Publish contracts-sdk package
+        continue-on-error: true
+        id: publish-npm
+        run: npx lerna publish from-package --yes --force-publish
+        env:
+          CI: false
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: send result via discord
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.WEBHOOK_ID }}
+          webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
+          username: "GitBot"
+          message: "Repo cw-bitcoin-orchestrator has just published: ${{ steps.publish-npm.outcome }}. ${{ github.event.head_commit.author.name }}"
