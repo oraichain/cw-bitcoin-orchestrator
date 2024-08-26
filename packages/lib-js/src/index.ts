@@ -4,9 +4,9 @@ import {
   Dest,
   SignatorySet,
 } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
-import { commitmentBytes } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import * as btc from "bitcoinjs-lib";
 import { convertSdkDestToWasmDest } from "./dest";
+import { commitmentBytes } from "./wasm/cw_bitcoin_wasm";
 
 export type BitcoinNetwork = "bitcoin" | "testnet" | "regtest";
 
