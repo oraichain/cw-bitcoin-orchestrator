@@ -2905,23 +2905,47 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oraichain/bitcoin-bridge-contracts-build@npm:^1.1.4, @oraichain/bitcoin-bridge-contracts-build@workspace:packages/contracts-build":
+"@oraichain/bitcoin-bridge-contracts-build@npm:latest":
+  version: 1.1.2
+  resolution: "@oraichain/bitcoin-bridge-contracts-build@npm:1.1.2"
+  checksum: 10c0/236ea24c957ce5a4df319a6a4b92713f74a5c0a80756909431d04ce1c98abb9b86a3dfd6ca828c0f9c5590b3e80e0b3ea3810f364177bc3baac261557d9f36b1
+  languageName: node
+  linkType: hard
+
+"@oraichain/bitcoin-bridge-contracts-build@workspace:packages/contracts-build":
   version: 0.0.0-use.local
   resolution: "@oraichain/bitcoin-bridge-contracts-build@workspace:packages/contracts-build"
   languageName: unknown
   linkType: soft
 
-"@oraichain/bitcoin-bridge-contracts-sdk@npm:^1.1.4, @oraichain/bitcoin-bridge-contracts-sdk@workspace:packages/contracts-sdk":
+"@oraichain/bitcoin-bridge-contracts-sdk@npm:^1.1.2, @oraichain/bitcoin-bridge-contracts-sdk@workspace:packages/contracts-sdk":
   version: 0.0.0-use.local
   resolution: "@oraichain/bitcoin-bridge-contracts-sdk@workspace:packages/contracts-sdk"
   languageName: unknown
   linkType: soft
 
-"@oraichain/bitcoin-bridge-lib-js@npm:^1.1.4, @oraichain/bitcoin-bridge-lib-js@workspace:packages/lib-js":
+"@oraichain/bitcoin-bridge-contracts-sdk@npm:latest":
+  version: 1.1.2
+  resolution: "@oraichain/bitcoin-bridge-contracts-sdk@npm:1.1.2"
+  checksum: 10c0/035ea9e891fed2d9242d53e9e6225af224664e7d6e56bbe77b9406cadbc867efdfbb559df1601ec4776b9412c52f36cf8ce33149149d0d126f452a3774390370
+  languageName: node
+  linkType: hard
+
+"@oraichain/bitcoin-bridge-lib-js@npm:latest":
+  version: 1.1.2
+  resolution: "@oraichain/bitcoin-bridge-lib-js@npm:1.1.2"
+  dependencies:
+    "@oraichain/bitcoin-bridge-contracts-sdk": "npm:^1.1.2"
+    bitcoinjs-lib: "npm:^6.0.1"
+  checksum: 10c0/5957ae5588d3fb1af0fa70ce9686af65d6b5014e35ba5e3cd003c1890853bbe2b26977761ff3a9238de529bc257861a1307111d59bf5d8df808da0fdc2d7ad40
+  languageName: node
+  linkType: hard
+
+"@oraichain/bitcoin-bridge-lib-js@workspace:packages/lib-js":
   version: 0.0.0-use.local
   resolution: "@oraichain/bitcoin-bridge-lib-js@workspace:packages/lib-js"
   dependencies:
-    "@oraichain/bitcoin-bridge-contracts-sdk": "npm:^1.1.4"
+    "@oraichain/bitcoin-bridge-contracts-sdk": "npm:latest"
     bitcoinjs-lib: "npm:^6.0.1"
   languageName: unknown
   linkType: soft
@@ -2930,10 +2954,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@oraichain/bitcoin-bridge-orchestrator@workspace:packages/orchestrator"
   dependencies:
-    "@oraichain/bitcoin-bridge-contracts-build": "npm:^1.1.4"
-    "@oraichain/bitcoin-bridge-contracts-sdk": "npm:^1.1.4"
-    "@oraichain/bitcoin-bridge-lib-js": "npm:^1.1.4"
-    "@oraichain/bitcoin-bridge-wasm-sdk": "npm:^1.1.4"
+    "@oraichain/bitcoin-bridge-contracts-build": "npm:latest"
+    "@oraichain/bitcoin-bridge-contracts-sdk": "npm:latest"
+    "@oraichain/bitcoin-bridge-lib-js": "npm:latest"
+    "@oraichain/bitcoin-bridge-wasm-sdk": "npm:latest"
     "@oraichain/cw-simulate": "npm:^2.8.97"
     "@types/bip32": "npm:^2.0.0"
     "@types/compression": "npm:^1.7.5"
@@ -2961,7 +2985,14 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@oraichain/bitcoin-bridge-wasm-sdk@npm:^1.1.4, @oraichain/bitcoin-bridge-wasm-sdk@workspace:packages/wasm-sdk":
+"@oraichain/bitcoin-bridge-wasm-sdk@npm:latest":
+  version: 1.1.2
+  resolution: "@oraichain/bitcoin-bridge-wasm-sdk@npm:1.1.2"
+  checksum: 10c0/31f0b2f72a03eefdd7af2d4248bfa74bd60e35113342407e6a4a2cebe52a7e4617c5b6d3a82557fb265cf4f77338dc602156a67f40efbbb0e7a0f0754e274ed5
+  languageName: node
+  linkType: hard
+
+"@oraichain/bitcoin-bridge-wasm-sdk@workspace:packages/wasm-sdk":
   version: 0.0.0-use.local
   resolution: "@oraichain/bitcoin-bridge-wasm-sdk@workspace:packages/wasm-sdk"
   languageName: unknown

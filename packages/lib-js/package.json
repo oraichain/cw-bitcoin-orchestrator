@@ -11,7 +11,7 @@
     "data/"
   ],
   "dependencies": {
-    "@oraichain/bitcoin-bridge-contracts-sdk": "^1.1.4",
+    "@oraichain/bitcoin-bridge-contracts-sdk": "latest",
     "bitcoinjs-lib": "^6.0.1"
   },
   "publishConfig": {
