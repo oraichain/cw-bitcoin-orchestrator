@@ -22,7 +22,7 @@ class TriggerBlocks {
       } catch (err) {
         console.log(err?.message);
       }
-      await setTimeout(60 * 1000); // 5 minutes per block
+      await setTimeout(60 * 1000); // 1 minutes per block
     }
   }
 }
