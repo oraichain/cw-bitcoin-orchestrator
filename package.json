@@ -8,7 +8,7 @@
     "docs": "typedoc --entryPointStrategy expand --name 'Bitcoin Bridge SDK' --readme none --tsconfig packages/contracts-sdk/tsconfig.json packages/contracts-sdk/src",
     "clean": "lerna clean --yes && lerna exec -- rimraf build/ dist/ cache/",
     "dev": "lerna run dev",
-    "build": "tsc -p tsconfig.json",
+    "build": "lerna run build --concurrency 1",
     "build-tsc": "tsc -p",
     "deploy": "yarn build && lerna publish",
     "prepare": "husky install",
