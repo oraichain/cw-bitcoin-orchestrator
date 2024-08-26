@@ -16,7 +16,7 @@ export const wrappedExecuteTransaction = async (fn: () => Promise<void>) => {
       if (message?.includes("account sequence mismatch")) {
         continue;
       } else {
-        console.log(`[UNEXPECTED ERROR] ${message}`);
+        console.log(`[UNEXPECTED ERROR] ${message} ${fn}`);
         break;
       }
     }
