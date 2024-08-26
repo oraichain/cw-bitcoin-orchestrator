@@ -233,6 +233,9 @@ export interface DenomUnit {
 }
 export type QueryMsg =
   | {
+      config: {};
+    }
+  | {
       bitcoin_config: {};
     }
   | {
@@ -426,6 +429,17 @@ export interface ChangeRates {
 }
 export type Uint64 = number;
 export type ArrayOfBinary = Binary[];
+export interface ConfigResponse {
+  osor_entry_point_contract?: Addr | null;
+  owner: Addr;
+  relayer_fee: Uint128;
+  relayer_fee_receiver: Addr;
+  relayer_fee_token: AssetInfo;
+  swap_router_contract?: Addr | null;
+  token_factory_addr: Addr;
+  token_fee: Ratio;
+  token_fee_receiver: Addr;
+}
 export type NullableUint32 = number | null;
 export type Boolean = boolean;
 export type NullableString = String | null;

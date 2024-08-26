@@ -11,6 +11,7 @@ import { RPCClient } from "rpc-bitcoin";
 import xss from "xss-clean";
 import bitcoinRoute from "./apis/routes/bitcoin.route";
 import checkpointRoute from "./apis/routes/checkpoint.route";
+import contractRoute from "./apis/routes/contract.route";
 import env from "./configs/env";
 import morgan from "./configs/morgan";
 import { OraichainConfig } from "./configs/networks";
@@ -52,6 +53,7 @@ const PORT = env.server.port;
 
 app.use("/api/bitcoin", bitcoinRoute);
 app.use("/api/checkpoint", checkpointRoute);
+app.use("/api/contract", contractRoute);
 
 server.listen(PORT, async () => {
   const homeDir = os.homedir();

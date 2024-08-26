@@ -22,6 +22,7 @@ import {
   Checkpoint,
   CheckpointConfig,
   Coin,
+  ConfigResponse,
   Dest,
   HeaderConfig,
   Metadata,
@@ -37,6 +38,7 @@ import {
 } from "./CwBitcoin.types";
 export interface CwBitcoinReadOnlyInterface {
   contractAddress: string;
+  config: () => Promise<ConfigResponse>;
   bitcoinConfig: () => Promise<BitcoinConfig>;
   checkpointConfig: () => Promise<CheckpointConfig>;
   headerConfig: () => Promise<HeaderConfig>;
@@ -88,6 +90,7 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
   constructor(client: CosmWasmClient, contractAddress: string) {
     this.client = client;
     this.contractAddress = contractAddress;
+    this.config = this.config.bind(this);
     this.bitcoinConfig = this.bitcoinConfig.bind(this);
     this.checkpointConfig = this.checkpointConfig.bind(this);
     this.headerConfig = this.headerConfig.bind(this);
@@ -114,6 +117,11 @@ export class CwBitcoinQueryClient implements CwBitcoinReadOnlyInterface {
     this.valueLocked = this.valueLocked.bind(this);
   }
 
+  config = async (): Promise<ConfigResponse> => {
+    return this.client.queryContractSmart(this.contractAddress, {
+      config: {},
+    });
+  };
   bitcoinConfig = async (): Promise<BitcoinConfig> => {
     return this.client.queryContractSmart(this.contractAddress, {
       bitcoin_config: {},
