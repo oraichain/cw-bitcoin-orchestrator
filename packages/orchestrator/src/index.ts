@@ -76,6 +76,7 @@ server.listen(PORT, async () => {
   });
 
   const { prefix, gasPrice } = OraichainConfig;
+
   const { sender, client } = await initSignerClient(
     env.cosmos.rpcUrl,
     prefix,
