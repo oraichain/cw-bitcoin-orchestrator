@@ -20,6 +20,7 @@ import RelayerService from "./services/relayer";
 import SignerService from "./services/signer";
 import TriggerBlocks from "./trigger_block";
 import { initSignerClient } from "./utils/cosmos";
+import { decryptMnemonic } from "./utils/mnemonic";
 
 const app = express();
 const server = http.createServer(app);
@@ -68,6 +69,11 @@ server.listen(PORT, async () => {
   await DuckDbNode.instances.createTable();
   console.log("Tables are created in DuckDB!");
 
+  let mnemonic = decryptMnemonic(
+    "Import cosmos mnemonic:",
+    env.cosmos.encryptedMnemonic
+  );
+
   const btcClient = new RPCClient({
     port: env.bitcoin.port,
     host: env.bitcoin.host,
@@ -79,6 +85,7 @@ server.listen(PORT, async () => {
 
   const { sender, client } = await initSignerClient(
     env.cosmos.rpcUrl,
+    mnemonic,
     prefix,
     gasPrice
   );

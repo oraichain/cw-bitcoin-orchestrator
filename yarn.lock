@@ -3912,6 +3912,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/readline-sync@npm:^1":
+  version: 1.4.8
+  resolution: "@types/readline-sync@npm:1.4.8"
+  checksum: 10c0/08da90bbc4905f42eea2f7e03253f86b8060e93dbd427cc2ef5ebc0955248088c85e1638dd480ce28e2e576624979a81e12d1371d2c38e1796002ca8efbc719f
+  languageName: node
+  linkType: hard
+
 "@types/request-promise-native@npm:^1.0.17":
   version: 1.0.21
   resolution: "@types/request-promise-native@npm:1.0.21"
@@ -12694,6 +12701,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"readline-sync@npm:^1.4.10":
+  version: 1.4.10
+  resolution: "readline-sync@npm:1.4.10"
+  checksum: 10c0/0a4d0fe4ad501f8f005a3c9cbf3cc0ae6ca2ced93e9a1c7c46f226bdfcb6ef5d3f437ae7e9d2e1098ee13524a3739c830e4c8dbc7f543a693eecd293e41093a3
+  languageName: node
+  linkType: hard
+
 "readonly-date@npm:^1.0.0":
   version: 1.0.0
   resolution: "readonly-date@npm:1.0.0"
@@ -13088,6 +13102,7 @@ __metadata:
     "@types/lodash": "npm:^4.17.0"
     "@types/morgan": "npm:^1.9.9"
     "@types/node": "npm:^20.11.30"
+    "@types/readline-sync": "npm:^1"
     "@typescript-eslint/eslint-plugin": "npm:^7.3.1"
     "@typescript-eslint/parser": "npm:^7.3.1"
     cosmjs-types: "npm:0.8.0"
@@ -13103,6 +13118,7 @@ __metadata:
     lerna: "npm:^8.1.8"
     nx: "npm:19.5.7"
     patch-package: "npm:^8.0.0"
+    readline-sync: "npm:^1.4.10"
     rimraf: "npm:^5.0.5"
     typedoc: "npm:^0.25.12"
     typescript: "npm:5.5.4"

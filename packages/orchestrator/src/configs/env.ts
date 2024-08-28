@@ -9,7 +9,9 @@ const envVarsSchema = Joi.object()
   .keys({
     NODE_ENV: Joi.string().error(new Error("NODE_ENV is required")),
     PORT: Joi.number().default(8000),
-    MNEMONIC: Joi.string().error(new Error("MNEMONIC is required")),
+    ENCRYPTED_MNEMONIC: Joi.string().error(
+      new Error("ENCRYPTED_MNEMONIC is required")
+    ),
     BTC_RPC_PORT: Joi.number().default(3000),
     BTC_RPC_HOST: Joi.string().default("http://127.0.0.1"),
     BTC_RPC_USERNAME: Joi.string().default("satoshi"),
@@ -53,7 +55,7 @@ export default {
   cosmos: {
     rpcUrl: envVars.COSMOS_RPC_URL,
     cwBitcoin: envVars.CW_BITCOIN_ADDRESS,
-    mnemonic: envVars.MNEMONIC,
+    encryptedMnemonic: envVars.ENCRYPTED_MNEMONIC,
   },
   duckdb: {
     name: envVars.DUCKDB_DIR_NAME,

@@ -4,7 +4,6 @@ import {
 } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { GasPrice } from "@cosmjs/stargate";
-import env from "../configs/env";
 
 export const wrappedExecuteTransaction = async (fn: () => Promise<void>) => {
   while (true) {
@@ -30,15 +29,13 @@ export const initQueryClient = async (rpcUrl: string) => {
 
 export const initSignerClient = async (
   rpcUrl: string,
+  mnemonic: string,
   prefix: string,
   gasPrice: GasPrice
 ) => {
-  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(
-    env.cosmos.mnemonic,
-    {
-      prefix,
-    }
-  );
+  const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
+    prefix,
+  });
   const [firstAccount] = await wallet.getAccounts();
   const client = await SigningCosmWasmClient.connectWithSigner(rpcUrl, wallet, {
     gasPrice,

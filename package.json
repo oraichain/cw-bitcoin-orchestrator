@@ -28,7 +28,8 @@
     "@cosmjs/stargate": "0.31.3",
     "@cosmjs/tendermint-rpc": "0.31.3",
     "@oraichain/oraidex-common": "^1.0.10",
-    "joi": "^17.13.3"
+    "joi": "^17.13.3",
+    "readline-sync": "^1.4.10"
   },
   "devDependencies": {
     "@babel/traverse": "7.24.1",
@@ -40,6 +41,7 @@
     "@types/lodash": "^4.17.0",
     "@types/morgan": "^1.9.9",
     "@types/node": "^20.11.30",
+    "@types/readline-sync": "^1",
     "@typescript-eslint/eslint-plugin": "^7.3.1",
     "@typescript-eslint/parser": "^7.3.1",
     "cosmjs-types": "0.8.0",
