@@ -69,10 +69,13 @@ server.listen(PORT, async () => {
   await DuckDbNode.instances.createTable();
   console.log("Tables are created in DuckDB!");
 
-  let mnemonic = decryptMnemonic(
-    "Import cosmos mnemonic:",
-    env.cosmos.encryptedMnemonic
-  );
+  let mnemonic = env.cosmos.mnemonic;
+  if (!mnemonic) {
+    mnemonic = decryptMnemonic(
+      "Import cosmos mnemonic:",
+      env.cosmos.encryptedMnemonic
+    );
+  }
 
   const btcClient = new RPCClient({
     port: env.bitcoin.port,
