@@ -1,3 +1,5 @@
+#!/usr/bin/env -S node --no-warnings
+
 import dotenv from "dotenv";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";

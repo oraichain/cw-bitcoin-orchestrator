@@ -5,9 +5,7 @@
   "files": [
     "build/"
   ],
-  "bin": {
-    "bitcoin-orchestrator": "node build/index.js"
-  },
+  "bin": "build/index.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "npm run build; node --max-old-space-size=8192 build/index.js"
