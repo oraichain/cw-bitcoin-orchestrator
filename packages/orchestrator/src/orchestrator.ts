@@ -32,8 +32,6 @@ const start = async () => {
   app.use(
     cors({
       origin: "*",
-      credentials: true,
-      exposedHeaders: ["set-cookie"],
     })
   );
   app.use(express.json());
