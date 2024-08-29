@@ -18,10 +18,10 @@
     "@cosmjs/proto-signing": "0.31.3",
     "@cosmjs/stargate": "0.31.3",
     "@cosmjs/tendermint-rpc": "0.31.3",
-    "@oraichain/bitcoin-bridge-contracts-build": "workspace:^",
-    "@oraichain/bitcoin-bridge-contracts-sdk": "workspace:^",
-    "@oraichain/bitcoin-bridge-lib-js": "workspace:^",
-    "@oraichain/bitcoin-bridge-wasm-sdk": "workspace:^",
+    "@oraichain/bitcoin-bridge-contracts-build": "^1.1.6",
+    "@oraichain/bitcoin-bridge-contracts-sdk": "^1.1.6",
+    "@oraichain/bitcoin-bridge-lib-js": "^1.1.6",
+    "@oraichain/bitcoin-bridge-wasm-sdk": "^1.1.6",
     "@oraichain/oraidex-common": "^1.0.10",
     "bip32": "^4.0.0",
     "bitcoinjs-lib": "^6.0.1",
@@ -58,5 +58,5 @@
     "registry": "https://registry.npmjs.org/",
     "access": "public"
   },
-  "gitHead": "3fe79865db09a3cf37ad4e166ec48d856f425a0c"
+  "gitHead": "760da964f492111f70fcab35b5667e75d9737f7a"
 }

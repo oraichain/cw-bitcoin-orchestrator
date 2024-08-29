@@ -18,5 +18,5 @@
   "main": "wasm.js",
   "homepage": "https://orai.io",
   "types": "wasm.d.ts",
-  "gitHead": "3fe79865db09a3cf37ad4e166ec48d856f425a0c"
+  "gitHead": "760da964f492111f70fcab35b5667e75d9737f7a"
 }
