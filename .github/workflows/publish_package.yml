@@ -26,7 +26,7 @@ jobs:
         run: yarn install && yarn build
 
       - name: Install global
-        run: yarn global add patch-package 
+        run: yarn global add patch-package node-gyp
         
       - name: Add github info
         run: |
