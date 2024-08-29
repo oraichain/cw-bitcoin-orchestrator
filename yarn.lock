@@ -2965,6 +2965,9 @@ __metadata:
     winston: "npm:^3.14.1"
     winston-daily-rotate-file: "npm:^5.0.0"
     xss-clean: "npm:^0.1.4"
+    yargs: "npm:^17.7.2"
+  bin:
+    bitcoin-orchestrator: build/index.js
   languageName: unknown
   linkType: soft
 
@@ -15281,7 +15284,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yargs@npm:17.7.2, yargs@npm:^17.3.1, yargs@npm:^17.6.2":
+"yargs@npm:17.7.2, yargs@npm:^17.3.1, yargs@npm:^17.6.2, yargs@npm:^17.7.2":
   version: 17.7.2
   resolution: "yargs@npm:17.7.2"
   dependencies:
