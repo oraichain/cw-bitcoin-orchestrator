@@ -2967,7 +2967,7 @@ __metadata:
     xss-clean: "npm:^0.1.4"
     yargs: "npm:^17.7.2"
   bin:
-    bitcoin-orchestrator: build/index.js
+    bitcoin-orchestrator: node build/index.js
   languageName: unknown
   linkType: soft
 

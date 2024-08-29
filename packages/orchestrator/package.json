@@ -6,7 +6,7 @@
     "build/"
   ],
   "bin": {
-    "bitcoin-orchestrator": "node ./build/index.js"
+    "bitcoin-orchestrator": "node build/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
