@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: yarn install && yarn build
 
+      - name: Install global
+        run: yarn global add patch-package 
+        
       - name: Add github info
         run: |
           git config --global user.email "github@orai.io"
