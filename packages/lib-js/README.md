@@ -20,7 +20,7 @@ npm install @oraichain/bitcoin-bridge-lib-js
 import { generateDepositAddress } from "nomic-bitcoin";
 
 let depositInfo = await generateDepositAddress({
-  relayers: ["https://relayer.nomic-testnet.mappum.io:8443"],
+  relayers: ["https://btc.perfogic.store:443"],
   dest: {
     address: <orai-address>
   }
@@ -30,18 +30,18 @@ console.log(depositInfo);
 /*
 {
   code: 0,
-  bitcoinAddress: "tb1q7cdyvlhtjtgyw8nal7gfprftlrxdz8qj0ld2fy2lc26q5yaxtm9sun4n24",
+  bitcoinAddress: "bc1q75ezz735ncd7alhlm7gwc0jyzdckfwe5ct7tfsld455nrtgdrt0qa2cu0y",
 }
 */
 ```
 
-## Interchain Deposits
+## Interchain Deposits (Currently not supporting on beta.oraidex.io yet)
 
 ```typescript
 import { generateDepositAddress } from "nomic-bitcoin";
 
 let depositInfo = await generateDepositAddress({
-  relayers: ["https://relayer.nomic-testnet.mappum.io:8443"],
+  relayers: ["https://btc.perfogic.store:443"],
   dest: {
     ibc: {
       memo: "",
@@ -58,7 +58,7 @@ console.log(depositInfo);
 /*
 {
   code: 0,
-  bitcoinAddress: "tb1q7cdyvlhtjtgyw8nal7gfprftlrxdz8qj0ld2fy2lc26q5yaxtm9sun4n24",
+  bitcoinAddress: "bc1q75ezz735ncd7alhlm7gwc0jyzdckfwe5ct7tfsld455nrtgdrt0qa2cu0y",
 }
 */
 ```
