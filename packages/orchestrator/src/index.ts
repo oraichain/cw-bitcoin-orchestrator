@@ -30,7 +30,7 @@ yargs(hideBin(process.argv))
     const { default: signerCmd } = await import("./bin/signer");
     await signerCmd();
   })
-  .command("trigger_block", "Trigger new blocks on bitcoin", async () => {
+  .command("trigger-block", "Trigger new blocks on bitcoin", async () => {
     // lazy-import orchestrator to activate env config
     const { default: triggerBlockCmd } = await import("./bin/trigger_block");
     await triggerBlockCmd();
