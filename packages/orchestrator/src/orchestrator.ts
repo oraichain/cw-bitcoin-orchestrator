@@ -1,4 +1,7 @@
-import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import {
+  AppBitcoinClient,
+  LightClientBitcoinClient,
+} from "@oraichain/bitcoin-bridge-contracts-sdk";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -91,22 +94,32 @@ const start = async () => {
       prefix,
       gasPrice
     );
-    const cwBitcoinClient = new CwBitcoinClient(
+    const lightClientBitcoinClient = new LightClientBitcoinClient(
       client,
       sender,
-      env.cosmos.cwBitcoin
+      env.cosmos.lightClientBitcoin
+    );
+    const appBitcoinClient = new AppBitcoinClient(
+      client,
+      sender,
+      env.cosmos.appBitcoin
     );
 
-    const triggerBlock = new TriggerBlocks(cwBitcoinClient);
+    const triggerBlock = new TriggerBlocks(appBitcoinClient);
 
     const relayerService = new RelayerService(
       btcClient,
-      cwBitcoinClient,
+      lightClientBitcoinClient,
+      appBitcoinClient,
       DuckDbNode.instances
     );
     RelayerService.instances = relayerService;
 
-    const signerService = new SignerService(btcClient, cwBitcoinClient);
+    const signerService = new SignerService(
+      btcClient,
+      lightClientBitcoinClient,
+      appBitcoinClient
+    );
 
     await Promise.all([
       relayerService.relay(),

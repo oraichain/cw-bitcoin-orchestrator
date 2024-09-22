@@ -14,8 +14,11 @@ const envVarsSchema = Joi.object()
     BTC_RPC_PASSWORD: Joi.string().default("nakamoto"),
     BTC_NETWORK: Joi.string().default("testnet"),
     COSMOS_RPC_URL: Joi.optional(),
-    CW_BITCOIN_ADDRESS: Joi.string().error(
-      new Error("CW_BITCOIN_ADDRESS is required")
+    LIGHT_CLIENT_BITCOIN_ADDRESS: Joi.string().error(
+      new Error("LIGHT_CLIENT_BITCOIN_ADDRESS is required")
+    ),
+    APP_BITCOIN_ADDRESS: Joi.string().error(
+      new Error("APP_BITCOIN_ADDRESS is required")
     ),
     DUCKDB_DIR_NAME: Joi.string().default("db.duckdb"),
     MAX_WITHDRAWAL_RATE: Joi.number().default(0.1),
@@ -50,9 +53,10 @@ export default {
   },
   cosmos: {
     rpcUrl: envVars.COSMOS_RPC_URL,
-    cwBitcoin: envVars.CW_BITCOIN_ADDRESS,
     encryptedMnemonic: envVars.ENCRYPTED_MNEMONIC,
     mnemonic: envVars.MNEMONIC,
+    appBitcoin: envVars.APP_BITCOIN_ADDRESS,
+    lightClientBitcoin: envVars.LIGHT_CLIENT_BITCOIN_ADDRESS,
   },
   duckdb: {
     name: envVars.DUCKDB_DIR_NAME,

@@ -1,4 +1,7 @@
-import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import {
+  AppBitcoinClient,
+  LightClientBitcoinClient,
+} from "@oraichain/bitcoin-bridge-contracts-sdk";
 import {
   Dest,
   WrappedHeader,
@@ -58,7 +61,8 @@ interface RelayTxIdBody {
 class RelayerService implements RelayerInterface {
   static instances: RelayerService;
   btcClient: RPCClient;
-  cwBitcoinClient: CwBitcoinClient;
+  lightClientBitcoinClient: LightClientBitcoinClient;
+  appBitcoinClient: AppBitcoinClient;
   watchedScriptClient: WatchedScriptsService;
   relayTxids: Map<string, RelayTxIdBody>;
   // receiver -> bitcoin_address -> (txid, vout) -> Deposit
@@ -66,14 +70,16 @@ class RelayerService implements RelayerInterface {
 
   constructor(
     btcClient: RPCClient,
-    cwBitcoinClient: CwBitcoinClient,
+    lightClientBitcoinClient: LightClientBitcoinClient,
+    appBitcoinClient: AppBitcoinClient,
     db: DuckDbNode
   ) {
     this.btcClient = btcClient;
-    this.cwBitcoinClient = cwBitcoinClient;
+    this.lightClientBitcoinClient = lightClientBitcoinClient;
+    this.appBitcoinClient = appBitcoinClient;
     this.watchedScriptClient = new WatchedScriptsService(
       db,
-      this.cwBitcoinClient
+      this.appBitcoinClient
     );
     WatchedScriptsService.instances = this.watchedScriptClient;
     this.relayTxids = new Map<string, RelayTxIdBody>();
@@ -99,7 +105,7 @@ class RelayerService implements RelayerInterface {
       try {
         let [fullNodeHash, sideChainHash] = await Promise.all([
           this.btcClient.getbestblockhash(),
-          this.cwBitcoinClient.sidechainBlockHash(),
+          this.lightClientBitcoinClient.sidechainBlockHash(),
         ]);
 
         if (fullNodeHash !== sideChainHash) {
@@ -154,14 +160,14 @@ class RelayerService implements RelayerInterface {
     );
 
     await wrappedExecuteTransaction(async () => {
-      const tx = await this.cwBitcoinClient.relayHeaders({
+      const tx = await this.lightClientBitcoinClient.relayHeaders({
         headers: [...wrappedHeaders],
       });
       console.log(`Relayed headers with tx hash: ${tx.transactionHash}`);
     });
 
     let currentSidechainBlockHash =
-      await this.cwBitcoinClient.sidechainBlockHash();
+      await this.lightClientBitcoinClient.sidechainBlockHash();
     if (currentSidechainBlockHash === fullNodeHash) {
       console.log("Relayed all headers");
     }
@@ -278,7 +284,7 @@ class RelayerService implements RelayerInterface {
 
         // Block handler
         console.log("Scanning blocks for deposit transactions...");
-        const tip = await this.cwBitcoinClient.sidechainBlockHash();
+        const tip = await this.lightClientBitcoinClient.sidechainBlockHash();
 
         if (prevTip === tip) {
           throw new Error(
@@ -379,7 +385,7 @@ class RelayerService implements RelayerInterface {
 
   async scanDeposits(numBlocks: number) {
     try {
-      let tip = await this.cwBitcoinClient.sidechainBlockHash();
+      let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
       let blocks = await this.lastNBlocks(numBlocks, tip);
       for (const block of blocks) {
         let txs = await this.filterDepositTxs(block.tx);
@@ -456,7 +462,7 @@ class RelayerService implements RelayerInterface {
 
       if (!script) continue;
 
-      const isExistOutpoint = await this.cwBitcoinClient.processedOutpoint({
+      const isExistOutpoint = await this.appBitcoinClient.processedOutpoint({
         key: calculateOutpointKey(txid, i),
       });
 
@@ -494,7 +500,7 @@ class RelayerService implements RelayerInterface {
       });
 
       await wrappedExecuteTransaction(async () => {
-        const tx = await this.cwBitcoinClient.relayDeposit({
+        const tx = await this.appBitcoinClient.relayDeposit({
           btcHeight: blockHeight,
           btcTx: Buffer.from(toBinaryTransaction(decodeRawTx(rawTx))).toString(
             "base64"
@@ -519,7 +525,7 @@ class RelayerService implements RelayerInterface {
     const relayed = {};
     while (true) {
       try {
-        const txs = await this.cwBitcoinClient.signedRecoveryTxs();
+        const txs = await this.appBitcoinClient.signedRecoveryTxs();
         for (const recoveryTx of txs) {
           if (relayed[recoveryTx]) continue;
 
@@ -542,7 +548,7 @@ class RelayerService implements RelayerInterface {
     const relayed = {};
     while (true) {
       try {
-        const checkpoints = await this.cwBitcoinClient.completedCheckpointTxs({
+        const checkpoints = await this.appBitcoinClient.completedCheckpointTxs({
           limit: 1100,
         });
         for (const checkpoint of checkpoints) {
@@ -571,9 +577,9 @@ class RelayerService implements RelayerInterface {
       try {
         let [confirmedIndex, unconfirmedIndex, lastCompletedIndex] =
           await Promise.all([
-            this.cwBitcoinClient.confirmedIndex(),
-            this.cwBitcoinClient.unhandledConfirmedIndex(),
-            this.cwBitcoinClient.completedIndex(),
+            this.appBitcoinClient.confirmedIndex(),
+            this.appBitcoinClient.unhandledConfirmedIndex(),
+            this.appBitcoinClient.completedIndex(),
           ]);
 
         if (unconfirmedIndex === null) {
@@ -592,20 +598,21 @@ class RelayerService implements RelayerInterface {
 
         let [tx, btcHeight, minConfs] = await Promise.all([
           (async () => {
-            let rawTx = await this.cwBitcoinClient.checkpointTx({
+            let rawTx = await this.appBitcoinClient.checkpointTx({
               index: unconfIndex,
             });
             return fromBinaryTransaction(Buffer.from(rawTx, "base64"));
           })(),
           (async () => {
-            const blockHash = await this.cwBitcoinClient.sidechainBlockHash();
+            const blockHash =
+              await this.lightClientBitcoinClient.sidechainBlockHash();
             const blockHeader = await this.btcClient.getblockheader({
               blockhash: blockHash,
             });
             return blockHeader.height as number;
           })(),
           (async () => {
-            const config = await this.cwBitcoinClient.bitcoinConfig();
+            const config = await this.appBitcoinClient.bitcoinConfig();
             return config.min_confirmations;
           })(),
         ]);
@@ -633,7 +640,7 @@ class RelayerService implements RelayerInterface {
             blockhash: blockHash,
           });
           await wrappedExecuteTransaction(async () => {
-            const tx = await this.cwBitcoinClient.relayCheckpoint({
+            const tx = await this.appBitcoinClient.relayCheckpoint({
               btcHeight: height,
               cpIndex: unconfIndex,
               btcProof: Buffer.from(
@@ -665,7 +672,7 @@ class RelayerService implements RelayerInterface {
     numBlocks: number,
     scanBlocks: number
   ): Promise<[number, string] | null> {
-    let tip = await this.cwBitcoinClient.sidechainBlockHash();
+    let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
     let baseHeader = await this.btcClient.getblockheader({
       blockhash: tip,
     });
@@ -703,7 +710,7 @@ class RelayerService implements RelayerInterface {
   // [QUERY FUNCTIONS]
   async getPendingDeposits(receiver: string): Promise<DepositInfo[]> {
     const currentSidechainBlockHash =
-      await this.cwBitcoinClient.sidechainBlockHash();
+      await this.lightClientBitcoinClient.sidechainBlockHash();
     const blockHeader: BlockHeader = await this.btcClient.getblockheader({
       blockhash: currentSidechainBlockHash,
     });
@@ -736,13 +743,13 @@ class RelayerService implements RelayerInterface {
     dest: Dest
   ): Promise<void> {
     const checkpoint = await (checkpointIndex
-      ? this.cwBitcoinClient.checkpointByIndex({
+      ? this.appBitcoinClient.checkpointByIndex({
           index: checkpointIndex,
         })
-      : this.cwBitcoinClient.buildingCheckpoint());
+      : this.appBitcoinClient.buildingCheckpoint());
 
-    const checkpointConfig = await this.cwBitcoinClient.checkpointConfig();
-    const bitcoinConfig = await this.cwBitcoinClient.bitcoinConfig();
+    const checkpointConfig = await this.appBitcoinClient.checkpointConfig();
+    const bitcoinConfig = await this.appBitcoinClient.bitcoinConfig();
 
     const sigset = checkpoint.sigset;
     const encodedDest = commitmentBytes(convertSdkDestToWasmDest(dest));
