@@ -20,10 +20,20 @@ yargs(hideBin(process.argv))
     const { default: registerCmd } = await import("./bin/register");
     await registerCmd();
   })
-  .command("start", "Start the orchestrator", async () => {
+  .command("relayer", "Relaying packets on bitcoin", async () => {
     // lazy-import orchestrator to activate env config
-    const { default: orchestratorCmd } = await import("./bin/start");
-    await orchestratorCmd();
+    const { default: relayerCmd } = await import("./bin/relayer");
+    await relayerCmd();
+  })
+  .command("signer", "Signing txs on bitcoin", async () => {
+    // lazy-import orchestrator to activate env config
+    const { default: signerCmd } = await import("./bin/signer");
+    await signerCmd();
+  })
+  .command("trigger_block", "Trigger new blocks on bitcoin", async () => {
+    // lazy-import orchestrator to activate env config
+    const { default: triggerBlockCmd } = await import("./bin/trigger_block");
+    await triggerBlockCmd();
   })
   .option("help", {
     alias: "h",

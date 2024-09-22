@@ -20,8 +20,6 @@ import morgan from "../configs/morgan";
 import { OraichainConfig } from "../configs/networks";
 import { DuckDbNode } from "../services/db";
 import RelayerService from "../services/relayer";
-import SignerService from "../services/signer";
-import TriggerBlocks from "../trigger_block";
 import { initSignerClient } from "../utils/cosmos";
 import { decryptMnemonic } from "../utils/mnemonic";
 
@@ -105,8 +103,6 @@ const start = async () => {
       env.cosmos.appBitcoin
     );
 
-    const triggerBlock = new TriggerBlocks(appBitcoinClient);
-
     const relayerService = new RelayerService(
       btcClient,
       lightClientBitcoinClient,
@@ -115,17 +111,7 @@ const start = async () => {
     );
     RelayerService.instances = relayerService;
 
-    const signerService = new SignerService(
-      btcClient,
-      lightClientBitcoinClient,
-      appBitcoinClient
-    );
-
-    await Promise.all([
-      relayerService.relay(),
-      signerService.relay(),
-      env.server.env === "development" ? triggerBlock.relay() : undefined,
-    ]);
+    await Promise.all([relayerService.relay()]);
   });
 };
 
