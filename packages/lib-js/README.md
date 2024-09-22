@@ -49,7 +49,7 @@ let depositInfo = await generateDepositAddress({
       sender: "orai1rchnkdpsxzhquu63y6r4j4t57pnc9w8ehdhedx",
       source_channel: "channel-6", // Oraichain should have the src-channel to the destination chain
       source_port: "transfer",
-      timeout_timestamp: 1725059744308000000,
+      timeout_timestamp: 1735059744308000000,
     },
   },
 });

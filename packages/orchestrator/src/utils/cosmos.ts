@@ -2,6 +2,7 @@ import {
   CosmWasmClient,
   SigningCosmWasmClient,
 } from "@cosmjs/cosmwasm-stargate";
+import { fromBech32, toBech32 } from "@cosmjs/encoding";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { GasPrice } from "@cosmjs/stargate";
 
@@ -46,4 +47,12 @@ export const initSignerClient = async (
     sender: firstAccount.address,
     client,
   };
+};
+
+export const convertToOtherAddress = (
+  address: string,
+  prefix: string = "oraivaloper"
+) => {
+  const bech32Data = fromBech32(address);
+  return toBech32(prefix, bech32Data.data);
 };

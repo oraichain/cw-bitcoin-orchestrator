@@ -10,9 +10,10 @@ class TriggerBlocks {
     const hash = Array.from({ length: 64 }, () =>
       Math.floor(Math.random() * 16).toString(16)
     ).join("");
-    await this.appBitcoinClient.triggerBeginBlock({
+    const tx = await this.appBitcoinClient.triggerBeginBlock({
       hash: Buffer.from(hash, "hex").toString("base64"),
     });
+    console.log("Update block at:", tx.transactionHash);
   }
 
   async relay() {
