@@ -1,4 +1,4 @@
-import { CwBitcoinQueryClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import { AppBitcoinQueryClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { Dest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
 import env from "../../configs/env";
 import RelayerService from "../../services/relayer";
@@ -6,7 +6,7 @@ import { initQueryClient } from "../../utils/cosmos";
 
 const getConfig = async () => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
-  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  const queryClient = new AppBitcoinQueryClient(client, env.cosmos.appBitcoin);
   return queryClient.bitcoinConfig();
 };
 
@@ -27,7 +27,7 @@ const submitDepositAddress = async (
 
 const getValueLocked = async () => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
-  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  const queryClient = new AppBitcoinQueryClient(client, env.cosmos.appBitcoin);
   try {
     const valueLocked = await queryClient.valueLocked();
     return valueLocked;
@@ -38,7 +38,7 @@ const getValueLocked = async () => {
 
 const getCheckpointQueue = async () => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
-  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  const queryClient = new AppBitcoinQueryClient(client, env.cosmos.appBitcoin);
   try {
     const [buildingIndex, confirmedIndex, firstUnconfirmedIndex] =
       await Promise.all([

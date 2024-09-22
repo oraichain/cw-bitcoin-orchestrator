@@ -1,4 +1,4 @@
-import { CwBitcoinQueryClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import { AppBitcoinQueryClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import {
   fromBinaryTransaction,
   getBitcoinTransactionTxid,
@@ -8,13 +8,13 @@ import { initQueryClient } from "../../utils/cosmos";
 
 const getConfig = async () => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
-  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  const queryClient = new AppBitcoinQueryClient(client, env.cosmos.appBitcoin);
   return queryClient.checkpointConfig();
 };
 
 const getCheckpoint = async (index: number | undefined) => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
-  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  const queryClient = new AppBitcoinQueryClient(client, env.cosmos.appBitcoin);
   const [checkpoint, checkpointTx] = await Promise.all([
     (async () => {
       if (index === undefined) {
@@ -38,19 +38,19 @@ const getCheckpoint = async (index: number | undefined) => {
 
 const getDepositFee = async (index: number | undefined) => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
-  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  const queryClient = new AppBitcoinQueryClient(client, env.cosmos.appBitcoin);
   return queryClient.depositFees({ index });
 };
 
 const getWithdrawFee = async (index: number | undefined, address: string) => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
-  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  const queryClient = new AppBitcoinQueryClient(client, env.cosmos.appBitcoin);
   return queryClient.withdrawalFees({ address, index });
 };
 
 const getCheckpointFee = async (index: number | undefined) => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
-  const queryClient = new CwBitcoinQueryClient(client, env.cosmos.cwBitcoin);
+  const queryClient = new AppBitcoinQueryClient(client, env.cosmos.appBitcoin);
   return queryClient.checkpointFees({ index });
 };
 
