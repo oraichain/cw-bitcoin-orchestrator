@@ -12,7 +12,15 @@
     "build-tsc": "tsc -p",
     "deploy": "yarn build && lerna publish",
     "prepare": "husky install",
-    "build:docker": "lerna run build --concurrency 1"
+    "build:docker": "lerna run build --concurrency 1",
+    "integration:setup": "yarn run:regtest && yarn run:oraid",
+    "integration:clean": "yarn clean:regtest && yarn clean:oraid",
+    "integration:run": "jest --testPathPattern=integrations --forceExit",
+    "integration:all": "npm run integration:clean; npm run integration:setup; npm run integration:run; npm run integration:clean",
+    "run:regtest": "bitcoind -regtest -server -rpcuser=satoshi -rpcpassword=nakamoto --fallbackfee=0.001 --daemon --datadir=$HOME",
+    "run:oraid": "sh $PWD/scripts/single-local-node.sh",
+    "clean:regtest": "killall bitcoind; rm -rf $HOME/regtest",
+    "clean:oraid": "killall oraid; rm -rf $HOME/oraid"
   },
   "workspaces": [
     "packages/*"
@@ -29,7 +37,8 @@
     "@cosmjs/tendermint-rpc": "0.31.3",
     "@oraichain/oraidex-common": "^1.0.10",
     "joi": "^17.13.3",
-    "readline-sync": "^1.4.10"
+    "readline-sync": "^1.4.10",
+    "regtest-client": "^0.2.1"
   },
   "devDependencies": {
     "@babel/traverse": "7.24.1",

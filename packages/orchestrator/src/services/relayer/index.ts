@@ -6,7 +6,7 @@ import {
   Dest,
   WrappedHeader,
 } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
-import { redeemScript } from "@oraichain/bitcoin-bridge-lib-js";
+import { BitcoinNetwork, redeemScript } from "@oraichain/bitcoin-bridge-lib-js";
 import {
   commitmentBytes,
   decodeRawTx,
@@ -737,10 +737,39 @@ class RelayerService implements RelayerInterface {
     return deposits;
   }
 
+  // for testing purpose only
+  async generateDepositAddress(
+    checkpointIndex: number,
+    dest: Dest,
+    network: btc.networks.Network
+  ) {
+    const checkpoint = await (checkpointIndex
+      ? this.appBitcoinClient.checkpointByIndex({
+          index: checkpointIndex,
+        })
+      : this.appBitcoinClient.buildingCheckpoint());
+
+    const checkpointConfig = await this.appBitcoinClient.checkpointConfig();
+    const sigset = checkpoint.sigset;
+    const encodedDest = commitmentBytes(convertSdkDestToWasmDest(dest));
+    const depositScript = redeemScript(
+      sigset,
+      Buffer.from(encodedDest),
+      checkpointConfig.sigset_threshold
+    );
+    let wsh = btc.payments.p2wsh({
+      redeem: { output: depositScript },
+      network,
+    });
+    let address = wsh.address;
+    return address;
+  }
+
   async submitDepositAddress(
     depositAddr: string,
     checkpointIndex: number,
-    dest: Dest
+    dest: Dest,
+    network?: BitcoinNetwork
   ): Promise<void> {
     const checkpoint = await (checkpointIndex
       ? this.appBitcoinClient.checkpointByIndex({
@@ -760,7 +789,7 @@ class RelayerService implements RelayerInterface {
     );
     let wsh = btc.payments.p2wsh({
       redeem: { output: depositScript },
-      network: getCurrentNetwork(),
+      network: getCurrentNetwork(network),
     });
     let address = wsh.address;
 

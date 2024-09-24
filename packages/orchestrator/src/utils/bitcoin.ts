@@ -9,12 +9,16 @@ export enum ScriptPubkeyType {
   WitnessScriptHash = "witness_v0_scripthash",
 }
 
-export function getCurrentNetwork() {
-  if (env.bitcoin.network === "mainnet") {
+export function getCurrentNetwork(network?: btc.networks.Network) {
+  let envNetwork = network || env.bitcoin.network;
+  if (envNetwork === "mainnet") {
     return btc.networks.bitcoin;
   }
-  if (env.bitcoin.network === "testnet") {
+  if (envNetwork === "testnet") {
     return btc.networks.testnet;
+  }
+  if (envNetwork === "regtest") {
+    return btc.networks.regtest;
   }
   throw new Error("Invalid network");
 }
