@@ -1,4 +1,4 @@
-import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import { AppBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { Dest as SdkDest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
 import { TableName } from "../../utils/db";
 import { DuckDbNode } from "../db";
@@ -23,10 +23,10 @@ class WatchedScriptsService {
   static instances: WatchedScriptsService;
   constructor(
     protected db: DuckDbNode,
-    protected cwBitcoinClient: CwBitcoinClient
+    protected appBitcoinClient: AppBitcoinClient
   ) {
     this.db = db;
-    this.cwBitcoinClient = cwBitcoinClient;
+    this.appBitcoinClient = appBitcoinClient;
   }
 
   async insertScript(data: WatchedScriptsInterface) {
@@ -52,7 +52,7 @@ class WatchedScriptsService {
 
   async removeExpired() {
     // TODO: Implement this by a single sql
-    const checkpointConfig = await this.cwBitcoinClient.checkpointConfig();
+    const checkpointConfig = await this.appBitcoinClient.checkpointConfig();
     const currentTime = Date.now();
     const scripts: WatchedScriptsInterface[] = await this.db.select(
       TableName.WatchedScripts,

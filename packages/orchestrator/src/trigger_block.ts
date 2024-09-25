@@ -1,18 +1,19 @@
-import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import { AppBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { setTimeout } from "timers/promises";
 
 // TODO: remove this in the future
 class TriggerBlocks {
-  constructor(protected cwBitcoinClient: CwBitcoinClient) {}
+  constructor(protected appBitcoinClient: AppBitcoinClient) {}
 
   async triggerBlocks() {
     // create a random hash string
     const hash = Array.from({ length: 64 }, () =>
       Math.floor(Math.random() * 16).toString(16)
     ).join("");
-    await this.cwBitcoinClient.triggerBeginBlock({
+    const tx = await this.appBitcoinClient.triggerBeginBlock({
       hash: Buffer.from(hash, "hex").toString("base64"),
     });
+    console.log("Update block at:", tx.transactionHash);
   }
 
   async relay() {
@@ -22,7 +23,7 @@ class TriggerBlocks {
       } catch (err) {
         console.log(err?.message);
       }
-      await setTimeout(60 * 1000); // 1 minutes per block
+      await setTimeout(10 * 1000); // 1 minutes per block
     }
   }
 }

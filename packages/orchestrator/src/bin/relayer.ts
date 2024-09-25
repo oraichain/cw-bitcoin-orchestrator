@@ -1,4 +1,7 @@
-import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import {
+  AppBitcoinClient,
+  LightClientBitcoinClient,
+} from "@oraichain/bitcoin-bridge-contracts-sdk";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -9,18 +12,16 @@ import os from "os";
 import path from "path";
 import { RPCClient } from "rpc-bitcoin";
 import xss from "xss-clean";
-import bitcoinRoute from "./apis/routes/bitcoin.route";
-import checkpointRoute from "./apis/routes/checkpoint.route";
-import contractRoute from "./apis/routes/contract.route";
-import env from "./configs/env";
-import morgan from "./configs/morgan";
-import { OraichainConfig } from "./configs/networks";
-import { DuckDbNode } from "./services/db";
-import RelayerService from "./services/relayer";
-import SignerService from "./services/signer";
-import TriggerBlocks from "./trigger_block";
-import { initSignerClient } from "./utils/cosmos";
-import { decryptMnemonic } from "./utils/mnemonic";
+import bitcoinRoute from "../apis/routes/bitcoin.route";
+import checkpointRoute from "../apis/routes/checkpoint.route";
+import contractRoute from "../apis/routes/contract.route";
+import env from "../configs/env";
+import morgan from "../configs/morgan";
+import { OraichainConfig } from "../configs/networks";
+import { DuckDbNode } from "../services/db";
+import RelayerService from "../services/relayer";
+import { initSignerClient } from "../utils/cosmos";
+import { decryptMnemonic } from "../utils/mnemonic";
 
 const start = async () => {
   const app = express();
@@ -91,28 +92,26 @@ const start = async () => {
       prefix,
       gasPrice
     );
-    const cwBitcoinClient = new CwBitcoinClient(
+    const lightClientBitcoinClient = new LightClientBitcoinClient(
       client,
       sender,
-      env.cosmos.cwBitcoin
+      env.cosmos.lightClientBitcoin
     );
-
-    const triggerBlock = new TriggerBlocks(cwBitcoinClient);
+    const appBitcoinClient = new AppBitcoinClient(
+      client,
+      sender,
+      env.cosmos.appBitcoin
+    );
 
     const relayerService = new RelayerService(
       btcClient,
-      cwBitcoinClient,
+      lightClientBitcoinClient,
+      appBitcoinClient,
       DuckDbNode.instances
     );
     RelayerService.instances = relayerService;
 
-    const signerService = new SignerService(btcClient, cwBitcoinClient);
-
-    await Promise.all([
-      relayerService.relay(),
-      signerService.relay(),
-      env.server.env === "development" ? triggerBlock.relay() : undefined,
-    ]);
+    await Promise.all([relayerService.relay()]);
   });
 };
 

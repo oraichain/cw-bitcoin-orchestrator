@@ -1,4 +1,8 @@
-import { CwBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import {
+  AppBitcoinClient,
+  LightClientBitcoinClient,
+} from "@oraichain/bitcoin-bridge-contracts-sdk";
+import { BitcoinNetwork } from "@oraichain/bitcoin-bridge-lib-js";
 import { encodeXpub } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import BIP32Factory, { BIP32Interface } from "bip32";
 import crypto from "crypto";
@@ -17,27 +21,34 @@ import { RelayerInterface } from "../common/relayer.interface";
 
 class SignerService implements RelayerInterface {
   btcClient: RPCClient;
-  cwBitcoinClient: CwBitcoinClient;
+  lightClientBitcoinClient: LightClientBitcoinClient;
+  appBitcoinClient: AppBitcoinClient;
+  network?: BitcoinNetwork;
 
-  constructor(btcClient: RPCClient, cwBitcoinClient: CwBitcoinClient) {
+  constructor(
+    btcClient: RPCClient,
+    lightClientBitcoinClient: LightClientBitcoinClient,
+    appBitcoinClient: AppBitcoinClient,
+    network?: BitcoinNetwork
+  ) {
     this.btcClient = btcClient;
-    this.cwBitcoinClient = cwBitcoinClient;
+    this.lightClientBitcoinClient = lightClientBitcoinClient;
+    this.appBitcoinClient = appBitcoinClient;
+    this.network = network;
   }
 
   async relay() {
     let { xpriv, xpub } = await this.loadOrGenerateXpriv();
 
-    const signatoryKey = await this.cwBitcoinClient.signatoryKey({
-      addr: this.cwBitcoinClient.sender,
+    const signatoryKey = await this.appBitcoinClient.signatoryKey({
+      addr: this.appBitcoinClient.sender,
     });
 
     if (signatoryKey === null) {
-      await wrappedExecuteTransaction(async () => {
-        const tx = await this.cwBitcoinClient.setSignatoryKey({
-          xpub: encodeXpub({ key: xpub }),
-        });
-        console.log(`Setting signatory key at: ${tx.transactionHash}`);
+      const tx = await this.appBitcoinClient.setSignatoryKey({
+        xpub: encodeXpub({ key: xpub }),
       });
+      console.log(`Setting signatory key at: ${tx.transactionHash}`);
     }
 
     await this.startRelay({
@@ -61,7 +72,7 @@ class SignerService implements RelayerInterface {
       try {
         const blockchainInfo = await this.btcClient.getblockchaininfo();
         const btcHeight = blockchainInfo.blocks;
-        let buildingIndex = await this.cwBitcoinClient.buildingIndex();
+        let buildingIndex = await this.appBitcoinClient.buildingIndex();
         let previousIndex = buildingIndex - 1;
 
         if (previousIndex < 0) {
@@ -69,17 +80,19 @@ class SignerService implements RelayerInterface {
           continue;
         }
 
-        let checkpoint = await this.cwBitcoinClient.checkpointByIndex({
+        let checkpoint = await this.appBitcoinClient.checkpointByIndex({
           index: previousIndex,
         });
 
         if (checkpoint.status === "signing") {
           await this.checkChangeRate();
 
-          let signTxs = await this.cwBitcoinClient.signingTxsAtCheckpointIndex({
-            xpub: encodeXpub({ key: xpub }),
-            checkpointIndex: previousIndex,
-          });
+          let signTxs = await this.appBitcoinClient.signingTxsAtCheckpointIndex(
+            {
+              xpub: encodeXpub({ key: xpub }),
+              checkpointIndex: previousIndex,
+            }
+          );
 
           if (signTxs.length > 0) {
             // Fetch latest signed checkpoint height
@@ -88,13 +101,16 @@ class SignerService implements RelayerInterface {
             let sigs = [];
             for (const signTx of signTxs) {
               const [msg, sigsetIndex] = signTx;
-              const node = bip32.fromBase58(xpriv, getCurrentNetwork());
+              const node = bip32.fromBase58(
+                xpriv,
+                getCurrentNetwork(this.network)
+              );
               const key = node.derive(sigsetIndex);
               const sig = key.sign(Buffer.from(msg));
               sigs = [...sigs, Array.from(sig)];
             }
             await wrappedExecuteTransaction(async () => {
-              const tx = await this.cwBitcoinClient.submitCheckpointSignature({
+              const tx = await this.appBitcoinClient.submitCheckpointSignature({
                 btcHeight,
                 checkpointIndex: previousIndex,
                 sigs,
@@ -107,7 +123,7 @@ class SignerService implements RelayerInterface {
           }
         }
       } catch (err) {
-        console.log(`[START_CHECKPOINT_SIGNING] ${err?.message}`);
+        console.log(`[START_CHECKPOINT_SIGNING] ${err?.message} ${err?.stack}`);
       }
 
       await setTimeout(ITERATION_DELAY * 10);
@@ -116,7 +132,8 @@ class SignerService implements RelayerInterface {
 
   async circuitBreaker(previousIndex: number) {
     // Fetch current block
-    let sidechainBlockHash = await this.cwBitcoinClient.sidechainBlockHash();
+    let sidechainBlockHash =
+      await this.lightClientBitcoinClient.sidechainBlockHash();
     let sidechainHeader: BlockHeader = await this.btcClient.getblockheader({
       blockhash: sidechainBlockHash,
       verbose: true,
@@ -126,7 +143,7 @@ class SignerService implements RelayerInterface {
     let signedAtBtcHeight = undefined;
 
     if (previousIndex - 1 >= 0) {
-      let previousCheckpoint = await this.cwBitcoinClient.checkpointByIndex({
+      let previousCheckpoint = await this.appBitcoinClient.checkpointByIndex({
         index: previousIndex - 1,
       });
       signedAtBtcHeight = previousCheckpoint.signed_at_btc_height;
@@ -148,7 +165,7 @@ class SignerService implements RelayerInterface {
 
   async checkChangeRate() {
     const { withdrawal, sigset_change } =
-      await this.cwBitcoinClient.changeRates({
+      await this.appBitcoinClient.changeRates({
         interval: env.signer.legitimateCheckpointInterval,
       });
     let sigsetChangeRate = sigset_change / 10000;
@@ -173,7 +190,7 @@ class SignerService implements RelayerInterface {
 
     while (true) {
       try {
-        let signTxs = await this.cwBitcoinClient.signingRecoveryTxs({
+        let signTxs = await this.appBitcoinClient.signingRecoveryTxs({
           xpub: encodeXpub({ key: xpub }),
         });
         let sigs = [];
@@ -181,14 +198,17 @@ class SignerService implements RelayerInterface {
         if (signTxs.length > 0) {
           for (const signTx of signTxs) {
             const [msg, sigsetIndex] = signTx;
-            const node = bip32.fromBase58(xpriv, getCurrentNetwork());
+            const node = bip32.fromBase58(
+              xpriv,
+              getCurrentNetwork(this.network)
+            );
             const key = node.derive(sigsetIndex);
             const sig = key.sign(Buffer.from(msg));
             sigs = [...sigs, Array.from(sig)];
           }
 
           await wrappedExecuteTransaction(async () => {
-            const tx = await this.cwBitcoinClient.submitRecoverySignature({
+            const tx = await this.appBitcoinClient.submitRecoverySignature({
               sigs,
               xpub: encodeXpub({ key: xpub }),
             });
@@ -218,12 +238,15 @@ class SignerService implements RelayerInterface {
     const bip32 = BIP32Factory(ecc);
     if (!fs.existsSync(xprivPath)) {
       const seed = crypto.randomBytes(32);
-      node = bip32.fromSeed(seed, getCurrentNetwork());
+      node = bip32.fromSeed(seed, getCurrentNetwork(this.network));
       let xpriv = node.toBase58();
       fs.writeFileSync(xprivPath, xpriv);
     } else {
       const fileContent = fs.readFileSync(xprivPath, "utf-8");
-      node = bip32.fromBase58(fileContent.trim(), getCurrentNetwork());
+      node = bip32.fromBase58(
+        fileContent.trim(),
+        getCurrentNetwork(this.network)
+      );
     }
     let xpriv = node.toBase58();
     let xpub = node.neutered().toBase58();
