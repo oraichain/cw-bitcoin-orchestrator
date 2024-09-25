@@ -1,3 +1,4 @@
+import { BitcoinNetwork } from "@oraichain/bitcoin-bridge-lib-js";
 import * as btc from "bitcoinjs-lib";
 import { Buffer } from "buffer";
 import { Vout } from "../@types";
@@ -9,9 +10,9 @@ export enum ScriptPubkeyType {
   WitnessScriptHash = "witness_v0_scripthash",
 }
 
-export function getCurrentNetwork(network?: btc.networks.Network) {
+export function getCurrentNetwork(network?: BitcoinNetwork) {
   let envNetwork = network || env.bitcoin.network;
-  if (envNetwork === "mainnet") {
+  if (envNetwork === "mainnet" || envNetwork === "bitcoin") {
     return btc.networks.bitcoin;
   }
   if (envNetwork === "testnet") {
@@ -33,7 +34,10 @@ export function toScriptPubKeyP2WSH(redeemScript: Buffer) {
   return scriptPubKey;
 }
 
-export const decodeAddress = (output: Vout): string | null => {
+export const decodeAddress = (
+  output: Vout,
+  network?: BitcoinNetwork
+): string | null => {
   const scriptPubKeyBuffer = Buffer.from(output.scriptPubKey.hex, "hex");
 
   let address = null;
@@ -41,13 +45,13 @@ export const decodeAddress = (output: Vout): string | null => {
     case ScriptPubkeyType.WitnessKeyHash:
       address = btc.payments.p2pkh({
         output: scriptPubKeyBuffer,
-        network: getCurrentNetwork(),
+        network: getCurrentNetwork(network),
       }).address;
       break;
     case ScriptPubkeyType.WitnessScriptHash:
       address = btc.payments.p2wsh({
         output: scriptPubKeyBuffer,
-        network: getCurrentNetwork(),
+        network: getCurrentNetwork(network),
       }).address;
       break;
     case ScriptPubkeyType.Pubkey:
@@ -55,7 +59,7 @@ export const decodeAddress = (output: Vout): string | null => {
       const pubKeyHash = decodedScript[2] as Buffer;
       address = btc.payments.p2pkh({
         hash: pubKeyHash,
-        network: getCurrentNetwork(),
+        network: getCurrentNetwork(network),
       }).address;
       break;
     default:

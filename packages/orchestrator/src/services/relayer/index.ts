@@ -67,12 +67,14 @@ class RelayerService implements RelayerInterface {
   relayTxids: Map<string, RelayTxIdBody>;
   // receiver -> bitcoin_address -> (txid, vout) -> Deposit
   depositIndex: Map<string, Map<string, Map<string, Deposit>>>;
+  network?: BitcoinNetwork;
 
   constructor(
     btcClient: RPCClient,
     lightClientBitcoinClient: LightClientBitcoinClient,
     appBitcoinClient: AppBitcoinClient,
-    db: DuckDbNode
+    db: DuckDbNode,
+    network?: BitcoinNetwork
   ) {
     this.btcClient = btcClient;
     this.lightClientBitcoinClient = lightClientBitcoinClient;
@@ -84,6 +86,7 @@ class RelayerService implements RelayerInterface {
     WatchedScriptsService.instances = this.watchedScriptClient;
     this.relayTxids = new Map<string, RelayTxIdBody>();
     this.depositIndex = new Map<string, Map<string, Map<string, Deposit>>>();
+    this.network = network;
   }
 
   async relay() {
@@ -347,7 +350,7 @@ class RelayerService implements RelayerInterface {
             continue;
           }
 
-          const address = decodeAddress(output);
+          const address = decodeAddress(output, this.network);
           if (address !== output.scriptPubKey.address) continue;
 
           const script = await this.watchedScriptClient.getScript(
@@ -453,7 +456,7 @@ class RelayerService implements RelayerInterface {
       if (output.scriptPubKey.type != ScriptPubkeyType.WitnessScriptHash)
         continue;
 
-      const address = decodeAddress(output);
+      const address = decodeAddress(output, this.network);
       if (address !== output.scriptPubKey.address) continue;
 
       const script = await this.watchedScriptClient.getScript(
@@ -768,8 +771,7 @@ class RelayerService implements RelayerInterface {
   async submitDepositAddress(
     depositAddr: string,
     checkpointIndex: number,
-    dest: Dest,
-    network?: BitcoinNetwork
+    dest: Dest
   ): Promise<void> {
     const checkpoint = await (checkpointIndex
       ? this.appBitcoinClient.checkpointByIndex({
@@ -789,7 +791,7 @@ class RelayerService implements RelayerInterface {
     );
     let wsh = btc.payments.p2wsh({
       redeem: { output: depositScript },
-      network: getCurrentNetwork(network),
+      network: getCurrentNetwork(this.network),
     });
     let address = wsh.address;
 

@@ -1,4 +1,7 @@
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import {
+  ExecuteResult,
+  SigningCosmWasmClient,
+} from "@cosmjs/cosmwasm-stargate";
 import { coin, GasPrice } from "@cosmjs/stargate";
 import { AppBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { LightClientBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk/build/LightClientBitcoin.client";
@@ -19,13 +22,61 @@ import { DuckDbNode } from "../../src/services/db";
 import RelayerService from "../../src/services/relayer";
 import SignerService from "../../src/services/signer";
 import TriggerBlocks from "../../src/trigger_block";
-import { initSignerClient } from "../../src/utils/cosmos";
+import {
+  convertToOtherAddress,
+  initSignerClient,
+  wrappedExecuteTransaction,
+} from "../../src/utils/cosmos";
 import { initBitcoinContract, initOsorContract } from "./_init";
 
+async function moveNextCheckpoint(
+  currentCheckpointIndex: number,
+  btcClient: RPCClient,
+  relayerService: RelayerService,
+  appBitcoinClient: AppBitcoinClient,
+  triggerClient: TriggerBlocks,
+  walletAddress: string,
+  walletName: string
+) {
+  let depositAddress = await relayerService.generateDepositAddress(
+    currentCheckpointIndex,
+    {
+      address: "orai1ehmhqcn8erf3dgavrca69zgp4rtxj5kqgtcnyd",
+    },
+    btc.networks.regtest
+  );
+  await relayerService.submitDepositAddress(depositAddress, 0, {
+    address: "orai1ehmhqcn8erf3dgavrca69zgp4rtxj5kqgtcnyd",
+  });
+  await btcClient.sendtoaddress({
+    address: depositAddress,
+    amount: "0.5",
+  });
+  while (true) {
+    const index = await appBitcoinClient.buildingIndex();
+    if (index == currentCheckpointIndex + 1) {
+      console.log(
+        `Relayed deposit successfully on checkpoint ${
+          currentCheckpointIndex + 1
+        }`
+      );
+      break;
+    }
+    await btcClient.generatetoaddress(
+      { address: walletAddress, nblocks: 1 },
+      walletName
+    );
+    await wrappedExecuteTransaction(async () => {
+      await triggerClient.triggerBlocks();
+    });
+    await setTimeout(1000);
+  }
+}
 describe("Test bitcoin integration", () => {
   let mnemonics = [
     "rough minor raise pelican rate dog camera fold scissors asthma tuition gaze silver mom borrow bicycle produce witness forest blush law arctic name issue",
     "ski office crowd wine fabric digital cricket toward ripple tattoo live amount",
+    "oak nerve twelve butter flee forum obscure off sibling bar miracle switch",
   ];
   let validatorKeys: [string, string][] = [];
   let lightClientBitcoinClients: LightClientBitcoinClient[] = [];
@@ -36,13 +87,14 @@ describe("Test bitcoin integration", () => {
   let clients: SigningCosmWasmClient[] = [];
   let clientAddresses: string[] = [];
   let btcClient: RPCClient;
-  let bitcoindProcess: any;
   let entryPointAddress: string;
   let lightClientBitcoinAddress: string;
   let appBitcoinAddress: string;
   let tokenFactoryAddress: string;
   let walletName: string;
   let walletAddress: string;
+  let userClient: SigningCosmWasmClient;
+  let userAddress: string;
 
   beforeAll(async () => {
     fs.rmSync(path.join(__dirname, "testdata/data/regtest"), {
@@ -58,6 +110,15 @@ describe("Test bitcoin integration", () => {
       user: "satoshi",
       pass: "nakamoto",
     });
+
+    const { sender: uAddress, client: uClient } = await initSignerClient(
+      "http://127.0.0.1:26657",
+      mnemonics[mnemonics.length - 1],
+      "orai",
+      GasPrice.fromString("0.002orai")
+    );
+    userClient = uClient;
+    userAddress = uAddress;
 
     const { sender, client } = await initSignerClient(
       "http://127.0.0.1:26657",
@@ -80,7 +141,7 @@ describe("Test bitcoin integration", () => {
     tokenFactoryAddress = tfAddress;
 
     const bip32 = BIP32Factory(ecc);
-    for (let i = 0; i < 1; i++) {
+    for (let i = 0; i < 2; i++) {
       const { sender, client } = await initSignerClient(
         "http://127.0.0.1:26657",
         mnemonics[i],
@@ -103,7 +164,8 @@ describe("Test bitcoin integration", () => {
         new SignerService(
           btcClient,
           lightClientBitcoinClients[i],
-          appBitcoinClients[i]
+          appBitcoinClients[i],
+          "bitcoin" // use bitcoin key to signing for regtest transaction
         )
       );
       relayerServices.push(
@@ -111,7 +173,8 @@ describe("Test bitcoin integration", () => {
           btcClient,
           lightClientBitcoinClients[i],
           appBitcoinClients[i],
-          DuckDbNode.instances
+          DuckDbNode.instances,
+          "regtest"
         )
       );
       triggerServices.push(new TriggerBlocks(appBitcoinClients[i]));
@@ -144,7 +207,18 @@ describe("Test bitcoin integration", () => {
           verbosity: 2,
         });
 
-        let tx = await lightClientBitcoinClients[i].updateHeaderConfig({
+        let tx;
+
+        let cpConfig = await appBitcoinClients[i].checkpointConfig();
+        tx = await appBitcoinClients[i].updateCheckpointConfig({
+          config: {
+            ...cpConfig,
+            min_checkpoint_interval: 1,
+          },
+        });
+        console.log(`Updated checkpoint config at ${tx.transactionHash}`);
+
+        tx = await lightClientBitcoinClients[i].updateHeaderConfig({
           config: {
             max_length: 2000,
             max_time_increase: 8 * 60 * 60,
@@ -188,7 +262,7 @@ describe("Test bitcoin integration", () => {
         console.log(`Setting signatory key at: ${tx.transactionHash}`);
       }
     }
-  }, 60000);
+  }, 120_000);
 
   it("Testing relay header", async () => {
     relayerServices[0].relayHeader();
@@ -205,15 +279,20 @@ describe("Test bitcoin integration", () => {
       }
       await setTimeout(100);
     }
-  }, 60000);
+  }, 1000_000_000);
 
-  it("Testing full app", async () => {
-    await triggerServices[0].triggerBlocks();
+  it("Testing relay deposit", async () => {
     Promise.all([
-      triggerServices[0].relay(),
       relayerServices[0].relay(),
-      signerServices[0].relay(),
+      signerServices[0].startRelay({
+        xpriv: validatorKeys[0][0],
+        xpub: validatorKeys[0][1],
+      }),
     ]);
+    await triggerServices[0].triggerBlocks();
+    let presentVotingPower = (await appBitcoinClients[0].buildingCheckpoint())
+      .sigset.present_vp;
+    expect(presentVotingPower).toBe(500_000_000);
     let depositAddress = await relayerServices[0].generateDepositAddress(
       0,
       {
@@ -221,33 +300,157 @@ describe("Test bitcoin integration", () => {
       },
       btc.networks.regtest
     );
-    await relayerServices[0].submitDepositAddress(
-      depositAddress,
-      0,
-      {
-        address: "orai1ehmhqcn8erf3dgavrca69zgp4rtxj5kqgtcnyd",
-      },
-      "regtest"
-    );
-    console.log(await btcClient.getbalance({}));
-    btcClient.sendtoaddress({
+    await relayerServices[0].submitDepositAddress(depositAddress, 0, {
+      address: "orai1ehmhqcn8erf3dgavrca69zgp4rtxj5kqgtcnyd",
+    });
+    await btcClient.sendtoaddress({
       address: depositAddress,
-      amount: "1",
+      amount: "0.5",
     });
     while (true) {
-      let balance = await clients[0].getBalance(
-        clientAddresses[0],
-        `factory/${tokenFactoryAddress}/obtc`
-      );
-      if (BigInt(balance.amount) != 0n) {
+      const index = await appBitcoinClients[0].buildingIndex();
+      if (index == 1) {
+        console.log("Relayed deposit successfully");
+        let checkpoint = await appBitcoinClients[0].buildingCheckpoint();
+        expect(checkpoint.sigset.present_vp).toBe(500_000_000);
         break;
       }
       await btcClient.generatetoaddress(
         { address: walletAddress, nblocks: 1 },
         walletName
       );
+      await wrappedExecuteTransaction(async () => {
+        await triggerServices[0].triggerBlocks();
+      });
+      await setTimeout(1000);
     }
 
-    return;
-  }, 60000);
+    // Update voting power, this will be effected on checkpoint building 2
+    await clients[0].sendTokens(
+      clientAddresses[0],
+      userAddress,
+      [coin("120000000", "orai")],
+      "auto",
+      ""
+    );
+    await userClient.delegateTokens(
+      userAddress,
+      convertToOtherAddress(clientAddresses[0]),
+      coin("100000000", "orai"),
+      "auto",
+      ""
+    );
+    await moveNextCheckpoint(
+      1,
+      btcClient,
+      relayerServices[0],
+      appBitcoinClients[0],
+      triggerServices[0],
+      walletAddress,
+      walletName
+    );
+    await btcClient.sendtoaddress({
+      address: depositAddress,
+      amount: "0.5",
+    });
+    while (true) {
+      const index = await appBitcoinClients[0].buildingIndex();
+      if (index == 3) {
+        console.log("Relayed deposit successfully");
+        let checkpoint = await appBitcoinClients[0].buildingCheckpoint();
+        expect(checkpoint.sigset.present_vp).toBe(600_000_000);
+        break;
+      }
+      await btcClient.generatetoaddress(
+        { address: walletAddress, nblocks: 1 },
+        walletName
+      );
+      await wrappedExecuteTransaction(async () => {
+        await triggerServices[0].triggerBlocks();
+      });
+      await setTimeout(1000);
+    }
+
+    // Add validator 2
+    let tx: ExecuteResult;
+    tx = await appBitcoinClients[1].registerValidator();
+    console.log(`Register validator at: ${tx.transactionHash}`);
+    tx = await appBitcoinClients[1].setSignatoryKey({
+      xpub: encodeXpub({ key: validatorKeys[1][1] }),
+    });
+    console.log(`Setting signatory key at: ${tx.transactionHash}`);
+    await moveNextCheckpoint(
+      3,
+      btcClient,
+      relayerServices[0],
+      appBitcoinClients[0],
+      triggerServices[0],
+      walletAddress,
+      walletName
+    );
+    while (true) {
+      const index = await appBitcoinClients[0].buildingIndex();
+      if (index == 4) {
+        console.log("Relayed deposit successfully");
+        let checkpoint = await appBitcoinClients[0].buildingCheckpoint();
+        console.log(checkpoint.sigset.present_vp);
+        expect(checkpoint.sigset.present_vp).toBe(1_100_000_000);
+        break;
+      }
+      await btcClient.generatetoaddress(
+        { address: walletAddress, nblocks: 1 },
+        walletName
+      );
+      await wrappedExecuteTransaction(async () => {
+        await triggerServices[0].triggerBlocks();
+      });
+      await setTimeout(1000);
+    }
+
+    // Update voting power, this will be effected on checkpoint building 2
+    await clients[0].sendTokens(
+      clientAddresses[0],
+      userAddress,
+      [coin("120000000", "orai")],
+      "auto",
+      ""
+    );
+    await userClient.delegateTokens(
+      userAddress,
+      convertToOtherAddress(clientAddresses[0]),
+      coin("100000000", "orai"),
+      "auto",
+      ""
+    );
+    await moveNextCheckpoint(
+      4,
+      btcClient,
+      relayerServices[0],
+      appBitcoinClients[0],
+      triggerServices[0],
+      walletAddress,
+      walletName
+    );
+    await btcClient.sendtoaddress({
+      address: depositAddress,
+      amount: "0.5",
+    });
+    while (true) {
+      const index = await appBitcoinClients[0].buildingIndex();
+      if (index == 5) {
+        console.log("Relayed deposit successfully");
+        let checkpoint = await appBitcoinClients[0].buildingCheckpoint();
+        expect(checkpoint.sigset.present_vp).toBe(1_200_000_000);
+        break;
+      }
+      await btcClient.generatetoaddress(
+        { address: walletAddress, nblocks: 1 },
+        walletName
+      );
+      await wrappedExecuteTransaction(async () => {
+        await triggerServices[0].triggerBlocks();
+      });
+      await setTimeout(1000);
+    }
+  }, 1000_000_000);
 });

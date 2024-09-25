@@ -2,6 +2,7 @@ import {
   AppBitcoinClient,
   LightClientBitcoinClient,
 } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import { BitcoinNetwork } from "@oraichain/bitcoin-bridge-lib-js";
 import { encodeXpub } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import BIP32Factory, { BIP32Interface } from "bip32";
 import crypto from "crypto";
@@ -22,15 +23,18 @@ class SignerService implements RelayerInterface {
   btcClient: RPCClient;
   lightClientBitcoinClient: LightClientBitcoinClient;
   appBitcoinClient: AppBitcoinClient;
+  network?: BitcoinNetwork;
 
   constructor(
     btcClient: RPCClient,
     lightClientBitcoinClient: LightClientBitcoinClient,
-    appBitcoinClient: AppBitcoinClient
+    appBitcoinClient: AppBitcoinClient,
+    network?: BitcoinNetwork
   ) {
     this.btcClient = btcClient;
     this.lightClientBitcoinClient = lightClientBitcoinClient;
     this.appBitcoinClient = appBitcoinClient;
+    this.network = network;
   }
 
   async relay() {
@@ -97,7 +101,10 @@ class SignerService implements RelayerInterface {
             let sigs = [];
             for (const signTx of signTxs) {
               const [msg, sigsetIndex] = signTx;
-              const node = bip32.fromBase58(xpriv, getCurrentNetwork());
+              const node = bip32.fromBase58(
+                xpriv,
+                getCurrentNetwork(this.network)
+              );
               const key = node.derive(sigsetIndex);
               const sig = key.sign(Buffer.from(msg));
               sigs = [...sigs, Array.from(sig)];
@@ -116,7 +123,7 @@ class SignerService implements RelayerInterface {
           }
         }
       } catch (err) {
-        console.log(`[START_CHECKPOINT_SIGNING] ${err?.message}`);
+        console.log(`[START_CHECKPOINT_SIGNING] ${err?.message} ${err?.stack}`);
       }
 
       await setTimeout(ITERATION_DELAY * 10);
@@ -191,7 +198,10 @@ class SignerService implements RelayerInterface {
         if (signTxs.length > 0) {
           for (const signTx of signTxs) {
             const [msg, sigsetIndex] = signTx;
-            const node = bip32.fromBase58(xpriv, getCurrentNetwork());
+            const node = bip32.fromBase58(
+              xpriv,
+              getCurrentNetwork(this.network)
+            );
             const key = node.derive(sigsetIndex);
             const sig = key.sign(Buffer.from(msg));
             sigs = [...sigs, Array.from(sig)];
@@ -228,12 +238,15 @@ class SignerService implements RelayerInterface {
     const bip32 = BIP32Factory(ecc);
     if (!fs.existsSync(xprivPath)) {
       const seed = crypto.randomBytes(32);
-      node = bip32.fromSeed(seed, getCurrentNetwork());
+      node = bip32.fromSeed(seed, getCurrentNetwork(this.network));
       let xpriv = node.toBase58();
       fs.writeFileSync(xprivPath, xpriv);
     } else {
       const fileContent = fs.readFileSync(xprivPath, "utf-8");
-      node = bip32.fromBase58(fileContent.trim(), getCurrentNetwork());
+      node = bip32.fromBase58(
+        fileContent.trim(),
+        getCurrentNetwork(this.network)
+      );
     }
     let xpriv = node.toBase58();
     let xpub = node.neutered().toBase58();
