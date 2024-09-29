@@ -40,7 +40,8 @@ BTC_RPC_USERNAME=satoshi
 BTC_RPC_PASSWORD=nakamoto
 BTC_NETWORK=mainnet
 COSMOS_RPC_URL=http://127.0.0.1:26657
-CW_BITCOIN_ADDRESS=orai1plhnld6489hpxay9wfel8mp39esw625pnufq03p9tg0d8u60987s99l7z6
+LIGHT_CLIENT_BITCOIN_ADDRESS=
+APP_BITCOIN_ADDRESS=
 STORAGE_DIR_NAME=.oraibtc-relayer
 DUCKDB_DIR_NAME=watched_scripts.duckdb
 DEPOSIT_BUFFER=43200
@@ -52,11 +53,33 @@ LEGITIMATE_CHECKPOINT_INTERVAL=86400
 
 ### 3. Request to be validator
 
-Once you set up your mnemonic, please send us your Oraichain validator address. We will add you to bitcoin bridge contract to be validator.
+Please send us your validator's information to be added on whitelist validators.
 
-### 4. Set up bitcoin node
+### 4. Run signer server
 
-Relayer nodes carry data between the Bitcoin blockchain and the Bitcoin Bridge IBC.
+Running this will enhance the security of Bitcoin Bridge. The more validators are running the signer server, the more security the system has.
+
+Check whether you are eligible validator:
+
+```
+bitcoin-bridge-orchestrator check --env $ENV_PATH
+```
+
+Register validator on smart contract if you are eligible native validator:
+
+```
+bitcoin-bridge-orchestrator register --env $ENV_PATH
+```
+
+Run your signer node:
+
+```
+bitcoin-bridge-orchestrator signer --env $ENV_PATH
+```
+
+### 5. Run relayer server (Optional)
+
+Relayer nodes carry data between the Bitcoin blockchain and the Bitcoin Bridge IBC. Running this will enhance the efficiency, performance of Bitcoin Bridge.
 
 #### i. Sync a Bitcoin node
 
@@ -72,10 +95,8 @@ bitcoind -server -rpcuser=satoshi -rpcpassword=nakamoto
 
 **NOTE:** To save on disk space, you may want to configure your Bitcoin node to prune block storage. For instance, add `-prune=5000` to only keep a maximum of 5000 MB of blocks. You may also want to use the `-daemon` option to keep the node running in the background.
 
-### 5. Run orchestrator
-
-Start your Orchestrator node:
+#### ii. Run relayer server
 
 ```
-bitcoin-bridge-orchestrator start --env $ENV_PATH
+bitcoin-bridge-orchestrator relayer --env $ENV_PATH
 ```
