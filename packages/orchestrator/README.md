@@ -31,20 +31,24 @@ npm install -g @oraichain/bitcoin-bridge-orchestrator
 ```
 # you can check the description of each fields on packages/orchestrator/.env.example
 PORT=8000
-NODE_ENV=development
+NODE_ENV=development # development, production, push this development if you want to trigger blocks (not needed)
 ENCRYPTED_MNEMONIC= # if you want to use encrypted mnemonic, please fill this field
 MNEMONIC= # if you want to use mnemonic, please fill this field, mnemonic will have priority over encrypted mnemonic
 BTC_RPC_HOST=http://127.0.0.1
 BTC_RPC_PORT=8332
 BTC_RPC_USERNAME=satoshi
 BTC_RPC_PASSWORD=nakamoto
-BTC_NETWORK=mainnet
+BTC_NETWORK=mainnet ## testnet or mainnet
 COSMOS_RPC_URL=http://127.0.0.1:26657
-LIGHT_CLIENT_BITCOIN_ADDRESS=
-APP_BITCOIN_ADDRESS=
+LIGHT_CLIENT_BITCOIN_ADDRESS=orai1rdykz2uuepxhkarar8ql5ajj5j37pq8h8d4zarvgx2s8pg0af37qucldna
+APP_BITCOIN_ADDRESS=orai12sxqkgsystjgd9faa48ghv3zmkfqc6qu05uy20mvv730vlzkpvls5zqxuz
 STORAGE_DIR_NAME=.oraibtc-relayer
 DUCKDB_DIR_NAME=watched_scripts.duckdb
+
+## Default deposit configure
 DEPOSIT_BUFFER=43200
+
+## Default signer configure
 MAX_WITHDRAWAL_RATE=0.1
 SIGSET_CHANGE_RATE=0.1
 MIN_BLOCKS_PER_CHECKPOINT=0
