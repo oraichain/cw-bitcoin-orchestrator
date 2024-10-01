@@ -9,7 +9,6 @@ import { convertSdkDestToWasmDest } from "./dest";
 import { commitmentBytes } from "./wasm/cw_bitcoin_wasm";
 
 export type BitcoinNetwork = "bitcoin" | "testnet" | "regtest";
-
 export interface DepositOptions {
   relayers: string[];
   dest: Dest;

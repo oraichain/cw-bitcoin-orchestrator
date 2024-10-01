@@ -129,6 +129,7 @@ class RelayerService implements RelayerInterface {
       } catch (err) {
         console.log(`[RELAY_HEADER] ${err?.message}`);
       }
+      await setTimeout(ITERATION_DELAY.RELAY_HEADER);
     }
   }
 
@@ -316,7 +317,7 @@ class RelayerService implements RelayerInterface {
           console.log(`[RELAY_DEPOSIT] ${err?.message}`);
         }
       }
-      await setTimeout(ITERATION_DELAY);
+      await setTimeout(ITERATION_DELAY.RELAY_DEPOSIT);
     }
   }
 
@@ -541,7 +542,7 @@ class RelayerService implements RelayerInterface {
       } catch (err) {
         console.log(`[RELAY_RECOVERY_DEPOSIT] ${err?.message}`);
       }
-      await setTimeout(ITERATION_DELAY);
+      await setTimeout(ITERATION_DELAY.RELAY_RECOVERY);
     }
   }
 
@@ -568,7 +569,7 @@ class RelayerService implements RelayerInterface {
       } catch (err) {
         console.log(`[RELAY_CHECKPOINT] ${err?.message}`);
       }
-      await setTimeout(ITERATION_DELAY);
+      await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT);
     }
   }
 
@@ -666,7 +667,7 @@ class RelayerService implements RelayerInterface {
           console.log(`[RELAY_CHECKPOINT_CONF] ${err?.message}`);
         }
       }
-      await setTimeout(ITERATION_DELAY);
+      await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_CONF);
     }
   }
 
