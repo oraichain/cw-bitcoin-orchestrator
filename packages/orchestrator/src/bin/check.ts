@@ -1,7 +1,7 @@
 import { AppBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import env from "../configs/env";
 import { OraichainConfig } from "../configs/networks";
-import { convertToOtherAddress, initSignerClient } from "../utils/cosmos";
+import { initSignerClient } from "../utils/cosmos";
 import { decryptMnemonic } from "../utils/mnemonic";
 
 const main = async () => {
@@ -21,14 +21,13 @@ const main = async () => {
     prefix,
     gasPrice
   );
-  const valAddress = convertToOtherAddress(sender);
   const appBitcoinClient = new AppBitcoinClient(
     client,
     sender,
     env.cosmos.appBitcoin
   );
   const isEligible = await appBitcoinClient.checkEligibleValidator({
-    valAddr: valAddress,
+    valAddr: sender,
   });
   if (isEligible) {
     console.log("You are eligible to be a signer");
