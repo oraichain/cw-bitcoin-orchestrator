@@ -4,10 +4,8 @@ const envVarsSchema = Joi.object()
   .keys({
     NODE_ENV: Joi.string().error(new Error("NODE_ENV is required")),
     PORT: Joi.number().default(8000),
-    ENCRYPTED_MNEMONIC: Joi.string().error(
-      new Error("ENCRYPTED_MNEMONIC is required")
-    ),
-    MNEMONIC: Joi.string().error(new Error("MNEMONIC is required")),
+    ENCRYPTED_MNEMONIC: Joi.string().optional(),
+    MNEMONIC: Joi.string().optional(),
     BTC_RPC_PORT: Joi.number().default(3000),
     BTC_RPC_HOST: Joi.string().default("http://127.0.0.1"),
     BTC_RPC_USERNAME: Joi.string().default("satoshi"),
