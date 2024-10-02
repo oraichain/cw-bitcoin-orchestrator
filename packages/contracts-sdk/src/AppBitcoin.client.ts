@@ -77,11 +77,7 @@ export interface AppBitcoinReadOnlyInterface {
   unhandledConfirmedIndex: () => Promise<NullableUint32>;
   changeRates: ({ interval }: { interval: number }) => Promise<ChangeRates>;
   valueLocked: () => Promise<Uint64>;
-  checkEligibleValidator: ({
-    valAddr,
-  }: {
-    valAddr: string;
-  }) => Promise<Boolean>;
+  checkEligibleValidator: ({ valAddr }: { valAddr: Addr }) => Promise<Boolean>;
 }
 export class AppBitcoinQueryClient implements AppBitcoinReadOnlyInterface {
   client: CosmWasmClient;
@@ -275,7 +271,7 @@ export class AppBitcoinQueryClient implements AppBitcoinReadOnlyInterface {
   checkEligibleValidator = async ({
     valAddr,
   }: {
-    valAddr: string;
+    valAddr: Addr;
   }): Promise<Boolean> => {
     return this.client.queryContractSmart(this.contractAddress, {
       check_eligible_validator: {
@@ -377,8 +373,10 @@ export interface AppBitcoinInterface extends AppBitcoinReadOnlyInterface {
   withdrawToBitcoin: (
     {
       btcAddress,
+      fee,
     }: {
       btcAddress: string;
+      fee?: number;
     },
     _fee?: number | StdFee | "auto",
     _memo?: string,
@@ -454,6 +452,18 @@ export interface AppBitcoinInterface extends AppBitcoinReadOnlyInterface {
     _memo?: string,
     _funds?: Coin[]
   ) => Promise<ExecuteResult>;
+  setWhitelistValidator: (
+    {
+      permission,
+      valAddr,
+    }: {
+      permission: boolean;
+      valAddr: Addr;
+    },
+    _fee?: number | StdFee | "auto",
+    _memo?: string,
+    _funds?: Coin[]
+  ) => Promise<ExecuteResult>;
 }
 export class AppBitcoinClient
   extends AppBitcoinQueryClient
@@ -485,6 +495,7 @@ export class AppBitcoinClient
     this.registerDenom = this.registerDenom.bind(this);
     this.changeBtcDenomOwner = this.changeBtcDenomOwner.bind(this);
     this.triggerBeginBlock = this.triggerBeginBlock.bind(this);
+    this.setWhitelistValidator = this.setWhitelistValidator.bind(this);
   }
 
   updateConfig = async (
@@ -669,8 +680,10 @@ export class AppBitcoinClient
   withdrawToBitcoin = async (
     {
       btcAddress,
+      fee,
     }: {
       btcAddress: string;
+      fee?: number;
     },
     _fee: number | StdFee | "auto" = "auto",
     _memo?: string,
@@ -682,6 +695,7 @@ export class AppBitcoinClient
       {
         withdraw_to_bitcoin: {
           btc_address: btcAddress,
+          fee,
         },
       },
       _fee,
@@ -835,6 +849,32 @@ export class AppBitcoinClient
       {
         trigger_begin_block: {
           hash,
+        },
+      },
+      _fee,
+      _memo,
+      _funds
+    );
+  };
+  setWhitelistValidator = async (
+    {
+      permission,
+      valAddr,
+    }: {
+      permission: boolean;
+      valAddr: Addr;
+    },
+    _fee: number | StdFee | "auto" = "auto",
+    _memo?: string,
+    _funds?: Coin[]
+  ): Promise<ExecuteResult> => {
+    return await this.client.execute(
+      this.sender,
+      this.contractAddress,
+      {
+        set_whitelist_validator: {
+          permission,
+          val_addr: valAddr,
         },
       },
       _fee,

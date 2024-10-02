@@ -69,6 +69,7 @@ export type ExecuteMsg =
   | {
       withdraw_to_bitcoin: {
         btc_address: string;
+        fee?: number | null;
       };
     }
   | {
@@ -104,6 +105,12 @@ export type ExecuteMsg =
   | {
       trigger_begin_block: {
         hash: Binary;
+      };
+    }
+  | {
+      set_whitelist_validator: {
+        permission: boolean;
+        val_addr: Addr;
       };
     };
 export type Binary = string;
@@ -261,7 +268,7 @@ export type QueryMsg =
     }
   | {
       check_eligible_validator: {
-        val_addr: string;
+        val_addr: Addr;
       };
     };
 export interface MigrateMsg {}
