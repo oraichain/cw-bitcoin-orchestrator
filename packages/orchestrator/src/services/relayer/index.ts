@@ -332,7 +332,10 @@ class RelayerService implements RelayerInterface {
     try {
       let mempoolTxs = await this.btcClient.getrawmempool();
       const txChunks = chunkArray(mempoolTxs, SCAN_MEMPOOL_CHUNK_SIZE);
+      let i = 0;
       for (const txChunk of txChunks) {
+        console.log("Chunk", i);
+        i++;
         let detailMempoolTxs: BitcoinTransaction[] = await retry(
           async () => {
             return (
