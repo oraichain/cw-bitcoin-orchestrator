@@ -451,20 +451,6 @@ class RelayerService implements RelayerInterface {
     const txid = tx.txid;
     const rawTx = tx.hex;
     const outputs = tx.vout;
-    if (
-      txid ===
-      "8ba76a50f5af052563d7c3b4c0bf63ed1bc6bfc3fbaf29e068d3c1a3cc1d78a5"
-    ) {
-      console.log(outputs);
-      for (let i = 0; i < outputs.length; i++) {
-        const script = await this.watchedScriptClient.getScript(
-          outputs[i].scriptPubKey.hex
-        );
-        console.log(script);
-      }
-    } else {
-      console.log(txid);
-    }
     for (let i = 0; i < outputs.length; i++) {
       const output = outputs[i];
 

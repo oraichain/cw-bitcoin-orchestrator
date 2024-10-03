@@ -41,19 +41,16 @@ yargs(hideBin(process.argv))
     (yargs) => {
       return yargs
         .option("oraiAddress", {
-          alias: "s",
           type: "string",
           describe: "Oraichain wallet address",
           demandOption: true,
         })
         .option("depositAddress", {
-          alias: "d",
           type: "string",
           describe: "Deposit address to submit",
           demandOption: true,
         })
         .option("sigsetIndex", {
-          alias: "s",
           type: "number",
           describe: "Sigset index associated with the deposit",
           demandOption: true,
