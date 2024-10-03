@@ -39,6 +39,7 @@ import {
   RETRY_DELAY,
   SCAN_MEMPOOL_CHUNK_SIZE,
 } from "../../constants";
+import { chunkArray } from "../../utils/array";
 import {
   calculateOutpointKey,
   decodeAddress,
