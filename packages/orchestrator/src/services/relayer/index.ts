@@ -37,6 +37,7 @@ import {
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
   RETRY_DELAY,
+  SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_SIZE,
 } from "../../constants";
 import { chunkArray } from "../../utils/array";
@@ -335,7 +336,6 @@ class RelayerService implements RelayerInterface {
       const txChunks = chunkArray(mempoolTxs, SCAN_MEMPOOL_CHUNK_SIZE);
       let i = 0;
       for (const txChunk of txChunks) {
-        console.log("Chunk", i);
         i++;
         let detailMempoolTxs: BitcoinTransaction[] = await retry(
           async () => {
@@ -350,6 +350,11 @@ class RelayerService implements RelayerInterface {
           },
           3,
           RETRY_DELAY
+        );
+        console.log(
+          "Chunk",
+          i,
+          detailMempoolTxs.map((item) => item.hash)
         );
 
         for (const tx of detailMempoolTxs) {
@@ -397,6 +402,8 @@ class RelayerService implements RelayerInterface {
             );
           }
         }
+
+        await setTimeout(SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY);
       }
     } catch (err) {
       this.logger.error(`[SCAN_TX_FROM_MEMPOOL] ${err?.message}`);
