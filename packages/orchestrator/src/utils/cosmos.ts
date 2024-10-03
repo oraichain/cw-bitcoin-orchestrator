@@ -5,8 +5,12 @@ import {
 import { fromBech32, toBech32 } from "@cosmjs/encoding";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { GasPrice } from "@cosmjs/stargate";
+import { Logger } from "winston";
 
-export const wrappedExecuteTransaction = async (fn: () => Promise<void>) => {
+export const wrappedExecuteTransaction = async (
+  fn: () => Promise<void>,
+  logger: Logger
+) => {
   while (true) {
     try {
       await fn();
@@ -16,7 +20,7 @@ export const wrappedExecuteTransaction = async (fn: () => Promise<void>) => {
       if (message?.includes("account sequence mismatch")) {
         continue;
       } else {
-        console.log(`[UNEXPECTED ERROR] ${message}`);
+        logger.error(`[UNEXPECTED ERROR] ${message}`);
         break;
       }
     }

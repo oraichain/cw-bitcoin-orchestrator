@@ -172,7 +172,7 @@ class RelayerService implements RelayerInterface {
         headers: [...wrappedHeaders],
       });
       this.logger.info(`Relayed headers with tx hash: ${tx.transactionHash}`);
-    });
+    }, this.logger);
 
     let currentSidechainBlockHash =
       await this.lightClientBitcoinClient.sidechainBlockHash();
@@ -525,7 +525,7 @@ class RelayerService implements RelayerInterface {
         this.logger.info(
           `Relayed deposit tx ${txid} at tx ${tx.transactionHash}`
         );
-      });
+      }, this.logger);
     }
   }
 
@@ -662,7 +662,7 @@ class RelayerService implements RelayerInterface {
             console.log(
               `Relayed checkpoint confirmation with tx ${txid} at tx ${tx.transactionHash}`
             );
-          });
+          }, this.logger);
           relayed[txid] = true;
         }
       } catch (err) {

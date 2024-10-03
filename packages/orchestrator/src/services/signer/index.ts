@@ -123,7 +123,7 @@ class SignerService implements RelayerInterface {
               this.logger.info(
                 `Signed checkpoint ${previousIndex} at ${tx.transactionHash}`
               );
-            });
+            }, this.logger);
           }
         }
       } catch (err) {
@@ -221,7 +221,7 @@ class SignerService implements RelayerInterface {
             this.logger.info(
               `Signed recovery transaction at ${tx.transactionHash}`
             );
-          });
+          }, this.logger);
         }
       } catch (err) {
         this.logger.error(`[START_RECOVERY_SIGNING] ${err?.message}`);
