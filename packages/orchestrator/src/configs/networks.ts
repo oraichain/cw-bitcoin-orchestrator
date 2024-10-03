@@ -8,7 +8,7 @@ export interface Network {
 
 export const OraichainConfig: Network = {
   prefix: "orai",
-  gasPrice: GasPrice.fromString("0.002orai"),
+  gasPrice: GasPrice.fromString("0.0015orai"),
   feeToken: "orai",
 };
 
