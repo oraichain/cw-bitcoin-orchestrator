@@ -25,6 +25,7 @@ const envVarsSchema = Joi.object()
     LEGITIMATE_CHECKPOINT_INTERVAL: Joi.number().default(24 * 60 * 60),
     DEPOSIT_BUFFER: Joi.number().error(new Error("DEPOSIT_BUFFER is required")),
     STORAGE_DIR_NAME: Joi.string().default(".oraibtc-relayer"),
+    WEBHOOK_URL: Joi.string().error(new Error("WEBHOOK_URL is required")),
   })
   .unknown();
 
@@ -67,5 +68,8 @@ export default {
   },
   deposit: {
     depositBuffer: envVars.DEPOSIT_BUFFER,
+  },
+  logger: {
+    webhookUrl: envVars.WEBHOOK_URL,
   },
 };

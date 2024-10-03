@@ -23,6 +23,7 @@ import {
 import * as btc from "bitcoinjs-lib";
 import { RPCClient } from "rpc-bitcoin";
 import { setTimeout } from "timers/promises";
+import { Logger } from "winston";
 import {
   BitcoinBlock,
   BitcoinTransaction,
@@ -30,6 +31,7 @@ import {
   VerbosedBlockHeader,
 } from "../../@types";
 import env from "../../configs/env";
+import { logger } from "../../configs/logger";
 import {
   ITERATION_DELAY,
   RELAY_DEPOSIT_BLOCKS_SIZE,
@@ -68,6 +70,7 @@ class RelayerService implements RelayerInterface {
   // receiver -> bitcoin_address -> (txid, vout) -> Deposit
   depositIndex: Map<string, Map<string, Map<string, Deposit>>>;
   network?: BitcoinNetwork;
+  logger: Logger;
 
   constructor(
     btcClient: RPCClient,
@@ -87,6 +90,7 @@ class RelayerService implements RelayerInterface {
     this.relayTxids = new Map<string, RelayTxIdBody>();
     this.depositIndex = new Map<string, Map<string, Map<string, Deposit>>>();
     this.network = network;
+    this.logger = logger("RelayerService");
   }
 
   async relay() {
@@ -127,7 +131,7 @@ class RelayerService implements RelayerInterface {
           );
         }
       } catch (err) {
-        console.log(`[RELAY_HEADER] ${err?.message}`);
+        this.logger.error(`[RELAY_HEADER] ${err?.message}`);
       }
       await setTimeout(ITERATION_DELAY.RELAY_HEADER);
     }
@@ -153,13 +157,13 @@ class RelayerService implements RelayerInterface {
     ).map((item) => item.result);
 
     if (fullNodeInfo.height < sideChainInfo.height) {
-      console.log!("Full node is still syncing with real running node!");
+      this.logger.info("Full node is still syncing with real running node!");
       return;
     }
     let startHeader = await this.commonAncestor(fullNodeHash, sideChainHash);
     let wrappedHeaders = await this.getHeaderBatch(startHeader.hash);
 
-    console.log(
+    this.logger.info(
       `Relaying headers...\n\theight=${wrappedHeaders[0].height}\n\tbatches=${wrappedHeaders.length}`
     );
 
@@ -167,13 +171,13 @@ class RelayerService implements RelayerInterface {
       const tx = await this.lightClientBitcoinClient.relayHeaders({
         headers: [...wrappedHeaders],
       });
-      console.log(`Relayed headers with tx hash: ${tx.transactionHash}`);
+      this.logger.info(`Relayed headers with tx hash: ${tx.transactionHash}`);
     });
 
     let currentSidechainBlockHash =
       await this.lightClientBitcoinClient.sidechainBlockHash();
     if (currentSidechainBlockHash === fullNodeHash) {
-      console.log("Relayed all headers");
+      this.logger.info("Relayed all headers");
     }
     return;
   }
@@ -277,7 +281,7 @@ class RelayerService implements RelayerInterface {
 
   // [RELAY_DEPOSIT]
   async relayDeposit() {
-    console.log("Starting deposit relay...");
+    this.logger.info("Starting deposit relay...");
     let prevTip = null;
     while (true) {
       try {
@@ -314,7 +318,7 @@ class RelayerService implements RelayerInterface {
         console.log("Waiting some seconds for next scan...");
       } catch (err) {
         if (!err?.message.includes("Waiting for next header...")) {
-          console.log(`[RELAY_DEPOSIT] ${err?.message}`);
+          this.logger.error(`[RELAY_DEPOSIT] ${err?.message}`);
         }
       }
       await setTimeout(ITERATION_DELAY.RELAY_DEPOSIT);
@@ -360,7 +364,7 @@ class RelayerService implements RelayerInterface {
 
           if (!script) continue;
 
-          console.log(`Found pending deposit transaction ${txid}`);
+          this.logger.info(`Found pending deposit transaction ${txid}`);
           this.relayTxids.set(txid, {
             tx,
             script,
@@ -383,7 +387,7 @@ class RelayerService implements RelayerInterface {
         }
       }
     } catch (err) {
-      console.log(`[SCAN_TX_FROM_MEMPOOL] ${err?.message}`);
+      this.logger.error(`[SCAN_TX_FROM_MEMPOOL] ${err?.message}`);
     }
   }
 
@@ -397,14 +401,14 @@ class RelayerService implements RelayerInterface {
           try {
             await this.maybeRelayDeposit(tx, block.height, block.hash);
           } catch (err) {
-            console.log(
+            this.logger.error(
               `[MAYBE_RELAY_DEPOSIT] ${err?.message} at tx ${tx.txid}`
             );
           }
         }
       }
     } catch (err) {
-      console.log(`[SCAN_DEPOSITS] ${err?.message}`);
+      this.logger.error(`[SCAN_DEPOSITS] ${err?.message}`);
     }
   }
 
@@ -518,14 +522,16 @@ class RelayerService implements RelayerInterface {
           dest: script.dest,
           sigsetIndex: Number(script.sigsetIndex),
         });
-        console.log(`Relayed deposit tx ${txid} at tx ${tx.transactionHash}`);
+        this.logger.info(
+          `Relayed deposit tx ${txid} at tx ${tx.transactionHash}`
+        );
       });
     }
   }
 
   // [RELAY RECOVERY DEPOSITS]
   async relayRecoveryDeposits() {
-    console.log("Starting recovery deposit relay...");
+    this.logger.info("Starting recovery deposit relay...");
     const relayed = {};
     while (true) {
       try {
@@ -540,7 +546,7 @@ class RelayerService implements RelayerInterface {
           console.log(`Relayed recovery tx ${tx}`);
         }
       } catch (err) {
-        console.log(`[RELAY_RECOVERY_DEPOSIT] ${err?.message}`);
+        this.logger.error(`[RELAY_RECOVERY_DEPOSIT] ${err?.message}`);
       }
       await setTimeout(ITERATION_DELAY.RELAY_RECOVERY);
     }
@@ -548,7 +554,7 @@ class RelayerService implements RelayerInterface {
 
   // [RELAY CHECKPOINT]
   async relayCheckpoints() {
-    console.log("Starting checkpoint relay...");
+    this.logger.info("Starting checkpoint relay...");
     const relayed = {};
     while (true) {
       try {
@@ -567,7 +573,7 @@ class RelayerService implements RelayerInterface {
           } catch (err) {}
         }
       } catch (err) {
-        console.log(`[RELAY_CHECKPOINT] ${err?.message}`);
+        this.logger.error(`[RELAY_CHECKPOINT] ${err?.message}`);
       }
       await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT);
     }
@@ -576,7 +582,7 @@ class RelayerService implements RelayerInterface {
   // [RELAY CHECKPOINT CONFIRM]
   async relayCheckpointConf() {
     let relayed = {};
-    console.log("Starting checkpoint confirm relay...");
+    this.logger.info("Starting checkpoint confirm relay...");
     while (true) {
       try {
         let [confirmedIndex, unconfirmedIndex, lastCompletedIndex] =
@@ -664,7 +670,7 @@ class RelayerService implements RelayerInterface {
           !err?.message.includes("Waiting for next scan...") &&
           !err?.message.includes("No completed checkpoints yet")
         ) {
-          console.log(`[RELAY_CHECKPOINT_CONF] ${err?.message}`);
+          this.logger.error(`[RELAY_CHECKPOINT_CONF] ${err?.message}`);
         }
       }
       await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_CONF);

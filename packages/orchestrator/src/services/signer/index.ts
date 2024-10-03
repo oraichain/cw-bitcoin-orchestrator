@@ -12,8 +12,10 @@ import path from "path";
 import { RPCClient } from "rpc-bitcoin";
 import { setTimeout } from "timers/promises";
 import * as ecc from "tiny-secp256k1";
+import { Logger } from "winston";
 import { BlockHeader } from "../../@types";
 import env from "../../configs/env";
+import { logger } from "../../configs/logger";
 import { ITERATION_DELAY } from "../../constants";
 import { getCurrentNetwork } from "../../utils/bitcoin";
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
@@ -24,6 +26,7 @@ class SignerService implements RelayerInterface {
   lightClientBitcoinClient: LightClientBitcoinClient;
   appBitcoinClient: AppBitcoinClient;
   network?: BitcoinNetwork;
+  logger: Logger;
 
   constructor(
     btcClient: RPCClient,
@@ -35,6 +38,7 @@ class SignerService implements RelayerInterface {
     this.lightClientBitcoinClient = lightClientBitcoinClient;
     this.appBitcoinClient = appBitcoinClient;
     this.network = network;
+    this.logger = logger("SignerService");
   }
 
   async relay() {
@@ -116,14 +120,16 @@ class SignerService implements RelayerInterface {
                 sigs,
                 xpub: encodeXpub({ key: xpub }),
               });
-              console.log(
+              this.logger.info(
                 `Signed checkpoint ${previousIndex} at ${tx.transactionHash}`
               );
             });
           }
         }
       } catch (err) {
-        console.log(`[START_CHECKPOINT_SIGNING] ${err?.message} ${err?.stack}`);
+        this.logger.error(
+          `[START_CHECKPOINT_SIGNING] ${err?.message} ${err?.stack}`
+        );
       }
 
       await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES);
@@ -212,11 +218,13 @@ class SignerService implements RelayerInterface {
               sigs,
               xpub: encodeXpub({ key: xpub }),
             });
-            console.log(`Signed recovery transaction at ${tx.transactionHash}`);
+            this.logger.info(
+              `Signed recovery transaction at ${tx.transactionHash}`
+            );
           });
         }
       } catch (err) {
-        console.log(`[START_RECOVERY_SIGNING] ${err?.message}`);
+        this.logger.error(`[START_RECOVERY_SIGNING] ${err?.message}`);
       }
 
       await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES);
