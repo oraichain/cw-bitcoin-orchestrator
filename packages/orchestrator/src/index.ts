@@ -35,6 +35,35 @@ yargs(hideBin(process.argv))
     const { default: triggerBlockCmd } = await import("./bin/trigger_block");
     await triggerBlockCmd();
   })
+  .command(
+    "submit-deposit-address",
+    "Submit deposit address",
+    (yargs) => {
+      return yargs
+        .option("oraiAddress", {
+          type: "string",
+          describe: "Oraichain wallet address",
+          demandOption: true,
+        })
+        .option("depositAddress", {
+          type: "string",
+          describe: "Deposit address to submit",
+          demandOption: true,
+        })
+        .option("sigsetIndex", {
+          type: "number",
+          describe: "Sigset index associated with the deposit",
+          demandOption: true,
+        });
+    },
+    async (argvs) => {
+      const { oraiAddress, depositAddress, sigsetIndex } = argvs;
+      const { default: submitDepositAddressCmd } = await import(
+        "./bin/submit_deposit_address"
+      );
+      await submitDepositAddressCmd(oraiAddress, depositAddress, sigsetIndex);
+    }
+  )
   .option("help", {
     alias: "h",
     demandOption: false,
