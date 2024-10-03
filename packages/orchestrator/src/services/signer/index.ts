@@ -80,7 +80,7 @@ class SignerService implements RelayerInterface {
         let previousIndex = buildingIndex - 1;
 
         if (previousIndex < 0) {
-          await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES);
+          await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES_INTERVAL);
           continue;
         }
 
@@ -132,7 +132,7 @@ class SignerService implements RelayerInterface {
         );
       }
 
-      await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES);
+      await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES_INTERVAL);
     }
   }
 
@@ -227,7 +227,7 @@ class SignerService implements RelayerInterface {
         this.logger.error(`[START_RECOVERY_SIGNING] ${err?.message}`);
       }
 
-      await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES);
+      await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES_INTERVAL);
     }
   }
 

@@ -117,6 +117,8 @@ class RelayerService implements RelayerInterface {
 
         if (fullNodeHash !== sideChainHash) {
           await this.relayHeaderBatch(fullNodeHash, sideChainHash);
+          // Delay between headers
+          await setTimeout(ITERATION_DELAY.RELAY_HEADER_BATCH_DELAY);
           continue;
         }
 
@@ -133,7 +135,7 @@ class RelayerService implements RelayerInterface {
       } catch (err) {
         this.logger.error(`[RELAY_HEADER] ${err?.message}`);
       }
-      await setTimeout(ITERATION_DELAY.RELAY_HEADER);
+      await setTimeout(ITERATION_DELAY.RELAY_HEADER_INTERVAL);
     }
   }
 
@@ -321,7 +323,7 @@ class RelayerService implements RelayerInterface {
           this.logger.error(`[RELAY_DEPOSIT] ${err?.message}`);
         }
       }
-      await setTimeout(ITERATION_DELAY.RELAY_DEPOSIT);
+      await setTimeout(ITERATION_DELAY.RELAY_DEPOSIT_INTERVAL);
     }
   }
 
@@ -548,7 +550,7 @@ class RelayerService implements RelayerInterface {
       } catch (err) {
         this.logger.error(`[RELAY_RECOVERY_DEPOSIT] ${err?.message}`);
       }
-      await setTimeout(ITERATION_DELAY.RELAY_RECOVERY);
+      await setTimeout(ITERATION_DELAY.RELAY_RECOVERY_INTERVAL);
     }
   }
 
@@ -575,7 +577,7 @@ class RelayerService implements RelayerInterface {
       } catch (err) {
         this.logger.error(`[RELAY_CHECKPOINT] ${err?.message}`);
       }
-      await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT);
+      await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_INTERVAL);
     }
   }
 
@@ -673,7 +675,7 @@ class RelayerService implements RelayerInterface {
           this.logger.error(`[RELAY_CHECKPOINT_CONF] ${err?.message}`);
         }
       }
-      await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_CONF);
+      await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_CONF_INTERVAL);
     }
   }
 
