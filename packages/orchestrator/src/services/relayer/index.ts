@@ -37,6 +37,7 @@ import {
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
   RETRY_DELAY,
+  SCAN_MEMPOOL_CHUNK_SIZE,
 } from "../../constants";
 import {
   calculateOutpointKey,
@@ -330,62 +331,67 @@ class RelayerService implements RelayerInterface {
   async scanTxsFromMempools() {
     try {
       let mempoolTxs = await this.btcClient.getrawmempool();
-      let detailMempoolTxs: BitcoinTransaction[] = await retry(
-        async () => {
-          return (
-            await this.btcClient.batch([
-              ...mempoolTxs.map((txid: string) => ({
-                method: "getrawtransaction",
-                params: [txid, true],
-              })),
-            ])
-          ).map((item) => item.result);
-        },
-        10,
-        RETRY_DELAY
-      );
+      const txChunks = chunkArray(mempoolTxs, SCAN_MEMPOOL_CHUNK_SIZE);
+      for (const txChunk of txChunks) {
+        let detailMempoolTxs: BitcoinTransaction[] = await retry(
+          async () => {
+            return (
+              await this.btcClient.batch([
+                ...txChunk.map((txid: string) => ({
+                  method: "getrawtransaction",
+                  params: [txid, true],
+                })),
+              ])
+            ).map((item) => item.result);
+          },
+          3,
+          RETRY_DELAY
+        );
 
-      for (const tx of detailMempoolTxs) {
-        let txid = tx.txid;
-        if (this.relayTxids.get(txid)) continue;
+        for (const tx of detailMempoolTxs) {
+          let txid = tx.txid;
+          if (this.relayTxids.get(txid)) continue;
 
-        const outputs = tx.vout;
+          const outputs = tx.vout;
 
-        for (let vout = 0; vout < outputs.length; vout++) {
-          let output = outputs[vout];
-          if (output.scriptPubKey.type != ScriptPubkeyType.WitnessScriptHash) {
-            continue;
+          for (let vout = 0; vout < outputs.length; vout++) {
+            let output = outputs[vout];
+            if (
+              output.scriptPubKey.type != ScriptPubkeyType.WitnessScriptHash
+            ) {
+              continue;
+            }
+
+            const address = decodeAddress(output, this.network);
+            if (address !== output.scriptPubKey.address) continue;
+
+            const script = await this.watchedScriptClient.getScript(
+              output.scriptPubKey.hex
+            );
+
+            if (!script) continue;
+
+            this.logger.info(`Found pending deposit transaction ${txid}`);
+            this.relayTxids.set(txid, {
+              tx,
+              script,
+            });
+
+            setNestedMap(
+              this.depositIndex,
+              [
+                toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+                address,
+                getTxidKey(txid, vout),
+              ],
+              {
+                txid,
+                vout,
+                height: undefined,
+                amount: output.value,
+              } as Deposit
+            );
           }
-
-          const address = decodeAddress(output, this.network);
-          if (address !== output.scriptPubKey.address) continue;
-
-          const script = await this.watchedScriptClient.getScript(
-            output.scriptPubKey.hex
-          );
-
-          if (!script) continue;
-
-          this.logger.info(`Found pending deposit transaction ${txid}`);
-          this.relayTxids.set(txid, {
-            tx,
-            script,
-          });
-
-          setNestedMap(
-            this.depositIndex,
-            [
-              toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
-              address,
-              getTxidKey(txid, vout),
-            ],
-            {
-              txid,
-              vout,
-              height: undefined,
-              amount: output.value,
-            } as Deposit
-          );
         }
       }
     } catch (err) {
