@@ -40,6 +40,7 @@ import {
   SCAN_BLOCK_TXS_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_SIZE,
+  SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY,
 } from "../../constants";
 import { chunkArray } from "../../utils/array";
 import {
@@ -585,6 +586,8 @@ class RelayerService implements RelayerInterface {
             relayed[checkpoint] = true;
             console.log(`Relayed checkpoint tx ${tx}`);
           } catch (err) {}
+
+          await setTimeout(SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY);
         }
       } catch (err) {
         this.logger.error(`[RELAY_CHECKPOINT] ${err?.message}`);
