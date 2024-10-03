@@ -41,6 +41,7 @@ import {
   SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_SIZE,
   SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY,
+  SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY,
 } from "../../constants";
 import { chunkArray } from "../../utils/array";
 import {
@@ -553,12 +554,12 @@ class RelayerService implements RelayerInterface {
         const txs = await this.appBitcoinClient.signedRecoveryTxs();
         for (const recoveryTx of txs) {
           if (relayed[recoveryTx]) continue;
-
           const tx = await this.btcClient.sendrawtransaction({
             hexstring: Buffer.from(recoveryTx, "base64").toString("hex"),
           });
           relayed[recoveryTx] = true;
           console.log(`Relayed recovery tx ${tx}`);
+          await setTimeout(SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY);
         }
       } catch (err) {
         this.logger.error(`[RELAY_RECOVERY_DEPOSIT] ${err?.message}`);
