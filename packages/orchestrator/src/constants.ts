@@ -1,6 +1,7 @@
 export const RELAY_HEADER_BATCH_SIZE = 250;
 export const SCAN_MEMPOOL_CHUNK_SIZE = 1000;
 export const SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY = 100;
+export const SCAN_BLOCK_TXS_INTERVAL_DELAY = 100;
 export const RELAY_DEPOSIT_BLOCKS_SIZE = 200; // 10 blocks
 export const RETRY_DELAY = 1000; // 1 second
 export const ITERATION_DELAY = {

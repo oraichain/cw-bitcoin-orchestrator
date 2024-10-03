@@ -37,6 +37,7 @@ import {
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
   RETRY_DELAY,
+  SCAN_BLOCK_TXS_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_SIZE,
 } from "../../constants";
@@ -425,6 +426,7 @@ class RelayerService implements RelayerInterface {
             );
           }
         }
+        await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
       }
     } catch (err) {
       this.logger.error(`[SCAN_DEPOSITS] ${err?.message}`);
