@@ -153,7 +153,7 @@ class RelayerService implements RelayerInterface {
               params: [sideChainHash],
             },
           ]),
-        10,
+        1,
         RETRY_DELAY
       )
     ).map((item) => item.result);
@@ -191,7 +191,7 @@ class RelayerService implements RelayerInterface {
           blockhash: blockHash,
           verbose: true,
         }),
-      10,
+      1,
       RETRY_DELAY
     );
     let wrappedHeaders = [];
@@ -205,7 +205,7 @@ class RelayerService implements RelayerInterface {
               blockhash: nextHash,
               verbose: true,
             }),
-          10,
+          1,
           RETRY_DELAY
         );
         const wrappedHeader: WrappedHeader = newWrappedHeader(
@@ -239,7 +239,7 @@ class RelayerService implements RelayerInterface {
               params: [rightHash],
             },
           ]),
-        10,
+        1,
         RETRY_DELAY
       )
     ).map((item) => item.result);
@@ -262,7 +262,7 @@ class RelayerService implements RelayerInterface {
             this.btcClient.getblockheader({
               blockhash: prev,
             }),
-          10,
+          1,
           RETRY_DELAY
         );
       } else {
@@ -272,7 +272,7 @@ class RelayerService implements RelayerInterface {
             this.btcClient.getblockheader({
               blockhash: prev,
             }),
-          10,
+          1,
           RETRY_DELAY
         );
       }
