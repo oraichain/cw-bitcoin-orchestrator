@@ -20,7 +20,7 @@ export const wrappedExecuteTransaction = async (
       if (message?.includes("account sequence mismatch")) {
         continue;
       } else {
-        logger.error(`[UNEXPECTED ERROR] ${message}`);
+        logger.error(`[UNEXPECTED ERROR] Error:`, error);
         break;
       }
     }
