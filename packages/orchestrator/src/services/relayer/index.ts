@@ -352,9 +352,6 @@ class RelayerService implements RelayerInterface {
           3,
           RETRY_DELAY
         );
-        console.log({
-          detailMempoolTxs,
-        });
         for (const tx of detailMempoolTxs) {
           if (!tx?.txid) {
             this.logger.info(`Invalid tx: ${tx} ${detailMempoolTxs}`);
