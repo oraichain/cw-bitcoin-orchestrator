@@ -8,6 +8,7 @@ import cors from "cors";
 import express from "express";
 import helmet from "helmet";
 import http from "http";
+import httpStatus from "http-status";
 import os from "os";
 import path from "path";
 import { RPCClient } from "rpc-bitcoin";
@@ -55,6 +56,12 @@ const start = async () => {
   app.use("/api/bitcoin", bitcoinRoute);
   app.use("/api/checkpoint", checkpointRoute);
   app.use("/api/contract", contractRoute);
+  app.get("/node_info", (_, res) => {
+    res.status(httpStatus.OK).json({
+      message: "Ok",
+      data: [],
+    });
+  });
 
   server.listen(PORT, async () => {
     const homeDir = os.homedir();
