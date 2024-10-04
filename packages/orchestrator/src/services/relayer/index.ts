@@ -139,7 +139,7 @@ class RelayerService implements RelayerInterface {
           );
         }
       } catch (err) {
-        this.logger.error(`[RELAY_HEADER] ${err?.message}`);
+        this.logger.error("[RELAY HEADER] Error:", err);
       }
       await setTimeout(ITERATION_DELAY.RELAY_HEADER_INTERVAL);
     }
@@ -326,7 +326,7 @@ class RelayerService implements RelayerInterface {
         console.log("Waiting some seconds for next scan...");
       } catch (err) {
         if (!err?.message.includes("Waiting for next header...")) {
-          this.logger.error(`[RELAY_DEPOSIT] ${err?.message}`);
+          this.logger.error("[RELAY_DEPOSIT] Error:", err);
         }
       }
       await setTimeout(ITERATION_DELAY.RELAY_DEPOSIT_INTERVAL);
@@ -402,7 +402,7 @@ class RelayerService implements RelayerInterface {
         await setTimeout(SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY);
       }
     } catch (err) {
-      this.logger.error(`[SCAN_TX_FROM_MEMPOOL] ${err?.message}`);
+      this.logger.error(`[SCAN_TX_FROM_MEMPOOL] Error:`, err);
     }
   }
 
@@ -417,14 +417,15 @@ class RelayerService implements RelayerInterface {
             await this.maybeRelayDeposit(tx, block.height, block.hash);
           } catch (err) {
             this.logger.error(
-              `[MAYBE_RELAY_DEPOSIT] ${err?.message} at tx ${tx.txid}`
+              `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
+              err
             );
           }
         }
         await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
       }
     } catch (err) {
-      this.logger.error(`[SCAN_DEPOSITS] ${err?.message}`);
+      this.logger.error(`[SCAN_DEPOSITS] Error:`, err);
     }
   }
 
@@ -562,7 +563,7 @@ class RelayerService implements RelayerInterface {
           await setTimeout(SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY);
         }
       } catch (err) {
-        this.logger.error(`[RELAY_RECOVERY_DEPOSIT] ${err?.message}`);
+        this.logger.error(`[RELAY_RECOVERY_DEPOSIT] Error:`, err);
       }
       await setTimeout(ITERATION_DELAY.RELAY_RECOVERY_INTERVAL);
     }
@@ -591,7 +592,7 @@ class RelayerService implements RelayerInterface {
           await setTimeout(SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY);
         }
       } catch (err) {
-        this.logger.error(`[RELAY_CHECKPOINT] ${err?.message}`);
+        this.logger.error(`[RELAY_CHECKPOINT] Error:`, err);
       }
       await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_INTERVAL);
     }
@@ -688,7 +689,7 @@ class RelayerService implements RelayerInterface {
           !err?.message.includes("Waiting for next scan...") &&
           !err?.message.includes("No completed checkpoints yet")
         ) {
-          this.logger.error(`[RELAY_CHECKPOINT_CONF] ${err?.message}`);
+          this.logger.error(`[RELAY_CHECKPOINT_CONF] Error:`, err);
         }
       }
       await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_CONF_INTERVAL);

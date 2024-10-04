@@ -127,9 +127,7 @@ class SignerService implements RelayerInterface {
           }
         }
       } catch (err) {
-        this.logger.error(
-          `[START_CHECKPOINT_SIGNING] ${err?.message} ${err?.stack}`
-        );
+        this.logger.error(`[START_CHECKPOINT_SIGNING] Error:`, err);
       }
 
       await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES_INTERVAL);
@@ -224,7 +222,7 @@ class SignerService implements RelayerInterface {
           }, this.logger);
         }
       } catch (err) {
-        this.logger.error(`[START_RECOVERY_SIGNING] ${err?.message}`);
+        this.logger.error(`[START_RECOVERY_SIGNING] Error:`, err);
       }
 
       await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES_INTERVAL);

@@ -26,7 +26,7 @@ class TriggerBlocks {
       try {
         await this.triggerBlocks();
       } catch (err) {
-        this.logger.error(err?.message);
+        this.logger.error("[TRIGGER BLOCK] Error:", err);
       }
       await setTimeout(10 * 1000); // 1 minutes per block
     }
