@@ -354,6 +354,10 @@ class RelayerService implements RelayerInterface {
         );
 
         for (const tx of detailMempoolTxs) {
+          if (!tx?.txid) {
+            this.logger.info("Invalid tx:", tx);
+            continue;
+          }
           let txid = tx.txid;
           if (this.relayTxids.get(txid)) continue;
 
