@@ -111,7 +111,7 @@ class RelayerService implements RelayerInterface {
 
   // [RELAY HEADER]
   async relayHeader() {
-    console.log("Starting header relay...");
+    this.logger.info("Starting header relay...");
     let lastHash = null;
 
     while (true) {
@@ -134,7 +134,7 @@ class RelayerService implements RelayerInterface {
             await this.btcClient.getblockheader({
               blockhash: lastHash,
             });
-          console.log(
+          this.logger.info(
             `Sidechain header state is up-to-date:\n\thash=${lastHashHeader.hash}\n\theight=${lastHashHeader.height}`
           );
         }
@@ -293,13 +293,13 @@ class RelayerService implements RelayerInterface {
     let prevTip = null;
     while (true) {
       try {
-        console.log("Scanning mempool for deposit transactions...");
+        this.logger.info("Scanning mempool for deposit transactions...");
 
         // Mempool handler
         await this.scanTxsFromMempools();
 
         // Block handler
-        console.log("Scanning blocks for deposit transactions...");
+        this.logger.info("Scanning blocks for deposit transactions...");
         const tip = await this.lightClientBitcoinClient.sidechainBlockHash();
 
         if (prevTip === tip) {
@@ -323,7 +323,7 @@ class RelayerService implements RelayerInterface {
         await this.scanDeposits(numBlocks);
         prevTip = tip;
 
-        console.log("Waiting some seconds for next scan...");
+        this.logger.info("Waiting some seconds for next scan...");
       } catch (err) {
         if (!err?.message.includes("Waiting for next header...")) {
           this.logger.error("[RELAY_DEPOSIT] Error:", err);
@@ -562,7 +562,7 @@ class RelayerService implements RelayerInterface {
             hexstring: Buffer.from(recoveryTx, "base64").toString("hex"),
           });
           relayed[recoveryTx] = true;
-          console.log(`Relayed recovery tx ${tx}`);
+          this.logger.info(`Relayed recovery tx ${tx}`);
           await setTimeout(SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY);
         }
       } catch (err) {
@@ -589,7 +589,7 @@ class RelayerService implements RelayerInterface {
               hexstring: Buffer.from(checkpoint, "base64").toString("hex"),
             });
             relayed[checkpoint] = true;
-            console.log(`Relayed checkpoint tx ${tx}`);
+            this.logger.info(`Relayed checkpoint tx ${tx}`);
           } catch (err) {}
 
           await setTimeout(SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY);
@@ -661,7 +661,7 @@ class RelayerService implements RelayerInterface {
         if (maybeConf !== null) {
           let [height, blockHash] = maybeConf;
           if (height > btcHeight - minConfs) {
-            console.log(
+            this.logger.info(
               `Waiting for more confirmations to relay checkpoint confirm with tx ${txid} ...`
             );
             continue;
@@ -681,7 +681,7 @@ class RelayerService implements RelayerInterface {
                 )
               ).toString("base64"),
             });
-            console.log(
+            this.logger.info(
               `Relayed checkpoint confirmation with tx ${txid} at tx ${tx.transactionHash}`
             );
           }, this.logger);

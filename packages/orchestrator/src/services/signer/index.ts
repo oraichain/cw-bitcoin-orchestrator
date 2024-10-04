@@ -52,7 +52,7 @@ class SignerService implements RelayerInterface {
       const tx = await this.appBitcoinClient.setSignatoryKey({
         xpub: encodeXpub({ key: xpub }),
       });
-      console.log(`Setting signatory key at: ${tx.transactionHash}`);
+      this.logger.info(`Setting signatory key at: ${tx.transactionHash}`);
     }
 
     await this.startRelay({
