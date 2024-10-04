@@ -349,7 +349,7 @@ class RelayerService implements RelayerInterface {
               ])
             ).map((item) => item.result);
           },
-          3,
+          1,
           RETRY_DELAY
         );
         for (const tx of detailMempoolTxs) {
