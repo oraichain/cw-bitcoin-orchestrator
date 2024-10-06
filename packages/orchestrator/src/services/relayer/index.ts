@@ -113,19 +113,40 @@ class RelayerService implements RelayerInterface {
 
   // [TRACKER]
   async trackMemoryLeak() {
-    let previousHeap = 0;
+    let previousHeapTotal = 0;
+    let previousRss = 0;
+    let previousExternal = 0;
     while (true) {
       const used = process.memoryUsage();
-      const currentHeap = used.heapTotal / 1024 / 1024;
-      console.log(`Memory usage: ${currentHeap} MB`);
-      if (previousHeap > 0 && currentHeap > previousHeap) {
+      const currentHeapTotal = used.heapTotal / 1024 / 1024;
+      const currentRss = used.rss / 1024 / 1024;
+      const currentExternal = used.external / 1024 / 1024;
+      console.log(`Node process is consumed: ${currentRss} MB`);
+      console.log(
+        `Memory heap total that GC thinks to allocate: ${currentHeapTotal} MB`
+      );
+      if (previousRss > 0 && currentRss > previousRss) {
         this.logger.info(
-          `Heap size increased ${
-            ((currentHeap - previousHeap) * 100) / currentHeap
-          } detected!`
+          `Rss increased: ${((currentRss - previousRss) * 100) / currentRss}%`
         );
       }
-      previousHeap = currentHeap;
+      if (previousHeapTotal > 0 && currentHeapTotal > previousHeapTotal) {
+        this.logger.info(
+          `Heap size increased ${
+            ((currentHeapTotal - previousHeapTotal) * 100) / currentHeapTotal
+          }%`
+        );
+      }
+      if (previousExternal > 0 && currentExternal > previousExternal) {
+        this.logger.info(
+          `External memory increased ${
+            ((currentExternal - previousExternal) * 100) / currentExternal
+          }%`
+        );
+      }
+      previousHeapTotal = currentHeapTotal;
+      previousRss = currentRss;
+      previousExternal = currentExternal;
       await setTimeout(5000);
     }
   }
