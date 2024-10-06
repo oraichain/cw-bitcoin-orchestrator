@@ -447,21 +447,26 @@ class RelayerService implements RelayerInterface {
   async scanDeposits(numBlocks: number) {
     try {
       let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
-      let blocks = await this.lastNBlocks(numBlocks, tip);
-      // for (const block of blocks) {
-      // let txs = await this.filterDepositTxs(block.tx);
-      // for (const tx of txs) {
-      //   try {
-      //     await this.maybeRelayDeposit(tx, block.height, block.hash);
-      //   } catch (err) {
-      //     this.logger.error(
-      //       `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
-      //       err
-      //     );
-      //   }
-      // }
-      // await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
-      // }
+      let hash = tip;
+      for (let i = 0; i < numBlocks; i++) {
+        let block: BitcoinBlock = await this.btcClient.getblock({
+          blockhash: hash,
+          verbosity: 2,
+        });
+        let txs = await this.filterDepositTxs(block.tx);
+        for (const tx of txs) {
+          try {
+            await this.maybeRelayDeposit(tx, block.height, block.hash);
+          } catch (err) {
+            this.logger.error(
+              `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
+              err
+            );
+          }
+        }
+        hash = block.previousblockhash;
+        await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
+      }
       // Remove expired
       await this.watchedScriptClient.removeExpired();
     } catch (err) {
@@ -489,20 +494,20 @@ class RelayerService implements RelayerInterface {
     return txs.filter((_, i) => results[i]);
   }
 
-  async lastNBlocks(numBlocks: number, tip: string): Promise<BitcoinBlock[]> {
-    let blocks = [];
-    let hash = tip; // use for traversing backwards
-    for (let i = 0; i < numBlocks; i++) {
-      let block: BitcoinBlock = await this.btcClient.getblock({
-        blockhash: hash,
-        verbosity: 2,
-      });
-      hash = block.previousblockhash;
-      blocks = [...blocks, block];
-      await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
-    }
-    return blocks;
-  }
+  // async lastNBlocks(numBlocks: number, tip: string): Promise<BitcoinBlock[]> {
+  //   let blocks = [];
+  //   let hash = tip; // use for traversing backwards
+  //   for (let i = 0; i < numBlocks; i++) {
+  //     let block: BitcoinBlock = await this.btcClient.getblock({
+  //       blockhash: hash,
+  //       verbosity: 2,
+  //     });
+  //     hash = block.previousblockhash;
+  //     blocks = [...blocks, block];
+  //     await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
+  //   }
+  //   return blocks;
+  // }
 
   async maybeRelayDeposit(
     tx: BitcoinTransaction,
@@ -753,17 +758,22 @@ class RelayerService implements RelayerInterface {
         break;
       }
 
-      let blocks = await this.lastNBlocks(Math.min(numBlocks, baseHeight), tip);
-      for (let i = 0; i < blocks.length; i++) {
-        let block = blocks[i];
+      let blockLength = Math.min(numBlocks, baseHeight);
+      let hash = tip;
+      for (let i = 0; i < blockLength; i++) {
+        let block: BitcoinBlock = await this.btcClient.getblock({
+          blockhash: hash,
+          verbosity: 2,
+        });
         let height = baseHeight - i;
         let searchedTxid = block.tx.find((tx) => tx.txid === txid);
         if (searchedTxid !== undefined) {
           return [height, block.hash];
         }
+        hash = block.previousblockhash;
       }
 
-      let oldestBlock = blocks[blocks.length - 1].hash;
+      let oldestBlock = hash;
       if (tip === oldestBlock) break;
       tip = oldestBlock;
       baseHeight = (
