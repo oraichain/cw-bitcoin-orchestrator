@@ -450,16 +450,17 @@ class RelayerService implements RelayerInterface {
       let blocks = await this.lastNBlocks(numBlocks, tip);
       for (const block of blocks) {
         let txs = await this.filterDepositTxs(block.tx);
-        for (const tx of txs) {
-          try {
-            await this.maybeRelayDeposit(tx, block.height, block.hash);
-          } catch (err) {
-            this.logger.error(
-              `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
-              err
-            );
-          }
-        }
+        console.log(txs);
+        // for (const tx of txs) {
+        //   try {
+        //     await this.maybeRelayDeposit(tx, block.height, block.hash);
+        //   } catch (err) {
+        //     this.logger.error(
+        //       `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
+        //       err
+        //     );
+        //   }
+        // }
         await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
       }
       // Remove expired
