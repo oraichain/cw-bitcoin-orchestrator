@@ -450,7 +450,7 @@ class RelayerService implements RelayerInterface {
       let blocks = await this.lastNBlocks(numBlocks, tip);
       for (const block of blocks) {
         let txs = await this.filterDepositTxs(block.tx);
-        console.log(txs);
+        console.log("Yellow", txs);
         // for (const tx of txs) {
         //   try {
         //     await this.maybeRelayDeposit(tx, block.height, block.hash);
