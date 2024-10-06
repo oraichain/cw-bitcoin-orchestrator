@@ -119,6 +119,7 @@ class RelayerService implements RelayerInterface {
       const used = process.memoryUsage();
       const currentHeapTotal = used.heapTotal / 1024 / 1024;
       const currentHeapUsed = used.heapUsed / 1024 / 1024;
+      this.logger.info("=============================================");
       if (previousHeapTotal > 0 && currentHeapTotal > previousHeapTotal) {
         this.logger.info(
           `Memory heap total that GC thinks to allocate: ${currentHeapTotal} MB`
@@ -144,9 +145,10 @@ class RelayerService implements RelayerInterface {
           "Heap is over-used the memory, please check the code!"
         );
       }
+      this.logger.info("=============================================");
       previousHeapTotal = currentHeapTotal;
       previousHeapUsed = currentHeapUsed;
-      await setTimeout(5000);
+      await setTimeout(ITERATION_DELAY.TRACK_MEMORY_LEAK);
     }
   }
 
