@@ -446,7 +446,7 @@ class RelayerService implements RelayerInterface {
   async scanDeposits(numBlocks: number) {
     try {
       let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
-      // let blocks = await this.lastNBlocks(numBlocks, tip);
+      let blocks = await this.lastNBlocks(numBlocks, tip);
       // for (const block of blocks) {
       // let txs = await this.filterDepositTxs(block.tx);
       // for (const tx of txs) {
