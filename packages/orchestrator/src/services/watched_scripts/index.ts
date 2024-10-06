@@ -67,6 +67,7 @@ class WatchedScriptsService {
   async removeExpired() {
     // TODO: Implement this by a single sql
     try {
+      this.logger.info("Start removing expired scripts");
       const checkpointConfig = await this.appBitcoinClient.checkpointConfig();
       const currentTime = Date.now();
       const scripts: WatchedScriptsInterface[] = await this.db.select(
