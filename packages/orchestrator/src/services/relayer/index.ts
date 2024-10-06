@@ -34,6 +34,7 @@ import {
 import env from "../../configs/env";
 import { logger } from "../../configs/logger";
 import {
+  FILTER_DEPOSIT_TX_CHUNK_SIZE,
   ITERATION_DELAY,
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
@@ -450,16 +451,16 @@ class RelayerService implements RelayerInterface {
       let blocks = await this.lastNBlocks(numBlocks, tip);
       for (const block of blocks) {
         let txs = await this.filterDepositTxs(block.tx);
-        // for (const tx of txs) {
-        //   try {
-        //     await this.maybeRelayDeposit(tx, block.height, block.hash);
-        //   } catch (err) {
-        //     this.logger.error(
-        //       `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
-        //       err
-        //     );
-        //   }
-        // }
+        for (const tx of txs) {
+          try {
+            await this.maybeRelayDeposit(tx, block.height, block.hash);
+          } catch (err) {
+            this.logger.error(
+              `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
+              err
+            );
+          }
+        }
         await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
       }
     } catch (err) {
@@ -468,24 +469,31 @@ class RelayerService implements RelayerInterface {
   }
 
   async filterDepositTxs(txs: BitcoinTransaction[]) {
-    let results = await Promise.all(
-      txs.map(async (tx) => {
-        let outputs = tx.vout;
-        for (let i = 0; i < outputs.length; i++) {
-          let output = outputs[i];
-          if (output.scriptPubKey.type == ScriptPubkeyType.WitnessScriptHash) {
-            let script = await this.watchedScriptClient.getScript(
-              output.scriptPubKey.hex
-            );
-            if (script) {
-              return true;
+    let filteredTxs = [];
+    let chunkTxs = chunkArray(txs, FILTER_DEPOSIT_TX_CHUNK_SIZE);
+    for (const chunkTx of chunkTxs) {
+      let results = await Promise.all(
+        chunkTx.map(async (tx) => {
+          let outputs = tx.vout;
+          for (let i = 0; i < outputs.length; i++) {
+            let output = outputs[i];
+            if (
+              output.scriptPubKey.type == ScriptPubkeyType.WitnessScriptHash
+            ) {
+              let script = await this.watchedScriptClient.getScript(
+                output.scriptPubKey.hex
+              );
+              if (script) {
+                return true;
+              }
             }
           }
-        }
-        return false;
-      })
-    );
-    return txs.filter((_, i) => results[i]);
+          return false;
+        })
+      );
+      filteredTxs = [...filteredTxs, ...chunkTx.filter((_, i) => results[i])];
+    }
+    return filteredTxs;
   }
 
   async lastNBlocks(numBlocks: number, tip: string): Promise<BitcoinBlock[]> {
