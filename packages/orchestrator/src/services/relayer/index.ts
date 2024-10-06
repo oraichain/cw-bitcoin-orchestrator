@@ -505,7 +505,6 @@ class RelayerService implements RelayerInterface {
       });
       hash = block.previousblockhash;
       blocks = [...blocks, block];
-      await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
     }
     return blocks;
   }
