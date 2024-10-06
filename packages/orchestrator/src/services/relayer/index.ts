@@ -355,7 +355,7 @@ class RelayerService implements RelayerInterface {
           RELAY_DEPOSIT_BLOCKS_SIZE
         );
 
-        await this.scanDeposits(numBlocks);
+        // await this.scanDeposits(numBlocks);
         prevTip = tip;
 
         this.logger.info("Waiting some seconds for next scan...");
