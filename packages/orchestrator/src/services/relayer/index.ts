@@ -355,6 +355,7 @@ class RelayerService implements RelayerInterface {
           RELAY_DEPOSIT_BLOCKS_SIZE
         );
 
+        console.log("Comment scan deposit");
         // await this.scanDeposits(numBlocks);
         prevTip = tip;
 
