@@ -355,8 +355,7 @@ class RelayerService implements RelayerInterface {
           RELAY_DEPOSIT_BLOCKS_SIZE
         );
 
-        console.log("Comment scan deposit");
-        // await this.scanDeposits(numBlocks);
+        await this.scanDeposits(numBlocks);
         prevTip = tip;
 
         this.logger.info("Waiting some seconds for next scan...");
@@ -447,21 +446,21 @@ class RelayerService implements RelayerInterface {
   async scanDeposits(numBlocks: number) {
     try {
       let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
-      let blocks = await this.lastNBlocks(numBlocks, tip);
-      for (const block of blocks) {
-        // let txs = await this.filterDepositTxs(block.tx);
-        // for (const tx of txs) {
-        //   try {
-        //     await this.maybeRelayDeposit(tx, block.height, block.hash);
-        //   } catch (err) {
-        //     this.logger.error(
-        //       `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
-        //       err
-        //     );
-        //   }
-        // }
-        // await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
-      }
+      // let blocks = await this.lastNBlocks(numBlocks, tip);
+      // for (const block of blocks) {
+      // let txs = await this.filterDepositTxs(block.tx);
+      // for (const tx of txs) {
+      //   try {
+      //     await this.maybeRelayDeposit(tx, block.height, block.hash);
+      //   } catch (err) {
+      //     this.logger.error(
+      //       `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
+      //       err
+      //     );
+      //   }
+      // }
+      // await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
+      // }
       // Remove expired
       await this.watchedScriptClient.removeExpired();
     } catch (err) {
