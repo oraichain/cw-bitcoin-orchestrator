@@ -21,6 +21,7 @@ import {
   toReceiverAddr,
 } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import * as btc from "bitcoinjs-lib";
+import process from "process";
 import { RPCClient } from "rpc-bitcoin";
 import { setTimeout } from "timers/promises";
 import { Logger } from "winston";
@@ -106,7 +107,47 @@ class RelayerService implements RelayerInterface {
       this.relayRecoveryDeposits(),
       this.relayCheckpoints(),
       this.relayCheckpointConf(),
+      this.trackMemoryLeak(),
     ]);
+  }
+
+  // [TRACKER]
+  async trackMemoryLeak() {
+    let previousHeapTotal = 0;
+    let previousHeapUsed = 0;
+    while (true) {
+      const used = process.memoryUsage();
+      const currentHeapTotal = used.heapTotal / 1024 / 1024;
+      const currentHeapUsed = used.heapUsed / 1024 / 1024;
+      if (previousHeapTotal > 0 && currentHeapTotal > previousHeapTotal) {
+        this.logger.info(
+          `Memory heap total that GC thinks to allocate: ${currentHeapTotal} MB`
+        );
+        this.logger.info(
+          `Heap size increased ${
+            ((currentHeapTotal - previousHeapTotal) * 100) / currentHeapTotal
+          }%`
+        );
+      }
+      if (previousHeapUsed > 0 && currentHeapUsed > previousHeapUsed) {
+        this.logger.info(
+          `Memory heap total that GC actually used: ${currentHeapUsed} MB`
+        );
+        this.logger.info(
+          `Heap used increased ${
+            ((currentHeapUsed - previousHeapUsed) * 100) / currentHeapUsed
+          }%`
+        );
+      }
+      if (currentHeapUsed > 800) {
+        this.logger.error(
+          "Heap is over-used the memory, please check the code!"
+        );
+      }
+      previousHeapTotal = currentHeapTotal;
+      previousHeapUsed = currentHeapUsed;
+      await setTimeout(5000);
+    }
   }
 
   // [RELAY HEADER]
@@ -411,8 +452,12 @@ class RelayerService implements RelayerInterface {
   async scanDeposits(numBlocks: number) {
     try {
       let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
-      let blocks = await this.lastNBlocks(numBlocks, tip);
-      for (const block of blocks) {
+      let hash = tip;
+      for (let i = 0; i < numBlocks; i++) {
+        let block: BitcoinBlock = await this.btcClient.getblock({
+          blockhash: hash,
+          verbosity: 2,
+        });
         let txs = await this.filterDepositTxs(block.tx);
         for (const tx of txs) {
           try {
@@ -424,8 +469,11 @@ class RelayerService implements RelayerInterface {
             );
           }
         }
+        hash = block.previousblockhash;
         await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
       }
+      // Remove expired
+      await this.watchedScriptClient.removeExpired();
     } catch (err) {
       this.logger.error(`[SCAN_DEPOSITS] Error:`, err);
     }
@@ -655,7 +703,7 @@ class RelayerService implements RelayerInterface {
           );
         }
 
-        let maybeConf = await this.scanForTxid(txid, 100, 200);
+        let maybeConf = await this.scanForTxid(txid, 20, 200);
 
         if (maybeConf !== null) {
           let [height, blockHash] = maybeConf;
