@@ -529,33 +529,33 @@ class RelayerService implements RelayerInterface {
         key: calculateOutpointKey(txid, i),
       });
 
-      if (isExistOutpoint === true) {
-        setNestedMap(
-          this.depositIndex,
-          [
-            toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
-            address,
-            getTxidKey(txid, i),
-          ],
-          undefined
-        );
-        continue;
-      }
+      // if (isExistOutpoint === true) {
+      //   setNestedMap(
+      //     this.depositIndex,
+      //     [
+      //       toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+      //       address,
+      //       getTxidKey(txid, i),
+      //     ],
+      //     undefined
+      //   );
+      //   continue;
+      // }
 
-      setNestedMap(
-        this.depositIndex,
-        [
-          toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
-          address,
-          getTxidKey(txid, i),
-        ],
-        {
-          txid,
-          vout: i,
-          height: blockHeight,
-          amount: output.value,
-        } as Deposit
-      );
+      // setNestedMap(
+      //   this.depositIndex,
+      //   [
+      //     toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+      //     address,
+      //     getTxidKey(txid, i),
+      //   ],
+      //   {
+      //     txid,
+      //     vout: i,
+      //     height: blockHeight,
+      //     amount: output.value,
+      //   } as Deposit
+      // );
 
       const txProof = await this.btcClient.gettxoutproof({
         txids: [txid],
