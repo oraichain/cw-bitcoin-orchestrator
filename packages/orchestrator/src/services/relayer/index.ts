@@ -113,41 +113,23 @@ class RelayerService implements RelayerInterface {
 
   // [TRACKER]
   async trackMemoryLeak() {
-    let previousHeapTotal = 0;
-    let previousHeapUsed = 0;
     while (true) {
       const used = process.memoryUsage();
       const currentHeapTotal = used.heapTotal / 1024 / 1024;
       const currentHeapUsed = used.heapUsed / 1024 / 1024;
       this.logger.info("=============================================");
-      if (previousHeapTotal > 0 && currentHeapTotal > previousHeapTotal) {
-        this.logger.info(
-          `Memory heap total that GC thinks to allocate: ${currentHeapTotal} MB`
-        );
-        this.logger.info(
-          `Heap size increased ${
-            ((currentHeapTotal - previousHeapTotal) * 100) / currentHeapTotal
-          }%`
-        );
-      }
-      if (previousHeapUsed > 0 && currentHeapUsed > previousHeapUsed) {
-        this.logger.info(
-          `Memory heap total that GC actually used: ${currentHeapUsed} MB`
-        );
-        this.logger.info(
-          `Heap used increased ${
-            ((currentHeapUsed - previousHeapUsed) * 100) / currentHeapUsed
-          }%`
-        );
-      }
+      this.logger.info(
+        `Memory heap total that GC predicts to allocate: ${currentHeapTotal} MB`
+      );
+      this.logger.info(
+        `Memory heap total that GC actually used: ${currentHeapUsed} MB`
+      );
       if (currentHeapUsed > 1200) {
         this.logger.error(
           "Heap is over-used the memory, please check the code!"
         );
       }
       this.logger.info("=============================================");
-      previousHeapTotal = currentHeapTotal;
-      previousHeapUsed = currentHeapUsed;
       await setTimeout(ITERATION_DELAY.TRACK_MEMORY_LEAK);
     }
   }
