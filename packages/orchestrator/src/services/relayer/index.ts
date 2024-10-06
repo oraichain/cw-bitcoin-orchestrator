@@ -494,20 +494,20 @@ class RelayerService implements RelayerInterface {
     return txs.filter((_, i) => results[i]);
   }
 
-  // async lastNBlocks(numBlocks: number, tip: string): Promise<BitcoinBlock[]> {
-  //   let blocks = [];
-  //   let hash = tip; // use for traversing backwards
-  //   for (let i = 0; i < numBlocks; i++) {
-  //     let block: BitcoinBlock = await this.btcClient.getblock({
-  //       blockhash: hash,
-  //       verbosity: 2,
-  //     });
-  //     hash = block.previousblockhash;
-  //     blocks = [...blocks, block];
-  //     await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
-  //   }
-  //   return blocks;
-  // }
+  async lastNBlocks(numBlocks: number, tip: string): Promise<BitcoinBlock[]> {
+    let blocks = [];
+    let hash = tip; // use for traversing backwards
+    for (let i = 0; i < numBlocks; i++) {
+      let block: BitcoinBlock = await this.btcClient.getblock({
+        blockhash: hash,
+        verbosity: 2,
+      });
+      hash = block.previousblockhash;
+      blocks = [...blocks, block];
+      await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
+    }
+    return blocks;
+  }
 
   async maybeRelayDeposit(
     tx: BitcoinTransaction,
@@ -698,7 +698,7 @@ class RelayerService implements RelayerInterface {
           );
         }
 
-        let maybeConf = await this.scanForTxid(txid, 100, 200);
+        let maybeConf = await this.scanForTxid(txid, 20, 200);
 
         if (maybeConf !== null) {
           let [height, blockHash] = maybeConf;
@@ -758,22 +758,17 @@ class RelayerService implements RelayerInterface {
         break;
       }
 
-      let blockLength = Math.min(numBlocks, baseHeight);
-      let hash = tip;
-      for (let i = 0; i < blockLength; i++) {
-        let block: BitcoinBlock = await this.btcClient.getblock({
-          blockhash: hash,
-          verbosity: 2,
-        });
+      let blocks = await this.lastNBlocks(Math.min(numBlocks, baseHeight), tip);
+      for (let i = 0; i < blocks.length; i++) {
+        let block = blocks[i];
         let height = baseHeight - i;
         let searchedTxid = block.tx.find((tx) => tx.txid === txid);
         if (searchedTxid !== undefined) {
           return [height, block.hash];
         }
-        hash = block.previousblockhash;
       }
 
-      let oldestBlock = hash;
+      let oldestBlock = blocks[blocks.length - 1].hash;
       if (tip === oldestBlock) break;
       tip = oldestBlock;
       baseHeight = (
