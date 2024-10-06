@@ -38,6 +38,7 @@ import {
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
   RETRY_DELAY,
+  SCAN_BLOCK_TXS_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_SIZE,
   SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY,
@@ -498,6 +499,7 @@ class RelayerService implements RelayerInterface {
       });
       hash = block.previousblockhash;
       blocks = [...blocks, block];
+      await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
     }
     return blocks;
   }
