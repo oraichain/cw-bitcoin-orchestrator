@@ -140,7 +140,7 @@ class RelayerService implements RelayerInterface {
           }%`
         );
       }
-      if (currentHeapUsed > 800) {
+      if (currentHeapUsed > 1200) {
         this.logger.error(
           "Heap is over-used the memory, please check the code!"
         );
