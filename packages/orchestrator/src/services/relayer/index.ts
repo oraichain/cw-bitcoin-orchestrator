@@ -21,6 +21,7 @@ import {
   toReceiverAddr,
 } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import * as btc from "bitcoinjs-lib";
+import process from "process";
 import { RPCClient } from "rpc-bitcoin";
 import { setTimeout } from "timers/promises";
 import { Logger } from "winston";
@@ -106,7 +107,27 @@ class RelayerService implements RelayerInterface {
       this.relayRecoveryDeposits(),
       this.relayCheckpoints(),
       this.relayCheckpointConf(),
+      this.trackMemoryLeak(),
     ]);
+  }
+
+  // [TRACKER]
+  async trackMemoryLeak() {
+    let previousHeap = 0;
+    while (true) {
+      const used = process.memoryUsage();
+      const currentHeap = used.heapTotal / 1024 / 1024;
+      console.log(`Memory usage: ${currentHeap} MB`);
+      if (previousHeap > 0 && currentHeap > previousHeap) {
+        this.logger.info(
+          `Heap size increased ${
+            ((currentHeap - previousHeap) * 100) / currentHeap
+          } detected!`
+        );
+      }
+      previousHeap = currentHeap;
+      await setTimeout(5000);
+    }
   }
 
   // [RELAY HEADER]
