@@ -475,22 +475,23 @@ class RelayerService implements RelayerInterface {
   }
 
   async filterDepositTxs(txs: BitcoinTransaction[]) {
-    let allScripts = await this.watchedScriptClient.getAllScripts();
-    let results = txs.map(async (tx) => {
-      let outputs = tx.vout;
-      for (let i = 0; i < outputs.length; i++) {
-        let output = outputs[i];
-        if (output.scriptPubKey.type == ScriptPubkeyType.WitnessScriptHash) {
-          let script = allScripts.find(
-            (item) => item.script == output.scriptPubKey.hex
-          );
-          if (script) {
-            return true;
+    let results = await Promise.all(
+      txs.map(async (tx) => {
+        let outputs = tx.vout;
+        for (let i = 0; i < outputs.length; i++) {
+          let output = outputs[i];
+          if (output.scriptPubKey.type == ScriptPubkeyType.WitnessScriptHash) {
+            let script = await this.watchedScriptClient.getScript(
+              output.scriptPubKey.hex
+            );
+            if (script) {
+              return true;
+            }
           }
         }
-      }
-      return false;
-    });
+        return false;
+      })
+    );
     return txs.filter((_, i) => results[i]);
   }
 
