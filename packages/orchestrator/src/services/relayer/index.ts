@@ -350,7 +350,7 @@ class RelayerService implements RelayerInterface {
     }
   }
 
-  async scanTxsFromMempools(relayed: Object) {
+  async scanTxsFromMempools(relayed: { [txid: string]: boolean }) {
     try {
       let mempoolTxs = await this.btcClient.getrawmempool();
       const txChunks = chunkArray(mempoolTxs, SCAN_MEMPOOL_CHUNK_SIZE);
