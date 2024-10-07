@@ -515,15 +515,34 @@ class RelayerService implements RelayerInterface {
       });
 
       if (isExistOutpoint === true) {
-        setNestedMap(
-          this.depositIndex,
-          [
-            toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
-            address,
-            getTxidKey(txid, i),
-          ],
-          undefined
+        // Remove this outpoint from deposit index
+        let bitcoinAddrMap = this.depositIndex.get(
+          toReceiverAddr(convertSdkDestToWasmDest(script.dest))
         );
+        if (!bitcoinAddrMap) continue;
+        let txidMap = bitcoinAddrMap.get(address);
+        if (!txidMap) continue;
+        txidMap.delete(getTxidKey(txid, i));
+
+        if (
+          this.depositIndex
+            .get(toReceiverAddr(convertSdkDestToWasmDest(script.dest)))
+            ?.get(address)
+            ?.get(getTxidKey(txid, i)) !== undefined
+        ) {
+          this.logger.error(
+            `Failed to remove deposit index for txid ${txid} at vout ${i}`
+          );
+          setNestedMap(
+            this.depositIndex,
+            [
+              toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+              address,
+              getTxidKey(txid, i),
+            ],
+            undefined
+          );
+        }
         continue;
       }
 
