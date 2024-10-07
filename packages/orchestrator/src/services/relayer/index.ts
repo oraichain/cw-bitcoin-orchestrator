@@ -703,6 +703,7 @@ class RelayerService implements RelayerInterface {
             this.logger.info(
               `Waiting for more confirmations to relay checkpoint confirm with tx ${txid} ...`
             );
+            await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_CONF_INTERVAL);
             continue;
           }
 

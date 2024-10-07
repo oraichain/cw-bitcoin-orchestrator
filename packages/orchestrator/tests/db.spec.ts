@@ -9,8 +9,8 @@ const seedsData = [
     dest: JSON.stringify({
       Address: "orai1ehmhqcn8erf3dgavrca69zgp4rtxj5kqgtcnyd",
     } as Dest),
-    sigsetIndex: 0,
-    sigsetCreateTime: 10000000,
+    sigsetIndex: 0n,
+    sigsetCreateTime: 10000000n,
   },
   {
     script: "345",
@@ -23,8 +23,8 @@ const seedsData = [
         timeout_timestamp: 12000000,
       },
     } as Dest),
-    sigsetIndex: 1,
-    sigsetCreateTime: 11000000,
+    sigsetIndex: 1n,
+    sigsetCreateTime: 11000000n,
   },
 ];
 
@@ -56,7 +56,6 @@ describe("Testing DuckDB WatchedScripts", () => {
         },
       }),
     ]);
-    console.log(data[0]);
     expect(data[0][0]?.address).toBe("a");
     expect(data[1][0]?.address).toBe("b");
   });

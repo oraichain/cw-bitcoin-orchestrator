@@ -199,7 +199,6 @@ export class DuckDbNode extends DuckDB {
     const query = _.trim(
       `UPDATE ${tableName} ${setDataClause} ${whereClauses}`
     );
-    console.log(query);
 
     return [query, [...overrideDataValues, ...whereValues]];
   }

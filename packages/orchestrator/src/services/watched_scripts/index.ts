@@ -36,12 +36,19 @@ class WatchedScriptsService {
   async insertScript(data: WatchedScriptsInterface) {
     const script = await this.getScript(data.script);
     if (!script) {
-      await this.db.insert(TableName.WatchedScripts, {
+      let insertedData = {
         ...data,
         dest: JSON.stringify(data.dest),
+        sigsetIndex: parseInt(data.sigsetIndex.toString()),
+        sigsetCreateTime: parseInt(data.sigsetCreateTime.toString()),
+      };
+      await this.db.insert(TableName.WatchedScripts, {
+        ...insertedData,
       });
       this.logger.info(
-        `Inserted new script with address ${data.address}, dest: ${data.dest}`
+        `Inserted new script with address ${
+          data.address
+        }, data: ${JSON.stringify(insertedData)}`
       );
     }
   }
@@ -69,7 +76,7 @@ class WatchedScriptsService {
     try {
       this.logger.info("Start removing expired scripts");
       const checkpointConfig = await this.appBitcoinClient.checkpointConfig();
-      const currentTime = Date.now();
+      const currentTime = Math.floor(Date.now() / 1000);
       const scripts: WatchedScriptsInterface[] = await this.db.select(
         TableName.WatchedScripts,
         {}
@@ -77,8 +84,9 @@ class WatchedScriptsService {
       let count = 0;
       for (const script of scripts) {
         if (
-          script.sigsetCreateTime + BigInt(checkpointConfig.max_age) <
-          BigInt(currentTime)
+          script.sigsetCreateTime !== null &&
+          BigInt(script.sigsetCreateTime) + BigInt(checkpointConfig.max_age) <
+            BigInt(currentTime)
         ) {
           await this.db.delete(TableName.WatchedScripts, {
             where: { address: script.address },
