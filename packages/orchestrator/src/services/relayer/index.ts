@@ -864,8 +864,8 @@ class RelayerService implements RelayerInterface {
       address,
       script: toScriptPubKeyP2WSH(depositScript).toString("hex"),
       dest,
-      sigsetIndex: checkpoint.sigset.index,
-      sigsetCreateTime: checkpoint.sigset.create_time,
+      sigsetIndex: BigInt(checkpoint.sigset.index),
+      sigsetCreateTime: BigInt(checkpoint.sigset.create_time),
     });
   }
 }

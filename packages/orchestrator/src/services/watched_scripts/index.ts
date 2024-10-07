@@ -9,16 +9,16 @@ export interface WatchedScriptsInterface {
   script: string;
   address: string;
   dest: SdkDest;
-  sigsetIndex: number;
-  sigsetCreateTime: number;
+  sigsetIndex: bigint;
+  sigsetCreateTime: bigint;
 }
 
 export interface StoredWatchedScriptsInterface {
   script: string;
   address: string;
   dest: string;
-  sigsetIndex: number;
-  sigsetCreateTime: number;
+  sigsetIndex: bigint;
+  sigsetCreateTime: bigint;
 }
 
 class WatchedScriptsService {
@@ -76,7 +76,10 @@ class WatchedScriptsService {
       );
       let count = 0;
       for (const script of scripts) {
-        if (script.sigsetCreateTime + checkpointConfig.max_age < currentTime) {
+        if (
+          script.sigsetCreateTime + BigInt(checkpointConfig.max_age) <
+          BigInt(currentTime)
+        ) {
           await this.db.delete(TableName.WatchedScripts, {
             where: { address: script.address },
           });

@@ -56,6 +56,7 @@ describe("Testing DuckDB WatchedScripts", () => {
         },
       }),
     ]);
+    console.log(data[0]);
     expect(data[0][0]?.address).toBe("a");
     expect(data[1][0]?.address).toBe("b");
   });
