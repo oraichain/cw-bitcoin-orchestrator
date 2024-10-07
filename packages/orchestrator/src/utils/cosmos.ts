@@ -5,6 +5,7 @@ import {
 import { fromBech32, toBech32 } from "@cosmjs/encoding";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { GasPrice } from "@cosmjs/stargate";
+import { setTimeout } from "timers/promises";
 import { Logger } from "winston";
 
 export const wrappedExecuteTransaction = async (
@@ -18,6 +19,8 @@ export const wrappedExecuteTransaction = async (
     } catch (error) {
       let message = error?.message;
       if (message?.includes("account sequence mismatch")) {
+        // should wait some time to avoid leaks
+        await setTimeout(Math.floor(Math.random() * 200));
         continue;
       } else {
         logger.error(`[UNEXPECTED ERROR] Error:`, error);

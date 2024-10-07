@@ -58,14 +58,7 @@ import { convertSdkDestToWasmDest } from "../../utils/dest";
 import { getTxidKey, setNestedMap } from "../../utils/map";
 import { RelayerInterface } from "../common/relayer.interface";
 import { DuckDbNode } from "../db";
-import WatchedScriptsService, {
-  WatchedScriptsInterface,
-} from "../watched_scripts";
-
-interface RelayTxIdBody {
-  tx: BitcoinTransaction;
-  script: WatchedScriptsInterface;
-}
+import WatchedScriptsService from "../watched_scripts";
 
 class RelayerService implements RelayerInterface {
   static instances: RelayerService;
@@ -73,7 +66,6 @@ class RelayerService implements RelayerInterface {
   lightClientBitcoinClient: LightClientBitcoinClient;
   appBitcoinClient: AppBitcoinClient;
   watchedScriptClient: WatchedScriptsService;
-  relayTxids: Map<string, RelayTxIdBody>;
   // receiver -> bitcoin_address -> (txid, vout) -> Deposit
   depositIndex: Map<string, Map<string, Map<string, Deposit>>>;
   network?: BitcoinNetwork;
@@ -94,7 +86,6 @@ class RelayerService implements RelayerInterface {
       this.appBitcoinClient
     );
     WatchedScriptsService.instances = this.watchedScriptClient;
-    this.relayTxids = new Map<string, RelayTxIdBody>();
     this.depositIndex = new Map<string, Map<string, Map<string, Deposit>>>();
     this.network = network;
     this.logger = logger("RelayerService");
@@ -316,12 +307,13 @@ class RelayerService implements RelayerInterface {
   async relayDeposit() {
     this.logger.info("Starting deposit relay...");
     let prevTip = null;
+    let relayed = {};
     while (true) {
       try {
         this.logger.info("Scanning mempool for deposit transactions...");
 
         // Mempool handler
-        await this.scanTxsFromMempools();
+        await this.scanTxsFromMempools(relayed);
 
         // Block handler
         this.logger.info("Scanning blocks for deposit transactions...");
@@ -358,7 +350,7 @@ class RelayerService implements RelayerInterface {
     }
   }
 
-  async scanTxsFromMempools() {
+  async scanTxsFromMempools(relayed: Object) {
     try {
       let mempoolTxs = await this.btcClient.getrawmempool();
       const txChunks = chunkArray(mempoolTxs, SCAN_MEMPOOL_CHUNK_SIZE);
@@ -382,7 +374,7 @@ class RelayerService implements RelayerInterface {
             continue;
           }
           let txid = tx.txid;
-          if (this.relayTxids.get(txid)) continue;
+          if (relayed[txid]) continue;
 
           const outputs = tx.vout;
 
@@ -404,10 +396,7 @@ class RelayerService implements RelayerInterface {
             if (!script) continue;
 
             this.logger.info(`Found pending deposit transaction ${txid}`);
-            this.relayTxids.set(txid, {
-              tx,
-              script,
-            });
+            relayed[txid] = true;
 
             setNestedMap(
               this.depositIndex,
