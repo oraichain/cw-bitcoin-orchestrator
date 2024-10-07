@@ -126,7 +126,7 @@ class RelayerService implements RelayerInterface {
       );
       if (currentHeapUsed > 1200) {
         this.logger.error(
-          "Heap is over-used the memory, please check the code!"
+          `Heap is very high now, at ${currentHeapUsed} MB. Consider to check the process!`
         );
       }
       this.logger.info("=============================================");
@@ -687,7 +687,7 @@ class RelayerService implements RelayerInterface {
           );
         }
 
-        let maybeConf = await this.scanForTxid(txid, 20, 200);
+        let maybeConf = await this.scanForTxid(txid, 5, 200);
 
         if (maybeConf !== null) {
           let [height, blockHash] = maybeConf;
