@@ -17,7 +17,7 @@ import { BlockHeader } from "../../@types";
 import env from "../../configs/env";
 import { logger } from "../../configs/logger";
 import { ITERATION_DELAY } from "../../constants";
-import { getCurrentNetwork } from "../../utils/bitcoin";
+import { getCurrentBlock, getCurrentNetwork } from "../../utils/bitcoin";
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { RelayerInterface } from "../common/relayer.interface";
 
@@ -74,8 +74,7 @@ class SignerService implements RelayerInterface {
 
     while (true) {
       try {
-        const blockchainInfo = await this.btcClient.getblockchaininfo();
-        const btcHeight = blockchainInfo.blocks;
+        const btcHeight = await getCurrentBlock();
         let buildingIndex = await this.appBitcoinClient.buildingIndex();
         let previousIndex = buildingIndex - 1;
 

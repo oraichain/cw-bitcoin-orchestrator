@@ -25,6 +25,7 @@ export async function retry<T>(
         throw e;
       }
       await setTimeout(delay);
+      return await fn(...params);
     }
   }
 }

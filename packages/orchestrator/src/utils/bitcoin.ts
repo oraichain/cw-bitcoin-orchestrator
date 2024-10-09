@@ -68,3 +68,12 @@ export const decodeAddress = (
 
   return address;
 };
+
+export const getCurrentBlock = async () => {
+  const data = await fetch(
+    env.bitcoin.network === "bitcoin" || env.bitcoin.network === "mainnet"
+      ? "https://blockstream.info/api/blocks"
+      : "https://blockstream.info/testnet/api/blocks"
+  ).then((res) => res.json());
+  return data[0].height;
+};
