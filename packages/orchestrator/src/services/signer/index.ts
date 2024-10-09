@@ -9,32 +9,27 @@ import crypto from "crypto";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { RPCClient } from "rpc-bitcoin";
 import { setTimeout } from "timers/promises";
 import * as ecc from "tiny-secp256k1";
 import { Logger } from "winston";
-import { BlockHeader } from "../../@types";
 import env from "../../configs/env";
 import { logger } from "../../configs/logger";
 import { ITERATION_DELAY } from "../../constants";
-import { getCurrentBlock, getCurrentNetwork } from "../../utils/bitcoin";
+import { getCurrentNetwork } from "../../utils/bitcoin";
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { RelayerInterface } from "../common/relayer.interface";
 
 class SignerService implements RelayerInterface {
-  btcClient: RPCClient;
   lightClientBitcoinClient: LightClientBitcoinClient;
   appBitcoinClient: AppBitcoinClient;
   network?: BitcoinNetwork;
   logger: Logger;
 
   constructor(
-    btcClient: RPCClient,
     lightClientBitcoinClient: LightClientBitcoinClient,
     appBitcoinClient: AppBitcoinClient,
     network?: BitcoinNetwork
   ) {
-    this.btcClient = btcClient;
     this.lightClientBitcoinClient = lightClientBitcoinClient;
     this.appBitcoinClient = appBitcoinClient;
     this.network = network;
@@ -74,7 +69,7 @@ class SignerService implements RelayerInterface {
 
     while (true) {
       try {
-        const btcHeight = await getCurrentBlock();
+        let btcHeight = await this.lightClientBitcoinClient.headerHeight();
         let buildingIndex = await this.appBitcoinClient.buildingIndex();
         let previousIndex = buildingIndex - 1;
 
@@ -135,13 +130,7 @@ class SignerService implements RelayerInterface {
 
   async circuitBreaker(previousIndex: number) {
     // Fetch current block
-    let sidechainBlockHash =
-      await this.lightClientBitcoinClient.sidechainBlockHash();
-    let sidechainHeader: BlockHeader = await this.btcClient.getblockheader({
-      blockhash: sidechainBlockHash,
-      verbose: true,
-    });
-    let currentHeight = sidechainHeader.height;
+    let currentHeight = await this.lightClientBitcoinClient.headerHeight();
 
     let signedAtBtcHeight = undefined;
 

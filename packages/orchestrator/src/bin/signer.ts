@@ -2,7 +2,6 @@ import {
   AppBitcoinClient,
   LightClientBitcoinClient,
 } from "@oraichain/bitcoin-bridge-contracts-sdk";
-import { RPCClient } from "rpc-bitcoin";
 import env from "../configs/env";
 import { OraichainConfig } from "../configs/networks";
 import SignerService from "../services/signer";
@@ -17,13 +16,6 @@ const start = async () => {
       env.cosmos.encryptedMnemonic
     );
   }
-
-  const btcClient = new RPCClient({
-    port: env.bitcoin.port,
-    host: env.bitcoin.host,
-    user: env.bitcoin.username,
-    pass: env.bitcoin.password,
-  });
 
   const { prefix, gasPrice } = OraichainConfig;
 
@@ -45,7 +37,6 @@ const start = async () => {
   );
 
   const signerService = new SignerService(
-    btcClient,
     lightClientBitcoinClient,
     appBitcoinClient
   );
