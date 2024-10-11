@@ -10,7 +10,6 @@ import { BitcoinNetwork, redeemScript } from "@oraichain/bitcoin-bridge-lib-js";
 import {
   commitmentBytes,
   decodeRawTx,
-  Deposit,
   DepositInfo,
   fromBinaryMerkleBlock,
   fromBinaryTransaction,
@@ -55,9 +54,10 @@ import {
 import { retry } from "../../utils/catchAsync";
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { convertSdkDestToWasmDest } from "../../utils/dest";
-import { getTxidKey, setNestedMap } from "../../utils/map";
 import { RelayerInterface } from "../common/relayer.interface";
 import { DuckDbNode } from "../db";
+import DepositIndexService from "../deposit_index";
+import RelayedSetService from "../relayed_set";
 import WatchedScriptsService from "../watched_scripts";
 
 class RelayerService implements RelayerInterface {
@@ -66,8 +66,8 @@ class RelayerService implements RelayerInterface {
   lightClientBitcoinClient: LightClientBitcoinClient;
   appBitcoinClient: AppBitcoinClient;
   watchedScriptClient: WatchedScriptsService;
-  // receiver -> bitcoin_address -> (txid, vout) -> Deposit
-  depositIndex: Map<string, Map<string, Map<string, Deposit>>>;
+  depositIndex: DepositIndexService;
+  relayedSet: RelayedSetService;
   network?: BitcoinNetwork;
   logger: Logger;
 
@@ -86,7 +86,9 @@ class RelayerService implements RelayerInterface {
       this.appBitcoinClient
     );
     WatchedScriptsService.instances = this.watchedScriptClient;
-    this.depositIndex = new Map<string, Map<string, Map<string, Deposit>>>();
+    this.depositIndex = new DepositIndexService(db);
+    DepositIndexService.instances = this.depositIndex;
+    this.relayedSet = new RelayedSetService(db);
     this.network = network;
     this.logger = logger("RelayerService");
   }
@@ -307,13 +309,12 @@ class RelayerService implements RelayerInterface {
   async relayDeposit() {
     this.logger.info("Starting deposit relay...");
     let prevTip = null;
-    let relayed = {};
     while (true) {
       try {
         this.logger.info("Scanning mempool for deposit transactions...");
 
         // Mempool handler
-        await this.scanTxsFromMempools(relayed);
+        await this.scanTxsFromMempools();
 
         // Block handler
         this.logger.info("Scanning blocks for deposit transactions...");
@@ -350,7 +351,7 @@ class RelayerService implements RelayerInterface {
     }
   }
 
-  async scanTxsFromMempools(relayed: { [txid: string]: boolean }) {
+  async scanTxsFromMempools() {
     try {
       let mempoolTxs = await this.btcClient.getrawmempool();
       const txChunks = chunkArray(mempoolTxs, SCAN_MEMPOOL_CHUNK_SIZE);
@@ -374,8 +375,8 @@ class RelayerService implements RelayerInterface {
             continue;
           }
           let txid = tx.txid;
-          if (relayed[txid]) continue;
-
+          const existed = await this.relayedSet.exist(`relay-deposit-${txid}`);
+          if (existed) continue;
           const outputs = tx.vout;
 
           for (let vout = 0; vout < outputs.length; vout++) {
@@ -396,22 +397,19 @@ class RelayerService implements RelayerInterface {
             if (!script) continue;
 
             this.logger.info(`Found pending deposit transaction ${txid}`);
-            relayed[txid] = true;
-
-            setNestedMap(
-              this.depositIndex,
-              [
-                toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
-                address,
-                getTxidKey(txid, vout),
-              ],
-              {
+            await this.relayedSet.insert(`relay-deposit-${txid}`);
+            await this.depositIndex.insertDeposit({
+              receiver: toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+              bitcoinAddress: address,
+              txid,
+              vout,
+              deposit: JSON.stringify({
                 txid,
                 vout,
                 height: undefined,
                 amount: output.value,
-              } as Deposit
-            );
+              }),
+            });
           }
         }
 
@@ -516,50 +514,27 @@ class RelayerService implements RelayerInterface {
 
       if (isExistOutpoint === true) {
         // Remove this outpoint from deposit index
-        let bitcoinAddrMap = this.depositIndex.get(
-          toReceiverAddr(convertSdkDestToWasmDest(script.dest))
-        );
-        if (!bitcoinAddrMap) continue;
-        let txidMap = bitcoinAddrMap.get(address);
-        if (!txidMap) continue;
-        txidMap.delete(getTxidKey(txid, i));
-
-        if (
-          this.depositIndex
-            .get(toReceiverAddr(convertSdkDestToWasmDest(script.dest)))
-            ?.get(address)
-            ?.get(getTxidKey(txid, i)) !== undefined
-        ) {
-          this.logger.error(
-            `Failed to remove deposit index for txid ${txid} at vout ${i}`
-          );
-          setNestedMap(
-            this.depositIndex,
-            [
-              toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
-              address,
-              getTxidKey(txid, i),
-            ],
-            undefined
-          );
-        }
+        await this.depositIndex.removeDeposit({
+          receiver: toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+          bitcoinAddress: address,
+          txid,
+          vout: i,
+        });
         continue;
       }
 
-      setNestedMap(
-        this.depositIndex,
-        [
-          toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
-          address,
-          getTxidKey(txid, i),
-        ],
-        {
+      await this.depositIndex.insertDeposit({
+        receiver: toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
+        bitcoinAddress: address,
+        txid,
+        vout: i,
+        deposit: JSON.stringify({
           txid,
           vout: i,
           height: blockHeight,
           amount: output.value,
-        } as Deposit
-      );
+        }),
+      });
 
       const txProof = await this.btcClient.gettxoutproof({
         txids: [txid],
@@ -591,16 +566,18 @@ class RelayerService implements RelayerInterface {
   // [RELAY RECOVERY DEPOSITS]
   async relayRecoveryDeposits() {
     this.logger.info("Starting recovery deposit relay...");
-    const relayed = {};
     while (true) {
       try {
         const txs = await this.appBitcoinClient.signedRecoveryTxs();
         for (const recoveryTx of txs) {
-          if (relayed[recoveryTx]) continue;
+          const existed = await this.relayedSet.exist(
+            `relay-recovery-deposits-${recoveryTx}`
+          );
+          if (existed) continue;
           const tx = await this.btcClient.sendrawtransaction({
             hexstring: Buffer.from(recoveryTx, "base64").toString("hex"),
           });
-          relayed[recoveryTx] = true;
+          await this.relayedSet.insert(`relay-recovery-deposits-${recoveryTx}`);
           this.logger.info(`Relayed recovery tx ${tx}`);
           await setTimeout(SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY);
         }
@@ -614,20 +591,21 @@ class RelayerService implements RelayerInterface {
   // [RELAY CHECKPOINT]
   async relayCheckpoints() {
     this.logger.info("Starting checkpoint relay...");
-    const relayed = {};
     while (true) {
       try {
         const checkpoints = await this.appBitcoinClient.completedCheckpointTxs({
           limit: 1100,
         });
         for (const checkpoint of checkpoints) {
-          if (relayed[checkpoint]) continue;
-
+          const exist = await this.relayedSet.exist(
+            `relay-checkpoint-${checkpoint}`
+          );
+          if (exist) continue;
           try {
             const tx = await this.btcClient.sendrawtransaction({
               hexstring: Buffer.from(checkpoint, "base64").toString("hex"),
             });
-            relayed[checkpoint] = true;
+            await this.relayedSet.insert(`relay-checkpoint-${checkpoint}`);
             this.logger.info(`Relayed checkpoint tx ${tx}`);
           } catch (err) {}
 
@@ -642,7 +620,6 @@ class RelayerService implements RelayerInterface {
 
   // [RELAY CHECKPOINT CONFIRM]
   async relayCheckpointConf() {
-    let relayed = {};
     this.logger.info("Starting checkpoint confirm relay...");
     while (true) {
       try {
@@ -689,7 +666,10 @@ class RelayerService implements RelayerInterface {
         ]);
         let txid = getBitcoinTransactionTxid(tx);
 
-        if (relayed[txid]) {
+        const exist = await this.relayedSet.exist(
+          `relay-checkpoint-conf-${txid}`
+        );
+        if (exist) {
           throw new Error(
             `Checkpoint confirm with tx ${txid} is already relayed`
           );
@@ -725,7 +705,7 @@ class RelayerService implements RelayerInterface {
               `Relayed checkpoint confirmation with tx ${txid} at tx ${tx.transactionHash}`
             );
           }, this.logger);
-          relayed[txid] = true;
+          await this.relayedSet.insert(`relay-checkpoint-conf-${txid}`);
         }
       } catch (err) {
         if (
@@ -787,26 +767,7 @@ class RelayerService implements RelayerInterface {
       blockhash: currentSidechainBlockHash,
     });
     const currentBtcHeight = blockHeader.height;
-
-    const addressMap = this.depositIndex.get(receiver);
-    if (!addressMap) return [];
-
-    const deposits = Array.from(addressMap.values()).flatMap(
-      (addressMapValue) =>
-        Array.from(addressMapValue.values())
-          .filter((deposit) => deposit) // Filter out falsy values
-          .map((deposit) => {
-            const confirmations = deposit.height
-              ? currentBtcHeight - deposit.height + 1
-              : 0;
-            return {
-              deposit,
-              confirmations,
-            };
-          })
-    );
-
-    return deposits;
+    return this.depositIndex.getDepositsByReceiver(receiver, currentBtcHeight);
   }
 
   // for testing purpose only

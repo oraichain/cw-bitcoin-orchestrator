@@ -109,7 +109,6 @@ const start = async () => {
       sender,
       env.cosmos.appBitcoin
     );
-
     const relayerService = new RelayerService(
       btcClient,
       lightClientBitcoinClient,

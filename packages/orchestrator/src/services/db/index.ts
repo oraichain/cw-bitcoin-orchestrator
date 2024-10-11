@@ -18,6 +18,21 @@ export const sqlCommands = {
         sigsetCreateTime BIGINT,
       )
       `,
+    [TableName.DepositIndex]: `CREATE TABLE IF NOT EXISTS ${TableName.DepositIndex}
+      (
+        receiver VARCHAR,
+        bitcoinAddress VARCHAR,
+        txid VARCHAR,
+        vout INTEGER,
+        deposit VARCHAR,
+        PRIMARY KEY (receiver, bitcoinAddress, txid, vout)
+      )
+      `,
+    [TableName.RelayedSet]: `CREATE TABLE IF NOT EXISTS ${TableName.RelayedSet}
+      (
+        data VARCHAR PRIMARY KEY,
+      )
+      `,
   },
 };
 

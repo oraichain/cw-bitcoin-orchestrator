@@ -18,6 +18,7 @@ import { RPCClient } from "rpc-bitcoin";
 import { setTimeout } from "timers/promises";
 import * as ecc from "tiny-secp256k1";
 import { BitcoinBlock } from "../../src/@types";
+import { logger } from "../../src/configs/logger";
 import { DuckDbNode } from "../../src/services/db";
 import RelayerService from "../../src/services/relayer";
 import SignerService from "../../src/services/signer";
@@ -68,7 +69,7 @@ async function moveNextCheckpoint(
     );
     await wrappedExecuteTransaction(async () => {
       await triggerClient.triggerBlocks();
-    });
+    }, logger("moveNextCheckpoint"));
     await setTimeout(1000);
   }
 }
@@ -162,7 +163,6 @@ describe("Test bitcoin integration", () => {
       );
       signerServices.push(
         new SignerService(
-          btcClient,
           lightClientBitcoinClients[i],
           appBitcoinClients[i],
           "bitcoin" // use bitcoin key to signing for regtest transaction
@@ -321,7 +321,7 @@ describe("Test bitcoin integration", () => {
       );
       await wrappedExecuteTransaction(async () => {
         await triggerServices[0].triggerBlocks();
-      });
+      }, logger("Testing relay deposit"));
       await setTimeout(1000);
     }
 
@@ -367,7 +367,7 @@ describe("Test bitcoin integration", () => {
       );
       await wrappedExecuteTransaction(async () => {
         await triggerServices[0].triggerBlocks();
-      });
+      }, logger("Testing relay deposit"));
       await setTimeout(1000);
     }
 
@@ -403,7 +403,7 @@ describe("Test bitcoin integration", () => {
       );
       await wrappedExecuteTransaction(async () => {
         await triggerServices[0].triggerBlocks();
-      });
+      }, logger("Testing relay deposit"));
       await setTimeout(1000);
     }
 
@@ -449,7 +449,7 @@ describe("Test bitcoin integration", () => {
       );
       await wrappedExecuteTransaction(async () => {
         await triggerServices[0].triggerBlocks();
-      });
+      }, logger("Testing relay deposit"));
       await setTimeout(1000);
     }
   }, 1000_000_000);
