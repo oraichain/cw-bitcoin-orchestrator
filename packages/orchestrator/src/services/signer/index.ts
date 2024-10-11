@@ -50,6 +50,7 @@ class SignerService implements RelayerInterface {
       this.logger.info(`Setting signatory key at: ${tx.transactionHash}`);
     }
 
+    this.logger.info(`Signer is running...`);
     await this.startRelay({
       xpriv,
       xpub,
