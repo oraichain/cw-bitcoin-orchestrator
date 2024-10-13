@@ -532,6 +532,7 @@ class RelayerService implements RelayerInterface {
   async relayRecoveryDeposits() {
     this.logger.info("Starting recovery deposit relay...");
     while (true) {
+      console.log("Scanning recovery deposits...");
       try {
         const txs = await this.appBitcoinClient.signedRecoveryTxs();
         for (const recoveryTx of txs) {
@@ -549,6 +550,7 @@ class RelayerService implements RelayerInterface {
       } catch (err) {
         this.logger.error(`[RELAY_RECOVERY_DEPOSIT] Error:`, err);
       }
+      console.log("Waiting for next round to scan recovery deposits...");
       await setTimeout(ITERATION_DELAY.RELAY_RECOVERY_INTERVAL);
     }
   }
@@ -557,6 +559,7 @@ class RelayerService implements RelayerInterface {
   async relayCheckpoints() {
     this.logger.info("Starting checkpoint relay...");
     while (true) {
+      console.log("Scanning checkpoints...");
       try {
         const checkpoints = await this.appBitcoinClient.completedCheckpointTxs({
           limit: 1100,
@@ -579,6 +582,7 @@ class RelayerService implements RelayerInterface {
       } catch (err) {
         this.logger.error(`[RELAY_CHECKPOINT] Error:`, err);
       }
+      console.log("Waiting for next round to scan checkpoints...");
       await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_INTERVAL);
     }
   }
@@ -587,6 +591,7 @@ class RelayerService implements RelayerInterface {
   async relayCheckpointConf() {
     this.logger.info("Starting checkpoint confirm relay...");
     while (true) {
+      console.log("Scanning checkpoint confirmations...");
       try {
         let [confirmedIndex, unconfirmedIndex, lastCompletedIndex] =
           await Promise.all([
@@ -680,6 +685,7 @@ class RelayerService implements RelayerInterface {
           this.logger.error(`[RELAY_CHECKPOINT_CONF] Error:`, err);
         }
       }
+      console.log("Waiting for next round to scan checkpoint confirmations...");
       await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_CONF_INTERVAL);
     }
   }
