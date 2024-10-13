@@ -95,7 +95,7 @@ class RelayerService implements RelayerInterface {
     this.logger.info(`Relayer is running...`);
     await Promise.all([
       this.relayHeader(),
-      // this.relayDeposit(),
+      this.relayDeposit(),
       this.relayRecoveryDeposits(),
       this.relayCheckpoints(),
       this.relayCheckpointConf(),
@@ -288,15 +288,12 @@ class RelayerService implements RelayerInterface {
         await this.scanTxsFromMempools();
 
         // Block handler
-        this.logger.info("Scanning blocks for deposit transactions...");
         const tip = await this.lightClientBitcoinClient.sidechainBlockHash();
-
         if (prevTip === tip) {
           throw new Error(
             "Current tip block is scanned for relaying. Waiting for next header..."
           );
         }
-
         prevTip = prevTip || tip;
         let startHeight = (await this.commonAncestor(tip, prevTip)).height;
         let endHeader: BlockHeader = await this.btcClient.getblockheader({
@@ -308,7 +305,9 @@ class RelayerService implements RelayerInterface {
           endHeight - startHeight,
           RELAY_DEPOSIT_BLOCKS_SIZE
         );
-
+        this.logger.info(
+          `Scanning ${numBlocks} blocks for deposit transactions...`
+        );
         await this.scanDeposits(numBlocks);
         prevTip = tip;
 
