@@ -95,7 +95,7 @@ class RelayerService implements RelayerInterface {
     this.logger.info(`Relayer is running...`);
     await Promise.all([
       this.relayHeader(),
-      // this.relayDeposit(),
+      this.relayDeposit(),
       this.relayRecoveryDeposits(),
       this.relayCheckpoints(),
       this.relayCheckpointConf(),
