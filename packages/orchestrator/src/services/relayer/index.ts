@@ -335,7 +335,6 @@ class RelayerService implements RelayerInterface {
             })),
           ])
         ).map((item) => item.result);
-        console.log(detailMempoolTxs.length, detailMempoolTxs[0]);
         for (const tx of detailMempoolTxs) {
           if (!tx?.txid) {
             continue;
