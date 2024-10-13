@@ -36,7 +36,6 @@ import {
   ITERATION_DELAY,
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
-  RETRY_DELAY,
   SCAN_BLOCK_TXS_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_SIZE,
@@ -51,7 +50,6 @@ import {
   ScriptPubkeyType,
   toScriptPubKeyP2WSH,
 } from "../../utils/bitcoin";
-import { retry } from "../../utils/catchAsync";
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { convertSdkDestToWasmDest } from "../../utils/dest";
 import { RelayerInterface } from "../common/relayer.interface";
@@ -166,21 +164,16 @@ class RelayerService implements RelayerInterface {
 
   async relayHeaderBatch(fullNodeHash: string, sideChainHash: string) {
     let [fullNodeInfo, sideChainInfo]: [BlockHeader, BlockHeader] = (
-      await retry(
-        () =>
-          this.btcClient.batch([
-            {
-              method: "getblockheader",
-              params: [fullNodeHash],
-            },
-            {
-              method: "getblockheader",
-              params: [sideChainHash],
-            },
-          ]),
-        1,
-        RETRY_DELAY
-      )
+      await this.btcClient.batch([
+        {
+          method: "getblockheader",
+          params: [fullNodeHash],
+        },
+        {
+          method: "getblockheader",
+          params: [sideChainHash],
+        },
+      ])
     ).map((item) => item.result);
 
     if (fullNodeInfo.height < sideChainInfo.height) {
@@ -210,29 +203,21 @@ class RelayerService implements RelayerInterface {
   }
 
   async getHeaderBatch(blockHash: string): Promise<WrappedHeader[]> {
-    let cursorHeader: VerbosedBlockHeader = await retry(
-      () =>
-        this.btcClient.getblockheader({
-          blockhash: blockHash,
-          verbose: true,
-        }),
-      1,
-      RETRY_DELAY
+    let cursorHeader: VerbosedBlockHeader = await this.btcClient.getblockheader(
+      {
+        blockhash: blockHash,
+        verbose: true,
+      }
     );
     let wrappedHeaders = [];
     for (let i = 0; i < RELAY_HEADER_BATCH_SIZE; i++) {
       let nextHash = cursorHeader?.nextblockhash;
 
       if (nextHash !== undefined) {
-        cursorHeader = await retry(
-          () =>
-            this.btcClient.getblockheader({
-              blockhash: nextHash,
-              verbose: true,
-            }),
-          1,
-          RETRY_DELAY
-        );
+        cursorHeader = await this.btcClient.getblockheader({
+          blockhash: nextHash,
+          verbose: true,
+        });
         const wrappedHeader: WrappedHeader = newWrappedHeader(
           {
             bits: parseInt(cursorHeader.bits, 16),
@@ -252,21 +237,16 @@ class RelayerService implements RelayerInterface {
 
   async commonAncestor(leftHash: string, rightHash: string) {
     let [leftHeader, rightHeader]: [BlockHeader, BlockHeader] = (
-      await retry(
-        () =>
-          this.btcClient.batch([
-            {
-              method: "getblockheader",
-              params: [leftHash],
-            },
-            {
-              method: "getblockheader",
-              params: [rightHash],
-            },
-          ]),
-        1,
-        RETRY_DELAY
-      )
+      await this.btcClient.batch([
+        {
+          method: "getblockheader",
+          params: [leftHash],
+        },
+        {
+          method: "getblockheader",
+          params: [rightHash],
+        },
+      ])
     ).map((item) => item.result);
 
     while (leftHeader.hash !== rightHeader.hash) {
@@ -282,24 +262,14 @@ class RelayerService implements RelayerInterface {
         return leftHeader;
       } else if (leftHeader.height > rightHeader.height) {
         let prev = leftHeader.previousblockhash;
-        leftHeader = await retry(
-          () =>
-            this.btcClient.getblockheader({
-              blockhash: prev,
-            }),
-          1,
-          RETRY_DELAY
-        );
+        leftHeader = await this.btcClient.getblockheader({
+          blockhash: prev,
+        });
       } else {
         let prev = rightHeader.previousblockhash;
-        rightHeader = await retry(
-          () =>
-            this.btcClient.getblockheader({
-              blockhash: prev,
-            }),
-          1,
-          RETRY_DELAY
-        );
+        rightHeader = await this.btcClient.getblockheader({
+          blockhash: prev,
+        });
       }
     }
 
@@ -357,20 +327,15 @@ class RelayerService implements RelayerInterface {
       let mempoolTxs = await this.btcClient.getrawmempool();
       const txChunks = chunkArray(mempoolTxs, SCAN_MEMPOOL_CHUNK_SIZE);
       for (const txChunk of txChunks) {
-        let detailMempoolTxs: BitcoinTransaction[] = await retry(
-          async () => {
-            return (
-              await this.btcClient.batch([
-                ...txChunk.map((txid: string) => ({
-                  method: "getrawtransaction",
-                  params: [txid, true],
-                })),
-              ])
-            ).map((item) => item.result);
-          },
-          1,
-          RETRY_DELAY
-        );
+        let detailMempoolTxs: BitcoinTransaction[] = (
+          await this.btcClient.batch([
+            ...txChunk.map((txid: string) => ({
+              method: "getrawtransaction",
+              params: [txid, true],
+            })),
+          ])
+        ).map((item) => item.result);
+        console.log(detailMempoolTxs.length, detailMempoolTxs[0]);
         for (const tx of detailMempoolTxs) {
           if (!tx?.txid) {
             continue;
