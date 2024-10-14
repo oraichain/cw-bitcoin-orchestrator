@@ -18,19 +18,27 @@ class BlockHeaderService {
   }
 
   async insert(blockhash: string): Promise<VerbosedBlockHeader> {
-    const blockHeaderData: VerbosedBlockHeader =
-      await this.btcClient.getblockheader({
-        blockhash,
-        verbose: true,
+    try {
+      const blockHeaderData: VerbosedBlockHeader =
+        await this.btcClient.getblockheader({
+          blockhash,
+          verbose: true,
+        });
+      await this.db.insert(TableName.BlockHeader, {
+        where: {
+          hash: blockhash,
+          data: JSON.stringify(blockHeaderData),
+        },
       });
-    await this.db.insert(TableName.BlockHeader, {
-      where: {
-        hash: blockhash,
-        data: JSON.stringify(blockHeaderData),
-      },
-    });
-    this.logger.info(`Inserted new block header with hash ${blockhash}`);
-    return blockHeaderData;
+      this.logger.info(`Inserted new block header with hash ${blockhash}`);
+      return blockHeaderData;
+    } catch (err) {
+      this.logger.error(
+        `Error inserting block header with hash ${blockhash}`,
+        err
+      );
+      throw err;
+    }
   }
 
   async getBlockHeader(blockhash: string): Promise<VerbosedBlockHeader | null> {
