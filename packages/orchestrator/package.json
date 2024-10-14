@@ -37,7 +37,7 @@
     "joi": "^17.13.3",
     "morgan": "^1.10.0",
     "readline-sync": "^1.4.10",
-    "rpc-bitcoin": "https://github.com/oraichain/rpc-bitcoin.git",
+    "@oraichain/rpc-bitcoin": "^2.0.6",
     "tiny-secp256k1": "^2.2.3",
     "winston": "^3.14.1",
     "winston-daily-rotate-file": "^5.0.0",
