@@ -25,10 +25,8 @@ class BlockHeaderService {
           verbose: true,
         });
       await this.db.insert(TableName.BlockHeader, {
-        where: {
-          hash: blockhash,
-          data: JSON.stringify(blockHeaderData),
-        },
+        hash: blockhash,
+        data: JSON.stringify(blockHeaderData),
       });
       this.logger.info(`Inserted new block header with hash ${blockhash}`);
       return blockHeaderData;
