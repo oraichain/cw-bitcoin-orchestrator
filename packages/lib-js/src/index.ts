@@ -100,9 +100,9 @@ async function getDepositAddress(
   const checkpointConfig = configResponse.data as CheckpointConfig;
   const encodedDest = commitmentBytes(convertSdkDestToWasmDest(dest));
   const depositScript = redeemScript(
-    sigset, // thông tin signature sets ở checkpoint mới nhất
-    Buffer.from(encodedDest), // địa chỉ của user
-    checkpointConfig.sigset_threshold // 2 / 3
+    sigset,
+    Buffer.from(encodedDest),
+    checkpointConfig.sigset_threshold
   );
   let wsh = btc.payments.p2wsh({
     redeem: { output: depositScript },
