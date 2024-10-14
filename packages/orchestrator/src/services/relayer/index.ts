@@ -13,9 +13,9 @@ import {
   toBinaryTransaction,
   toReceiverAddr
 } from '@oraichain/bitcoin-bridge-wasm-sdk';
+import { RPCClient } from '@oraichain/rpc-bitcoin';
 import * as btc from 'bitcoinjs-lib';
 import process from 'process';
-import { RPCClient } from 'rpc-bitcoin';
 import { setTimeout } from 'timers/promises';
 import { Logger } from 'winston';
 import { BitcoinBlock, BitcoinTransaction, BlockHeader, VerbosedBlockHeader } from '../../@types';
