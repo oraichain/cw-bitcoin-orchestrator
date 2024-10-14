@@ -197,6 +197,9 @@ class RelayerService implements RelayerInterface {
   async getHeaderBatch(blockHash: string): Promise<WrappedHeader[]> {
     let cursorHeader: VerbosedBlockHeader =
       await this.blockHeaderService.getBlockHeader(blockHash);
+    console.log({
+      cursorHeader,
+    });
     let wrappedHeaders = [];
     for (let i = 0; i < RELAY_HEADER_BATCH_SIZE; i++) {
       let nextHash = cursorHeader?.nextblockhash;
