@@ -42,7 +42,7 @@ import DepositIndexService from '../deposit_index';
 import RelayedSetService from '../relayed_set';
 import WatchedScriptsService from '../watched_scripts';
 
-class RelayerService implements RelayerInterface {
+export default class RelayerService implements RelayerInterface {
   static instances: RelayerService;
   watchedScriptClient: WatchedScriptsService;
   depositIndexService: DepositIndexService;
