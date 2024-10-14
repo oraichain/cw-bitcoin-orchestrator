@@ -19,9 +19,9 @@ import {
   toBinaryTransaction,
   toReceiverAddr,
 } from "@oraichain/bitcoin-bridge-wasm-sdk";
+import { RPCClient } from "@oraichain/rpc-bitcoin";
 import * as btc from "bitcoinjs-lib";
 import process from "process";
-import { RPCClient } from "rpc-bitcoin";
 import { setTimeout } from "timers/promises";
 import { Logger } from "winston";
 import {
@@ -52,29 +52,27 @@ import {
 } from "../../utils/bitcoin";
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { convertSdkDestToWasmDest } from "../../utils/dest";
+import BlockHeaderService from "../block_header";
 import { RelayerInterface } from "../common/relayer.interface";
 import { DuckDbNode } from "../db";
 import DepositIndexService from "../deposit_index";
 import RelayedSetService from "../relayed_set";
 import WatchedScriptsService from "../watched_scripts";
 
-class RelayerService implements RelayerInterface {
+export default class RelayerService implements RelayerInterface {
   static instances: RelayerService;
-  btcClient: RPCClient;
-  lightClientBitcoinClient: LightClientBitcoinClient;
-  appBitcoinClient: AppBitcoinClient;
   watchedScriptClient: WatchedScriptsService;
-  depositIndex: DepositIndexService;
-  relayedSet: RelayedSetService;
-  network?: BitcoinNetwork;
+  depositIndexService: DepositIndexService;
+  relayedSetService: RelayedSetService;
+  blockHeaderService: BlockHeaderService;
   logger: Logger;
 
   constructor(
-    btcClient: RPCClient,
-    lightClientBitcoinClient: LightClientBitcoinClient,
-    appBitcoinClient: AppBitcoinClient,
-    db: DuckDbNode,
-    network?: BitcoinNetwork
+    protected btcClient: RPCClient,
+    protected lightClientBitcoinClient: LightClientBitcoinClient,
+    protected appBitcoinClient: AppBitcoinClient,
+    protected db: DuckDbNode,
+    protected network?: BitcoinNetwork
   ) {
     this.btcClient = btcClient;
     this.lightClientBitcoinClient = lightClientBitcoinClient;
@@ -84,9 +82,10 @@ class RelayerService implements RelayerInterface {
       this.appBitcoinClient
     );
     WatchedScriptsService.instances = this.watchedScriptClient;
-    this.depositIndex = new DepositIndexService(db);
-    DepositIndexService.instances = this.depositIndex;
-    this.relayedSet = new RelayedSetService(db);
+    this.depositIndexService = new DepositIndexService(db);
+    DepositIndexService.instances = this.depositIndexService;
+    this.relayedSetService = new RelayedSetService(db);
+    this.blockHeaderService = new BlockHeaderService(btcClient, db);
     this.network = network;
     this.logger = logger("RelayerService");
   }
@@ -148,9 +147,7 @@ class RelayerService implements RelayerInterface {
         if (lastHash != fullNodeHash) {
           lastHash = fullNodeHash;
           const lastHashHeader: BlockHeader =
-            await this.btcClient.getblockheader({
-              blockhash: lastHash,
-            });
+            await this.blockHeaderService.getBlockHeader(lastHash);
           this.logger.info(
             `Sidechain header state is up-to-date:\n\thash=${lastHashHeader.hash}\n\theight=${lastHashHeader.height}`
           );
@@ -163,18 +160,11 @@ class RelayerService implements RelayerInterface {
   }
 
   async relayHeaderBatch(fullNodeHash: string, sideChainHash: string) {
-    let [fullNodeInfo, sideChainInfo]: [BlockHeader, BlockHeader] = (
-      await this.btcClient.batch([
-        {
-          method: "getblockheader",
-          params: [fullNodeHash],
-        },
-        {
-          method: "getblockheader",
-          params: [sideChainHash],
-        },
-      ])
-    ).map((item) => item.result);
+    let [fullNodeInfo, sideChainInfo]: [BlockHeader, BlockHeader] =
+      await Promise.all([
+        this.blockHeaderService.getBlockHeader(fullNodeHash),
+        this.blockHeaderService.getBlockHeader(sideChainHash),
+      ]);
 
     if (fullNodeInfo.height < sideChainInfo.height) {
       this.logger.info("Full node is still syncing with real running node!");
@@ -183,41 +173,37 @@ class RelayerService implements RelayerInterface {
     let startHeader = await this.commonAncestor(fullNodeHash, sideChainHash);
     let wrappedHeaders = await this.getHeaderBatch(startHeader.hash);
 
-    this.logger.info(
-      `Relaying headers...\n\theight=${wrappedHeaders[0].height}\n\tbatches=${wrappedHeaders.length}`
-    );
+    if (wrappedHeaders.length > 0) {
+      this.logger.info(
+        `Relaying headers...\n\theight=${wrappedHeaders[0].height}\n\tbatches=${wrappedHeaders.length}`
+      );
 
-    await wrappedExecuteTransaction(async () => {
-      const tx = await this.lightClientBitcoinClient.relayHeaders({
-        headers: [...wrappedHeaders],
-      });
-      this.logger.info(`Relayed headers with tx hash: ${tx.transactionHash}`);
-    }, this.logger);
+      await wrappedExecuteTransaction(async () => {
+        const tx = await this.lightClientBitcoinClient.relayHeaders({
+          headers: [...wrappedHeaders],
+        });
+        this.logger.info(`Relayed headers with tx hash: ${tx.transactionHash}`);
+      }, this.logger);
 
-    let currentSidechainBlockHash =
-      await this.lightClientBitcoinClient.sidechainBlockHash();
-    if (currentSidechainBlockHash === fullNodeHash) {
-      this.logger.info("Relayed all headers");
+      let currentSidechainBlockHash =
+        await this.lightClientBitcoinClient.sidechainBlockHash();
+      if (currentSidechainBlockHash === fullNodeHash) {
+        this.logger.info("Relayed all headers");
+      }
     }
+
     return;
   }
 
   async getHeaderBatch(blockHash: string): Promise<WrappedHeader[]> {
-    let cursorHeader: VerbosedBlockHeader = await this.btcClient.getblockheader(
-      {
-        blockhash: blockHash,
-        verbose: true,
-      }
-    );
+    let cursorHeader: VerbosedBlockHeader =
+      await this.blockHeaderService.getBlockHeader(blockHash);
     let wrappedHeaders = [];
     for (let i = 0; i < RELAY_HEADER_BATCH_SIZE; i++) {
       let nextHash = cursorHeader?.nextblockhash;
 
       if (nextHash !== undefined) {
-        cursorHeader = await this.btcClient.getblockheader({
-          blockhash: nextHash,
-          verbose: true,
-        });
+        cursorHeader = await this.blockHeaderService.getBlockHeader(nextHash);
         const wrappedHeader: WrappedHeader = newWrappedHeader(
           {
             bits: parseInt(cursorHeader.bits, 16),
@@ -235,20 +221,15 @@ class RelayerService implements RelayerInterface {
     return wrappedHeaders;
   }
 
-  async commonAncestor(leftHash: string, rightHash: string) {
-    let [leftHeader, rightHeader]: [BlockHeader, BlockHeader] = (
-      await this.btcClient.batch([
-        {
-          method: "getblockheader",
-          params: [leftHash],
-        },
-        {
-          method: "getblockheader",
-          params: [rightHash],
-        },
-      ])
-    ).map((item) => item.result);
-
+  async commonAncestor(
+    leftHash: string,
+    rightHash: string
+  ): Promise<BlockHeader> {
+    let [leftHeader, rightHeader]: [BlockHeader, BlockHeader] =
+      await Promise.all([
+        this.blockHeaderService.getBlockHeader(leftHash),
+        this.blockHeaderService.getBlockHeader(rightHash),
+      ]);
     while (leftHeader.hash !== rightHeader.hash) {
       if (
         leftHeader.height > rightHeader.height &&
@@ -262,14 +243,10 @@ class RelayerService implements RelayerInterface {
         return leftHeader;
       } else if (leftHeader.height > rightHeader.height) {
         let prev = leftHeader.previousblockhash;
-        leftHeader = await this.btcClient.getblockheader({
-          blockhash: prev,
-        });
+        leftHeader = await this.blockHeaderService.getBlockHeader(prev);
       } else {
         let prev = rightHeader.previousblockhash;
-        rightHeader = await this.btcClient.getblockheader({
-          blockhash: prev,
-        });
+        rightHeader = await this.blockHeaderService.getBlockHeader(prev);
       }
     }
 
@@ -296,10 +273,9 @@ class RelayerService implements RelayerInterface {
         }
         prevTip = prevTip || tip;
         let startHeight = (await this.commonAncestor(tip, prevTip)).height;
-        let endHeader: BlockHeader = await this.btcClient.getblockheader({
-          blockhash: tip,
-          verbose: true,
-        });
+
+        let endHeader: BlockHeader =
+          await this.blockHeaderService.getBlockHeader(tip);
         let endHeight = endHeader.height;
         let numBlocks = Math.max(
           endHeight - startHeight,
@@ -339,7 +315,9 @@ class RelayerService implements RelayerInterface {
             continue;
           }
           let txid = tx.txid;
-          const existed = await this.relayedSet.exist(`relay-deposit-${txid}`);
+          const existed = await this.relayedSetService.exist(
+            `relay-deposit-${txid}`
+          );
           if (existed) continue;
           const outputs = tx.vout;
 
@@ -361,8 +339,8 @@ class RelayerService implements RelayerInterface {
             if (!script) continue;
 
             this.logger.info(`Found pending deposit transaction ${txid}`);
-            await this.relayedSet.insert(`relay-deposit-${txid}`);
-            await this.depositIndex.insertDeposit({
+            await this.relayedSetService.insert(`relay-deposit-${txid}`);
+            await this.depositIndexService.insertDeposit({
               receiver: toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
               bitcoinAddress: address,
               txid,
@@ -478,7 +456,7 @@ class RelayerService implements RelayerInterface {
 
       if (isExistOutpoint === true) {
         // Remove this outpoint from deposit index
-        await this.depositIndex.removeDeposit({
+        await this.depositIndexService.removeDeposit({
           receiver: toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
           bitcoinAddress: address,
           txid,
@@ -487,7 +465,7 @@ class RelayerService implements RelayerInterface {
         continue;
       }
 
-      await this.depositIndex.insertDeposit({
+      await this.depositIndexService.insertDeposit({
         receiver: toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
         bitcoinAddress: address,
         txid,
@@ -531,25 +509,25 @@ class RelayerService implements RelayerInterface {
   async relayRecoveryDeposits() {
     this.logger.info("Starting recovery deposit relay...");
     while (true) {
-      console.log("Scanning recovery deposits...");
       try {
         const txs = await this.appBitcoinClient.signedRecoveryTxs();
         for (const recoveryTx of txs) {
-          const existed = await this.relayedSet.exist(
+          const existed = await this.relayedSetService.exist(
             `relay-recovery-deposits-${recoveryTx}`
           );
           if (existed) continue;
           const tx = await this.btcClient.sendrawtransaction({
             hexstring: Buffer.from(recoveryTx, "base64").toString("hex"),
           });
-          await this.relayedSet.insert(`relay-recovery-deposits-${recoveryTx}`);
+          await this.relayedSetService.insert(
+            `relay-recovery-deposits-${recoveryTx}`
+          );
           this.logger.info(`Relayed recovery tx ${tx}`);
           await setTimeout(SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY);
         }
       } catch (err) {
         this.logger.error(`[RELAY_RECOVERY_DEPOSIT] Error:`, err);
       }
-      console.log("Waiting for next round to scan recovery deposits...");
       await setTimeout(ITERATION_DELAY.RELAY_RECOVERY_INTERVAL);
     }
   }
@@ -558,13 +536,12 @@ class RelayerService implements RelayerInterface {
   async relayCheckpoints() {
     this.logger.info("Starting checkpoint relay...");
     while (true) {
-      console.log("Scanning checkpoints...");
       try {
         const checkpoints = await this.appBitcoinClient.completedCheckpointTxs({
           limit: 1100,
         });
         for (const checkpoint of checkpoints) {
-          const exist = await this.relayedSet.exist(
+          const exist = await this.relayedSetService.exist(
             `relay-checkpoint-${checkpoint}`
           );
           if (exist) continue;
@@ -572,7 +549,9 @@ class RelayerService implements RelayerInterface {
             const tx = await this.btcClient.sendrawtransaction({
               hexstring: Buffer.from(checkpoint, "base64").toString("hex"),
             });
-            await this.relayedSet.insert(`relay-checkpoint-${checkpoint}`);
+            await this.relayedSetService.insert(
+              `relay-checkpoint-${checkpoint}`
+            );
             this.logger.info(`Relayed checkpoint tx ${tx}`);
           } catch (err) {}
 
@@ -581,7 +560,6 @@ class RelayerService implements RelayerInterface {
       } catch (err) {
         this.logger.error(`[RELAY_CHECKPOINT] Error:`, err);
       }
-      console.log("Waiting for next round to scan checkpoints...");
       await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_INTERVAL);
     }
   }
@@ -590,7 +568,6 @@ class RelayerService implements RelayerInterface {
   async relayCheckpointConf() {
     this.logger.info("Starting checkpoint confirm relay...");
     while (true) {
-      console.log("Scanning checkpoint confirmations...");
       try {
         let [confirmedIndex, unconfirmedIndex, lastCompletedIndex] =
           await Promise.all([
@@ -623,9 +600,9 @@ class RelayerService implements RelayerInterface {
           (async () => {
             const blockHash =
               await this.lightClientBitcoinClient.sidechainBlockHash();
-            const blockHeader = await this.btcClient.getblockheader({
-              blockhash: blockHash,
-            });
+            const blockHeader = await this.blockHeaderService.getBlockHeader(
+              blockHash
+            );
             return blockHeader.height as number;
           })(),
           (async () => {
@@ -635,7 +612,7 @@ class RelayerService implements RelayerInterface {
         ]);
         let txid = getBitcoinTransactionTxid(tx);
 
-        const exist = await this.relayedSet.exist(
+        const exist = await this.relayedSetService.exist(
           `relay-checkpoint-conf-${txid}`
         );
         if (exist) {
@@ -674,7 +651,7 @@ class RelayerService implements RelayerInterface {
               `Relayed checkpoint confirmation with tx ${txid} at tx ${tx.transactionHash}`
             );
           }, this.logger);
-          await this.relayedSet.insert(`relay-checkpoint-conf-${txid}`);
+          await this.relayedSetService.insert(`relay-checkpoint-conf-${txid}`);
         }
       } catch (err) {
         if (
@@ -684,7 +661,6 @@ class RelayerService implements RelayerInterface {
           this.logger.error(`[RELAY_CHECKPOINT_CONF] Error:`, err);
         }
       }
-      console.log("Waiting for next round to scan checkpoint confirmations...");
       await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_CONF_INTERVAL);
     }
   }
@@ -695,9 +671,7 @@ class RelayerService implements RelayerInterface {
     scanBlocks: number
   ): Promise<[number, string] | null> {
     let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
-    let baseHeader = await this.btcClient.getblockheader({
-      blockhash: tip,
-    });
+    let baseHeader = await this.blockHeaderService.getBlockHeader(tip);
     let initialHeight = baseHeader.height;
     let baseHeight = initialHeight;
 
@@ -719,11 +693,7 @@ class RelayerService implements RelayerInterface {
       let oldestBlock = blocks[blocks.length - 1].hash;
       if (tip === oldestBlock) break;
       tip = oldestBlock;
-      baseHeight = (
-        await this.btcClient.getblockheader({
-          blockhash: tip,
-        })
-      ).height;
+      baseHeight = (await this.blockHeaderService.getBlockHeader(tip)).height;
     }
 
     return null;
@@ -733,11 +703,13 @@ class RelayerService implements RelayerInterface {
   async getPendingDeposits(receiver: string): Promise<DepositInfo[]> {
     const currentSidechainBlockHash =
       await this.lightClientBitcoinClient.sidechainBlockHash();
-    const blockHeader: BlockHeader = await this.btcClient.getblockheader({
-      blockhash: currentSidechainBlockHash,
-    });
+    const blockHeader: BlockHeader =
+      await this.blockHeaderService.getBlockHeader(currentSidechainBlockHash);
     const currentBtcHeight = blockHeader.height;
-    return this.depositIndex.getDepositsByReceiver(receiver, currentBtcHeight);
+    return this.depositIndexService.getDepositsByReceiver(
+      receiver,
+      currentBtcHeight
+    );
   }
 
   // for testing purpose only
@@ -820,5 +792,3 @@ class RelayerService implements RelayerInterface {
     });
   }
 }
-
-export default RelayerService;

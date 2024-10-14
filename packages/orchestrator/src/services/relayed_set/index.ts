@@ -6,7 +6,6 @@ import { DuckDbNode } from "../db";
 class RelayedSetService {
   logger: Logger;
   constructor(protected db: DuckDbNode) {
-    this.db = db;
     this.logger = logger("RelayedSetService");
   }
 

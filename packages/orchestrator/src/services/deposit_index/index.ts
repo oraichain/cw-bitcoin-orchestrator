@@ -18,7 +18,6 @@ class DepositIndexService {
   static instances: DepositIndexService;
   logger: Logger;
   constructor(protected db: DuckDbNode) {
-    this.db = db;
     this.logger = logger("DepositIndexService");
   }
 
