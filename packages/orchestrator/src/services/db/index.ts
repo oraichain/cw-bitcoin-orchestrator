@@ -33,6 +33,12 @@ export const sqlCommands = {
         data VARCHAR PRIMARY KEY,
       )
       `,
+    [TableName.BlockHeader]: `CREATE TABLE IF NOT EXISTS ${TableName.BlockHeader}
+      (
+        hash VARCHAR PRIMARY KEY,
+        data VARCHAR,
+      )
+      `,
   },
 };
 
