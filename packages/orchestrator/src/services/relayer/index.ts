@@ -171,7 +171,9 @@ class RelayerService implements RelayerInterface {
       return;
     }
     let startHeader = await this.commonAncestor(fullNodeHash, sideChainHash);
+    console.log({ startHeader });
     let wrappedHeaders = await this.getHeaderBatch(startHeader.hash);
+    console.log({ wrappedHeaders });
 
     this.logger.info(
       `Relaying headers...\n\theight=${wrappedHeaders[0].height}\n\tbatches=${wrappedHeaders.length}`
@@ -274,7 +276,6 @@ class RelayerService implements RelayerInterface {
           );
         }
         prevTip = prevTip || tip;
-        console.log("Start header", await this.commonAncestor(tip, prevTip));
         let startHeight = (await this.commonAncestor(tip, prevTip)).height;
 
         let endHeader: BlockHeader =
