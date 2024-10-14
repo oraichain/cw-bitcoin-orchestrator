@@ -285,7 +285,7 @@ class RelayerService implements RelayerInterface {
         this.logger.info("Scanning mempool for deposit transactions...");
 
         // Mempool handler
-        await this.scanTxsFromMempools();
+        // await this.scanTxsFromMempools();
 
         // Block handler
         const tip = await this.lightClientBitcoinClient.sidechainBlockHash();
@@ -308,7 +308,7 @@ class RelayerService implements RelayerInterface {
         this.logger.info(
           `Scanning ${numBlocks} blocks for deposit transactions...`
         );
-        // await this.scanDeposits(numBlocks);
+        await this.scanDeposits(numBlocks);
         prevTip = tip;
 
         this.logger.info("Waiting some seconds for next scan...");
