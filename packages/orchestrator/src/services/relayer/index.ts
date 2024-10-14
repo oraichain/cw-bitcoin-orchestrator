@@ -224,7 +224,7 @@ class RelayerService implements RelayerInterface {
         this.blockHeaderService.getBlockHeader(leftHash),
         this.blockHeaderService.getBlockHeader(rightHash),
       ]);
-
+    console.log(leftHeader, rightHeader);
     while (leftHeader.hash !== rightHeader.hash) {
       if (
         leftHeader.height > rightHeader.height &&
@@ -560,6 +560,7 @@ class RelayerService implements RelayerInterface {
 
   // [RELAY CHECKPOINT CONFIRM]
   async relayCheckpointConf() {
+    this.logger.info("Starting checkpoint confirm relay...");
     while (true) {
       try {
         let [confirmedIndex, unconfirmedIndex, lastCompletedIndex] =
