@@ -171,35 +171,33 @@ class RelayerService implements RelayerInterface {
       return;
     }
     let startHeader = await this.commonAncestor(fullNodeHash, sideChainHash);
-    console.log({ startHeader });
     let wrappedHeaders = await this.getHeaderBatch(startHeader.hash);
-    console.log({ wrappedHeaders });
 
-    this.logger.info(
-      `Relaying headers...\n\theight=${wrappedHeaders[0].height}\n\tbatches=${wrappedHeaders.length}`
-    );
+    if (wrappedHeaders.length > 0) {
+      this.logger.info(
+        `Relaying headers...\n\theight=${wrappedHeaders[0].height}\n\tbatches=${wrappedHeaders.length}`
+      );
 
-    await wrappedExecuteTransaction(async () => {
-      const tx = await this.lightClientBitcoinClient.relayHeaders({
-        headers: [...wrappedHeaders],
-      });
-      this.logger.info(`Relayed headers with tx hash: ${tx.transactionHash}`);
-    }, this.logger);
+      await wrappedExecuteTransaction(async () => {
+        const tx = await this.lightClientBitcoinClient.relayHeaders({
+          headers: [...wrappedHeaders],
+        });
+        this.logger.info(`Relayed headers with tx hash: ${tx.transactionHash}`);
+      }, this.logger);
 
-    let currentSidechainBlockHash =
-      await this.lightClientBitcoinClient.sidechainBlockHash();
-    if (currentSidechainBlockHash === fullNodeHash) {
-      this.logger.info("Relayed all headers");
+      let currentSidechainBlockHash =
+        await this.lightClientBitcoinClient.sidechainBlockHash();
+      if (currentSidechainBlockHash === fullNodeHash) {
+        this.logger.info("Relayed all headers");
+      }
     }
+
     return;
   }
 
   async getHeaderBatch(blockHash: string): Promise<WrappedHeader[]> {
     let cursorHeader: VerbosedBlockHeader =
       await this.blockHeaderService.getBlockHeader(blockHash);
-    console.log({
-      cursorHeader,
-    });
     let wrappedHeaders = [];
     for (let i = 0; i < RELAY_HEADER_BATCH_SIZE; i++) {
       let nextHash = cursorHeader?.nextblockhash;
@@ -232,28 +230,23 @@ class RelayerService implements RelayerInterface {
         this.blockHeaderService.getBlockHeader(leftHash),
         this.blockHeaderService.getBlockHeader(rightHash),
       ]);
-    console.log("commonAncestor", leftHeader, rightHeader);
     while (leftHeader.hash !== rightHeader.hash) {
       if (
         leftHeader.height > rightHeader.height &&
         rightHeader.confirmations - 1 === leftHeader.height - rightHeader.height
       ) {
-        console.log("Jump one:", rightHeader);
         return rightHeader;
       } else if (
         rightHeader.height > leftHeader.height &&
         leftHeader.confirmations - 1 === rightHeader.height - leftHeader.height
       ) {
-        console.log("Jump one:", leftHeader);
         return leftHeader;
       } else if (leftHeader.height > rightHeader.height) {
         let prev = leftHeader.previousblockhash;
         leftHeader = await this.blockHeaderService.getBlockHeader(prev);
-        console.log("leftHeader:", leftHeader);
       } else {
         let prev = rightHeader.previousblockhash;
         rightHeader = await this.blockHeaderService.getBlockHeader(prev);
-        console.log("rightHeader:", rightHeader);
       }
     }
 
