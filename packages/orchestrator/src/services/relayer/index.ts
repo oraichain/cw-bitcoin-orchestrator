@@ -224,7 +224,7 @@ class RelayerService implements RelayerInterface {
         this.blockHeaderService.getBlockHeader(leftHash),
         this.blockHeaderService.getBlockHeader(rightHash),
       ]);
-    console.log(leftHeader, rightHeader);
+    console.log("commonAncestor", leftHeader, rightHeader);
     while (leftHeader.hash !== rightHeader.hash) {
       if (
         leftHeader.height > rightHeader.height &&
@@ -239,9 +239,11 @@ class RelayerService implements RelayerInterface {
       } else if (leftHeader.height > rightHeader.height) {
         let prev = leftHeader.previousblockhash;
         leftHeader = await this.blockHeaderService.getBlockHeader(prev);
+        console.log("leftHeader:", leftHeader);
       } else {
         let prev = rightHeader.previousblockhash;
         rightHeader = await this.blockHeaderService.getBlockHeader(prev);
+        console.log("rightHeader:", rightHeader);
       }
     }
 
