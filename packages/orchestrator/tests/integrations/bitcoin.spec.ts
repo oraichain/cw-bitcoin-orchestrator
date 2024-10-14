@@ -28,6 +28,7 @@ async function moveNextCheckpoint(currentCheckpointIndex: number, btcClient: RPC
     },
     btc.networks.regtest
   );
+  if (!depositAddress) return Error(`Deposit Address is emtpy`);
   await relayerService.submitDepositAddress(depositAddress, 0, {
     address: 'orai1ehmhqcn8erf3dgavrca69zgp4rtxj5kqgtcnyd'
   });
@@ -234,6 +235,7 @@ describe('Test bitcoin integration', () => {
       },
       btc.networks.regtest
     );
+    if (!depositAddress) return Error(`Deposit Address is emtpy`);
     await relayerServices[0].submitDepositAddress(depositAddress, 0, {
       address: 'orai1ehmhqcn8erf3dgavrca69zgp4rtxj5kqgtcnyd'
     });
