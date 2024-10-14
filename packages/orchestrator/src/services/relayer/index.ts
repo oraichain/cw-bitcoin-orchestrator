@@ -230,11 +230,13 @@ class RelayerService implements RelayerInterface {
         leftHeader.height > rightHeader.height &&
         rightHeader.confirmations - 1 === leftHeader.height - rightHeader.height
       ) {
+        console.log("Jump one:", rightHeader);
         return rightHeader;
       } else if (
         rightHeader.height > leftHeader.height &&
         leftHeader.confirmations - 1 === rightHeader.height - leftHeader.height
       ) {
+        console.log("Jump one:", leftHeader);
         return leftHeader;
       } else if (leftHeader.height > rightHeader.height) {
         let prev = leftHeader.previousblockhash;
@@ -270,6 +272,7 @@ class RelayerService implements RelayerInterface {
         }
         prevTip = prevTip || tip;
         let startHeight = (await this.commonAncestor(tip, prevTip)).height;
+
         let endHeader: BlockHeader =
           await this.blockHeaderService.getBlockHeader(tip);
         let endHeight = endHeader.height;
