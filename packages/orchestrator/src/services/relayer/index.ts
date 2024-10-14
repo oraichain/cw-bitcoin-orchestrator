@@ -218,7 +218,10 @@ class RelayerService implements RelayerInterface {
     return wrappedHeaders;
   }
 
-  async commonAncestor(leftHash: string, rightHash: string) {
+  async commonAncestor(
+    leftHash: string,
+    rightHash: string
+  ): Promise<BlockHeader> {
     let [leftHeader, rightHeader]: [BlockHeader, BlockHeader] =
       await Promise.all([
         this.blockHeaderService.getBlockHeader(leftHash),
@@ -271,6 +274,7 @@ class RelayerService implements RelayerInterface {
           );
         }
         prevTip = prevTip || tip;
+        console.log("Start header", await this.commonAncestor(tip, prevTip));
         let startHeight = (await this.commonAncestor(tip, prevTip)).height;
 
         let endHeader: BlockHeader =
