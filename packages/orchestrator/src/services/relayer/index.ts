@@ -162,7 +162,7 @@ export default class RelayerService implements RelayerInterface {
           },
           cursorHeader.height
         );
-        wrappedHeaders = [...wrappedHeaders, wrappedHeader];
+        wrappedHeaders.push(wrappedHeader);
       }
     }
     return wrappedHeaders;
