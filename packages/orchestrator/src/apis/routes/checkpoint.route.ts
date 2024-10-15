@@ -1,6 +1,6 @@
-import express from "express";
+import express, { Router } from "express";
 import checkpointController from "../controllers/checkpoint.controller";
-const router = express.Router();
+const router: Router = express.Router();
 
 router.get("/", checkpointController.getCheckpoint);
 router.get("/config", checkpointController.getConfig);
