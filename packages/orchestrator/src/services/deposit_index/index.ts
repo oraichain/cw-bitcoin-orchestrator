@@ -22,11 +22,9 @@ class DepositIndexService {
   }
 
   async insertDeposit(data: DepositIndexInterface) {
-    const deposit = await this.get({ ...data });
+    const deposit = await this.get(data);
     if (!deposit) {
-      await this.db.insert(TableName.DepositIndex, {
-        ...data
-      });
+      await this.db.insert(TableName.DepositIndex, data);
     }
     this.logger.info(`Insert deposit, with receiver ${data.receiver}, bitcoin address ${data.bitcoinAddress}, txid: ${data.txid}, vout: ${data.vout}, deposit: ${data.deposit}`);
   }

@@ -16,6 +16,7 @@ import {
 import { RPCClient } from '@oraichain/rpc-bitcoin';
 import * as btc from 'bitcoinjs-lib';
 import process from 'process';
+import { mapSlice } from 'src/utils/array';
 import { setTimeout } from 'timers/promises';
 import { Logger } from 'winston';
 import { BitcoinBlock, BitcoinTransaction, BlockHeader, VerbosedBlockHeader } from '../../@types';
@@ -31,7 +32,6 @@ import {
   SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY,
   SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY
 } from '../../constants';
-import { chunkArray } from '../../utils/array';
 import { calculateOutpointKey, decodeAddress, getCurrentNetwork, ScriptPubkeyType, toScriptPubKeyP2WSH } from '../../utils/bitcoin';
 import { wrappedExecuteTransaction } from '../../utils/cosmos';
 import { convertSdkDestToWasmDest } from '../../utils/dest';
@@ -225,26 +225,29 @@ export default class RelayerService implements RelayerInterface {
 
   async scanTxsFromMempools() {
     try {
-      let mempoolTxs = await this.btcClient.getrawmempool();
-      const txChunks = chunkArray(mempoolTxs, SCAN_MEMPOOL_CHUNK_SIZE);
-      for (const txChunk of txChunks) {
-        let detailMempoolTxs: BitcoinTransaction[] = (
-          await this.btcClient.batch(
-            txChunk.map((txid: string) => ({
-              method: 'getrawtransaction',
-              params: [txid, true]
-            }))
-          )
-        ).map((item) => item.result);
+      const allMempoolTxs = await this.btcClient.getrawmempool();
+      const mempoolTxs = [];
+      for (const txid of allMempoolTxs) {
+        const existed = await this.relayedSetService.exist(`relay-deposit-${txid}`);
+        if (existed) continue;
+        mempoolTxs.push(txid);
+      }
+
+      let i = 0;
+      while (i < mempoolTxs.length) {
+        const txChunk = mapSlice(mempoolTxs, i, (i += SCAN_MEMPOOL_CHUNK_SIZE), (txid: string) => ({
+          method: 'getrawtransaction',
+          params: [txid, true]
+        }));
+
+        let detailMempoolTxs: BitcoinTransaction[] = (await this.btcClient.batch(txChunk)).map((item) => item.result);
         for (const tx of detailMempoolTxs) {
           if (!tx?.txid) {
             continue;
           }
           let txid = tx.txid;
-          const existed = await this.relayedSetService.exist(`relay-deposit-${txid}`);
-          if (existed) continue;
-          const outputs = tx.vout;
 
+          const outputs = tx.vout;
           for (let vout = 0; vout < outputs.length; vout++) {
             let output = outputs[vout];
             if (output.scriptPubKey.type != ScriptPubkeyType.WitnessScriptHash) {
