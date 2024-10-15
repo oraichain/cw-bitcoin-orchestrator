@@ -12,6 +12,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@airbnb/node-memwatch@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@airbnb/node-memwatch@npm:2.0.0"
+  dependencies:
+    bindings: "npm:^1.5.0"
+    nan: "npm:^2.14.1"
+    node-gyp: "npm:latest"
+  checksum: 10c0/87f71ef4bfc757c73b69e2591badddcf6174aea1845e315bca3a47ea85d4e23a40a7bfa6376544b4e06532ac6ecc9d531fdd770cc27eee390dc0454187a015b2
+  languageName: node
+  linkType: hard
+
 "@ampproject/remapping@npm:^2.2.0":
   version: 2.3.0
   resolution: "@ampproject/remapping@npm:2.3.0"
@@ -3697,6 +3708,13 @@ __metadata:
   dependencies:
     tslib: "npm:^2.4.0"
   checksum: 10c0/f9fde5c554455019f33af6c8215f1a1435028803dc2a2825b077d812bed4209a1a64444a4ca0ce2ea7e1175c8d88e2f9173a36a33c199e8a5c671aa31de8242d
+  languageName: node
+  linkType: hard
+
+"@types/airbnb__node-memwatch@npm:^2":
+  version: 2.0.3
+  resolution: "@types/airbnb__node-memwatch@npm:2.0.3"
+  checksum: 10c0/16baec81f214c9af5876c4b3fff70a0d72f2007351eac41b66b4eadd0de477de310e1020b1a920c1528b8c055066305ff3b6a4902ab8ea2618f0fa2004b5bcca
   languageName: node
   linkType: hard
 
@@ -11063,7 +11081,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nan@npm:^2.14.0":
+"nan@npm:^2.14.0, nan@npm:^2.14.1":
   version: 2.22.0
   resolution: "nan@npm:2.22.0"
   dependencies:
@@ -12999,6 +13017,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root@workspace:."
   dependencies:
+    "@airbnb/node-memwatch": "npm:^2.0.0"
     "@babel/traverse": "npm:7.24.1"
     "@cosmjs/amino": "npm:0.31.3"
     "@cosmjs/cosmwasm-stargate": "npm:0.31.3"
@@ -13011,6 +13030,7 @@ __metadata:
     "@oraichain/oraidex-common": "npm:^1.0.10"
     "@swc/core": "npm:^1.4.11"
     "@swc/jest": "npm:^0.2.36"
+    "@types/airbnb__node-memwatch": "npm:^2"
     "@types/jest": "npm:^29.5.12"
     "@types/lodash": "npm:^4.17.0"
     "@types/morgan": "npm:^1.9.9"

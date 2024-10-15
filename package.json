@@ -29,6 +29,7 @@
     "node": ">=18.18.0"
   },
   "dependencies": {
+    "@airbnb/node-memwatch": "^2.0.0",
     "@cosmjs/amino": "0.31.3",
     "@cosmjs/cosmwasm-stargate": "0.31.3",
     "@cosmjs/crypto": "0.31.3",
@@ -48,6 +49,7 @@
     "@oraichain/cw-simulate": "^2.8.98",
     "@swc/core": "^1.4.11",
     "@swc/jest": "^0.2.36",
+    "@types/airbnb__node-memwatch": "^2",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.0",
     "@types/morgan": "^1.9.9",
