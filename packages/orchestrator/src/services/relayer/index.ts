@@ -37,7 +37,6 @@ import {
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
   SCAN_BLOCK_TXS_INTERVAL_DELAY,
-  SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY,
   SCAN_MEMPOOL_CHUNK_SIZE,
   SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY,
   SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY,
@@ -300,14 +299,13 @@ export default class RelayerService implements RelayerInterface {
   async scanTxsFromMempools() {
     try {
       const allMempoolTxs = await this.btcClient.getrawmempool();
-      const mempoolTxs = [];
-      for (const txid of allMempoolTxs) {
-        const existed = await this.relayedSetService.exist(
-          `relay-deposit-${txid}`
-        );
-        if (existed) continue;
-        mempoolTxs.push(txid);
-      }
+      const mempoolTxs = (
+        await Promise.all([
+          allMempoolTxs.map(async (txid: string) => {
+            return this.relayedSetService.exist(`relay-deposit-${txid}`);
+          }),
+        ])
+      ).filter((item) => item);
 
       let i = 0;
       while (i < mempoolTxs.length) {
@@ -329,7 +327,6 @@ export default class RelayerService implements RelayerInterface {
             continue;
           }
           let txid = tx.txid;
-
           const outputs = tx.vout;
           for (let vout = 0; vout < outputs.length; vout++) {
             let output = outputs[vout];
@@ -364,8 +361,6 @@ export default class RelayerService implements RelayerInterface {
             });
           }
         }
-
-        await setTimeout(SCAN_MEMPOOL_CHUNK_INTERVAL_DELAY);
       }
     } catch (err) {
       this.logger.error(`[SCAN_TX_FROM_MEMPOOL] Error:`, err);
