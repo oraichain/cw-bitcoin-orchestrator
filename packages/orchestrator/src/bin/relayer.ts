@@ -85,13 +85,6 @@ const start = async () => {
       );
     }
 
-    memwatch.on("stats", function (info) {
-      // Take first snapshot
-      var hd = new memwatch.HeapDiff();
-      var diff = hd.end();
-      console.log("Differ:", JSON.stringify(diff));
-    });
-
     const btcClient = new RPCClient({
       port: env.bitcoin.port,
       host: env.bitcoin.host,
@@ -125,7 +118,13 @@ const start = async () => {
     );
     RelayerService.instances = relayerService;
 
-    await Promise.all([relayerService.relay()]);
+    Promise.all([relayerService.relay()]);
+    memwatch.on("stats", function (info) {
+      // Take first snapshot
+      var hd = new memwatch.HeapDiff();
+      var diff = hd.end();
+      console.log("Differ:", JSON.stringify(diff));
+    });
   });
 };
 
