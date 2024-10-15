@@ -36,7 +36,7 @@ import {
   ITERATION_DELAY,
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
-  SCAN_BLOCK_TXS_INTERVAL_DELAY,
+  SCAN_BLOCKS_CHUNK_SIZE,
   SCAN_MEMPOOL_CHUNK_SIZE,
   SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY,
   SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY,
@@ -365,29 +365,71 @@ export default class RelayerService implements RelayerInterface {
 
   async scanDeposits(numBlocks: number) {
     try {
-      let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
-      let hash = tip;
+      let sidechainHeight = await this.lightClientBitcoinClient.headerHeight();
+      let allHeightQuerier = [];
       for (let i = 0; i < numBlocks; i++) {
-        let block: BitcoinBlock = await this.btcClient.getblock({
-          blockhash: hash,
-          verbosity: 2,
+        allHeightQuerier.push({
+          method: "getblockhash",
+          params: [sidechainHeight - i],
         });
-        let txs = await this.filterDepositTxs(block.tx);
-        for (const tx of txs) {
-          try {
-            await this.maybeRelayDeposit(tx, block.height, block.hash);
-          } catch (err) {
-            this.logger.error(
-              `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
-              err
-            );
+      }
+      let allBlockhashes = (await this.btcClient.batch(allHeightQuerier)).map(
+        (item) => item.result
+      );
+      let i = 0;
+      while (i < allBlockhashes.length) {
+        const blockhashChunk = mapSlice(
+          allBlockhashes,
+          i,
+          (i += SCAN_BLOCKS_CHUNK_SIZE),
+          (blockhash: string) => ({
+            method: "getblock",
+            params: [blockhash, 2],
+          })
+        );
+
+        let allDetailBlocks = (await this.btcClient.batch(blockhashChunk)).map(
+          (item) => item.result
+        );
+        for (const block of allDetailBlocks) {
+          let txs = await this.filterDepositTxs(block.tx);
+          for (const tx of txs) {
+            try {
+              await this.maybeRelayDeposit(tx, block.height, block.hash);
+            } catch (err) {
+              this.logger.error(
+                `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
+                err
+              );
+            }
           }
         }
-        hash = block.previousblockhash;
-        await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
       }
-      // Remove expired
       await this.watchedScriptClient.removeExpired();
+
+      // let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
+      // let hash = tip;
+      // for (let i = 0; i < numBlocks; i++) {
+      //   let block: BitcoinBlock = await this.btcClient.getblock({
+      //     blockhash: hash,
+      //     verbosity: 2,
+      //   });
+      //   let txs = await this.filterDepositTxs(block.tx);
+      //   for (const tx of txs) {
+      //     try {
+      //       await this.maybeRelayDeposit(tx, block.height, block.hash);
+      //     } catch (err) {
+      //       this.logger.error(
+      //         `[MAYBE_RELAY_DEPOSIT] Error at tx ${tx.txid}:`,
+      //         err
+      //       );
+      //     }
+      //   }
+      //   hash = block.previousblockhash;
+      //   await setTimeout(SCAN_BLOCK_TXS_INTERVAL_DELAY);
+      // }
+      // Remove expired
+      // await this.watchedScriptClient.removeExpired();
     } catch (err) {
       this.logger.error(`[SCAN_DEPOSITS] Error:`, err);
     }
