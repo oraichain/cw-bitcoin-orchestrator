@@ -23,6 +23,8 @@ import { RPCClient } from "@oraichain/rpc-bitcoin";
 import * as btc from "bitcoinjs-lib";
 import process from "process";
 import { setTimeout } from "timers/promises";
+import { setFlagsFromString } from "v8";
+import { runInNewContext } from "vm";
 import { Logger } from "winston";
 import {
   BitcoinBlock,
@@ -57,6 +59,9 @@ import { DuckDbNode } from "../db";
 import DepositIndexService from "../deposit_index";
 import RelayedSetService from "../relayed_set";
 import WatchedScriptsService from "../watched_scripts";
+
+setFlagsFromString("--expose_gc");
+const gc = runInNewContext("gc"); // nocommit
 
 export default class RelayerService implements RelayerInterface {
   static instances: RelayerService;
@@ -100,6 +105,7 @@ export default class RelayerService implements RelayerInterface {
       await this.relayRecoveryDeposits();
       await this.relayCheckpoints();
       await this.relayCheckpointConf();
+      gc();
     }
   }
 
