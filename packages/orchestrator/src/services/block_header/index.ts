@@ -36,9 +36,9 @@ class BlockHeaderService {
   }
 
   async getBlockHeader(blockhash: string): Promise<VerbosedBlockHeader | null> {
-    const data = (await this.db.select(TableName.BlockHeader, {
+    const data: BlockHeaderInterface[] = await this.db.select(TableName.BlockHeader, {
       where: { hash: blockhash }
-    })) as BlockHeaderInterface[];
+    });
     if (data.length === 0) {
       return this.insert(blockhash);
     }
