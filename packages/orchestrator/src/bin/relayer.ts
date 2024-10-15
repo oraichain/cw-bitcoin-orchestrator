@@ -99,7 +99,7 @@ const startService = async () => {
   const relayerService = new RelayerService(btcClient, lightClientBitcoinClient, appBitcoinClient, DuckDbNode.instances);
   RelayerService.instances = relayerService;
 
-  await Promise.all([relayerService.relay()]);
+  await relayerService.relay();
 };
 
 export default async () => {
