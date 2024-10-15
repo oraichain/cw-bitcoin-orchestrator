@@ -298,7 +298,6 @@ export default class RelayerService implements RelayerInterface {
       const mempoolTxs = (
         await Promise.all([
           allMempoolTxs.map(async (txid: string) => {
-            console.log({ txid });
             return this.relayedSetService.exist(`relay-deposit-${txid}`);
           }),
         ])
