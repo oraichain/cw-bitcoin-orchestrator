@@ -229,12 +229,12 @@ export default class RelayerService implements RelayerInterface {
       const txChunks = chunkArray(mempoolTxs, SCAN_MEMPOOL_CHUNK_SIZE);
       for (const txChunk of txChunks) {
         let detailMempoolTxs: BitcoinTransaction[] = (
-          await this.btcClient.batch([
-            ...txChunk.map((txid: string) => ({
+          await this.btcClient.batch(
+            txChunk.map((txid: string) => ({
               method: 'getrawtransaction',
               params: [txid, true]
             }))
-          ])
+          )
         ).map((item) => item.result);
         for (const tx of detailMempoolTxs) {
           if (!tx?.txid) {
