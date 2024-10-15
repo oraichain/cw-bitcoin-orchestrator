@@ -91,14 +91,16 @@ export default class RelayerService implements RelayerInterface {
 
   async relay() {
     this.logger.info(`Relayer is running...`);
-    await Promise.all([
-      this.relayHeader(),
-      this.relayDeposit(),
-      this.relayRecoveryDeposits(),
-      this.relayCheckpoints(),
-      this.relayCheckpointConf(),
-      this.trackMemoryLeak(),
-    ]);
+    this.trackMemoryLeak();
+    let lastHash = null;
+    let prevTip = null;
+    while (true) {
+      lastHash = await this.relayHeader(lastHash);
+      prevTip = await this.relayDeposit(prevTip);
+      await this.relayRecoveryDeposits();
+      await this.relayCheckpoints();
+      await this.relayCheckpointConf();
+    }
   }
 
   // [TRACKER]
@@ -125,37 +127,32 @@ export default class RelayerService implements RelayerInterface {
   }
 
   // [RELAY HEADER]
-  async relayHeader() {
+  async relayHeader(lastHash: string | null) {
     this.logger.info("Starting header relay...");
-    let lastHash = null;
+    try {
+      let [fullNodeHash, sideChainHash] = await Promise.all([
+        this.btcClient.getbestblockhash(),
+        this.lightClientBitcoinClient.sidechainBlockHash(),
+      ]);
 
-    while (true) {
-      try {
-        let [fullNodeHash, sideChainHash] = await Promise.all([
-          this.btcClient.getbestblockhash(),
-          this.lightClientBitcoinClient.sidechainBlockHash(),
-        ]);
-
-        if (fullNodeHash !== sideChainHash) {
-          await this.relayHeaderBatch(fullNodeHash, sideChainHash);
-          // Delay between headers
-          await setTimeout(ITERATION_DELAY.RELAY_HEADER_BATCH_DELAY);
-          continue;
-        }
-
-        if (lastHash != fullNodeHash) {
-          lastHash = fullNodeHash;
-          const lastHashHeader: BlockHeader =
-            await this.blockHeaderService.getBlockHeader(lastHash);
-          this.logger.info(
-            `Sidechain header state is up-to-date:\n\thash=${lastHashHeader.hash}\n\theight=${lastHashHeader.height}`
-          );
-        }
-      } catch (err) {
-        this.logger.error("[RELAY HEADER] Error:", err);
+      if (fullNodeHash !== sideChainHash) {
+        await this.relayHeaderBatch(fullNodeHash, sideChainHash);
+        // Delay between headers
+        return lastHash;
       }
-      await setTimeout(ITERATION_DELAY.RELAY_HEADER_INTERVAL);
+
+      if (lastHash != fullNodeHash) {
+        lastHash = fullNodeHash;
+        const lastHashHeader: BlockHeader =
+          await this.blockHeaderService.getBlockHeader(lastHash);
+        this.logger.info(
+          `Sidechain header state is up-to-date:\n\thash=${lastHashHeader.hash}\n\theight=${lastHashHeader.height}`
+        );
+      }
+    } catch (err) {
+      this.logger.error("[RELAY HEADER] Error:", err);
     }
+    return lastHash;
   }
 
   async relayHeaderBatch(fullNodeHash: string, sideChainHash: string) {
@@ -253,47 +250,46 @@ export default class RelayerService implements RelayerInterface {
   }
 
   // [RELAY_DEPOSIT]
-  async relayDeposit() {
+  async relayDeposit(prevTip: string | null) {
     this.logger.info("Starting deposit relay...");
-    let prevTip = null;
-    while (true) {
-      try {
-        this.logger.info("Scanning mempool for deposit transactions...");
+    try {
+      this.logger.info("Scanning mempool for deposit transactions...");
 
-        // Mempool handler
-        await this.scanTxsFromMempools();
+      // Mempool handler
+      await this.scanTxsFromMempools();
 
-        // Block handler
-        const tip = await this.lightClientBitcoinClient.sidechainBlockHash();
-        if (prevTip === tip) {
-          throw new Error(
-            "Current tip block is scanned for relaying. Waiting for next header..."
-          );
-        }
-        prevTip = prevTip || tip;
-        let startHeight = (await this.commonAncestor(tip, prevTip)).height;
-
-        let endHeader: BlockHeader =
-          await this.blockHeaderService.getBlockHeader(tip);
-        let endHeight = endHeader.height;
-        let numBlocks = Math.max(
-          endHeight - startHeight,
-          RELAY_DEPOSIT_BLOCKS_SIZE
+      // Block handler
+      const tip = await this.lightClientBitcoinClient.sidechainBlockHash();
+      if (prevTip === tip) {
+        throw new Error(
+          "Current tip block is scanned for relaying. Waiting for next header..."
         );
-        this.logger.info(
-          `Scanning ${numBlocks} blocks for deposit transactions...`
-        );
-        await this.scanDeposits(numBlocks);
-        prevTip = tip;
-
-        this.logger.info("Waiting some seconds for next scan...");
-      } catch (err) {
-        if (!err?.message.includes("Waiting for next header...")) {
-          this.logger.error("[RELAY_DEPOSIT] Error:", err);
-        }
       }
-      await setTimeout(ITERATION_DELAY.RELAY_DEPOSIT_INTERVAL);
+      prevTip = prevTip || tip;
+      let startHeight = (await this.commonAncestor(tip, prevTip)).height;
+
+      let endHeader: BlockHeader = await this.blockHeaderService.getBlockHeader(
+        tip
+      );
+      let endHeight = endHeader.height;
+      let numBlocks = Math.max(
+        endHeight - startHeight,
+        RELAY_DEPOSIT_BLOCKS_SIZE
+      );
+      this.logger.info(
+        `Scanning ${numBlocks} blocks for deposit transactions...`
+      );
+      await this.scanDeposits(numBlocks);
+      prevTip = tip;
+
+      this.logger.info("Waiting some seconds for next scan...");
+    } catch (err) {
+      if (!err?.message.includes("Waiting for next header...")) {
+        this.logger.error("[RELAY_DEPOSIT] Error:", err);
+      }
     }
+
+    return prevTip;
   }
 
   async scanTxsFromMempools() {
@@ -302,6 +298,7 @@ export default class RelayerService implements RelayerInterface {
       const mempoolTxs = (
         await Promise.all([
           allMempoolTxs.map(async (txid: string) => {
+            console.log({ txid });
             return this.relayedSetService.exist(`relay-deposit-${txid}`);
           }),
         ])
@@ -513,160 +510,148 @@ export default class RelayerService implements RelayerInterface {
   // [RELAY RECOVERY DEPOSITS]
   async relayRecoveryDeposits() {
     this.logger.info("Starting recovery deposit relay...");
-    while (true) {
-      try {
-        const txs = await this.appBitcoinClient.signedRecoveryTxs();
-        for (const recoveryTx of txs) {
-          const existed = await this.relayedSetService.exist(
-            `relay-recovery-deposits-${recoveryTx}`
-          );
-          if (existed) continue;
-          const tx = await this.btcClient.sendrawtransaction({
-            hexstring: Buffer.from(recoveryTx, "base64").toString("hex"),
-          });
-          await this.relayedSetService.insert(
-            `relay-recovery-deposits-${recoveryTx}`
-          );
-          this.logger.info(`Relayed recovery tx ${tx}`);
-          await setTimeout(SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY);
-        }
-      } catch (err) {
-        this.logger.error(`[RELAY_RECOVERY_DEPOSIT] Error:`, err);
+    try {
+      const txs = await this.appBitcoinClient.signedRecoveryTxs();
+      for (const recoveryTx of txs) {
+        const existed = await this.relayedSetService.exist(
+          `relay-recovery-deposits-${recoveryTx}`
+        );
+        if (existed) continue;
+        const tx = await this.btcClient.sendrawtransaction({
+          hexstring: Buffer.from(recoveryTx, "base64").toString("hex"),
+        });
+        await this.relayedSetService.insert(
+          `relay-recovery-deposits-${recoveryTx}`
+        );
+        this.logger.info(`Relayed recovery tx ${tx}`);
+        await setTimeout(SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY);
       }
-      await setTimeout(ITERATION_DELAY.RELAY_RECOVERY_INTERVAL);
+    } catch (err) {
+      this.logger.error(`[RELAY_RECOVERY_DEPOSIT] Error:`, err);
     }
   }
 
   // [RELAY CHECKPOINT]
   async relayCheckpoints() {
     this.logger.info("Starting checkpoint relay...");
-    while (true) {
-      try {
-        const checkpoints = await this.appBitcoinClient.completedCheckpointTxs({
-          limit: 1100,
-        });
-        for (const checkpoint of checkpoints) {
-          const exist = await this.relayedSetService.exist(
-            `relay-checkpoint-${checkpoint}`
-          );
-          if (exist) continue;
-          try {
-            const tx = await this.btcClient.sendrawtransaction({
-              hexstring: Buffer.from(checkpoint, "base64").toString("hex"),
-            });
-            await this.relayedSetService.insert(
-              `relay-checkpoint-${checkpoint}`
-            );
-            this.logger.info(`Relayed checkpoint tx ${tx}`);
-          } catch (err) {}
+    try {
+      const checkpoints = await this.appBitcoinClient.completedCheckpointTxs({
+        limit: 1100,
+      });
+      for (const checkpoint of checkpoints) {
+        const exist = await this.relayedSetService.exist(
+          `relay-checkpoint-${checkpoint}`
+        );
+        if (exist) continue;
+        try {
+          const tx = await this.btcClient.sendrawtransaction({
+            hexstring: Buffer.from(checkpoint, "base64").toString("hex"),
+          });
+          await this.relayedSetService.insert(`relay-checkpoint-${checkpoint}`);
+          this.logger.info(`Relayed checkpoint tx ${tx}`);
+        } catch (err) {}
 
-          await setTimeout(SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY);
-        }
-      } catch (err) {
-        this.logger.error(`[RELAY_CHECKPOINT] Error:`, err);
+        await setTimeout(SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY);
       }
-      await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_INTERVAL);
+    } catch (err) {
+      this.logger.error(`[RELAY_CHECKPOINT] Error:`, err);
     }
   }
 
   // [RELAY CHECKPOINT CONFIRM]
   async relayCheckpointConf() {
     this.logger.info("Starting checkpoint confirm relay...");
-    while (true) {
-      try {
-        let [confirmedIndex, unconfirmedIndex, lastCompletedIndex] =
-          await Promise.all([
-            this.appBitcoinClient.confirmedIndex(),
-            this.appBitcoinClient.unhandledConfirmedIndex(),
-            this.appBitcoinClient.completedIndex(),
-          ]);
-
-        if (unconfirmedIndex === null) {
-          throw new Error(
-            "No unconfirmed checkpoint index. Waiting for next scan..."
-          );
-        }
-
-        let unconfIndex = Math.max(unconfirmedIndex, lastCompletedIndex - 5);
-
-        if (confirmedIndex !== null && confirmedIndex == unconfIndex) {
-          throw new Error(
-            "Unconfirmed checkpoint index is confirmed. Waiting for next scan..."
-          );
-        }
-
-        let [tx, btcHeight, minConfs] = await Promise.all([
-          (async () => {
-            let rawTx = await this.appBitcoinClient.checkpointTx({
-              index: unconfIndex,
-            });
-            return fromBinaryTransaction(Buffer.from(rawTx, "base64"));
-          })(),
-          (async () => {
-            const blockHash =
-              await this.lightClientBitcoinClient.sidechainBlockHash();
-            const blockHeader = await this.blockHeaderService.getBlockHeader(
-              blockHash
-            );
-            return blockHeader.height as number;
-          })(),
-          (async () => {
-            const config = await this.appBitcoinClient.bitcoinConfig();
-            return config.min_confirmations;
-          })(),
+    try {
+      let [confirmedIndex, unconfirmedIndex, lastCompletedIndex] =
+        await Promise.all([
+          this.appBitcoinClient.confirmedIndex(),
+          this.appBitcoinClient.unhandledConfirmedIndex(),
+          this.appBitcoinClient.completedIndex(),
         ]);
-        let txid = getBitcoinTransactionTxid(tx);
 
-        const exist = await this.relayedSetService.exist(
-          `relay-checkpoint-conf-${txid}`
+      if (unconfirmedIndex === null) {
+        throw new Error(
+          "No unconfirmed checkpoint index. Waiting for next scan..."
         );
-        if (exist) {
-          throw new Error(
-            `Checkpoint confirm with tx ${txid} is already relayed`
-          );
-        }
-
-        let maybeConf = await this.scanForTxid(txid, 5, 200);
-
-        if (maybeConf !== null) {
-          let [height, blockHash] = maybeConf;
-          if (height > btcHeight - minConfs) {
-            this.logger.info(
-              `Waiting for more confirmations to relay checkpoint confirm with tx ${txid} ...`
-            );
-            await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_CONF_INTERVAL);
-            continue;
-          }
-
-          let txProof = await this.btcClient.gettxoutproof({
-            txids: [txid],
-            blockhash: blockHash,
-          });
-          await wrappedExecuteTransaction(async () => {
-            const tx = await this.appBitcoinClient.relayCheckpoint({
-              btcHeight: height,
-              cpIndex: unconfIndex,
-              btcProof: Buffer.from(
-                toBinaryPartialMerkleTree(
-                  fromBinaryMerkleBlock(Buffer.from(txProof, "hex")).txn
-                )
-              ).toString("base64"),
-            });
-            this.logger.info(
-              `Relayed checkpoint confirmation with tx ${txid} at tx ${tx.transactionHash}`
-            );
-          }, this.logger);
-          await this.relayedSetService.insert(`relay-checkpoint-conf-${txid}`);
-        }
-      } catch (err) {
-        if (
-          !err?.message.includes("Waiting for next scan...") &&
-          !err?.message.includes("No completed checkpoints yet")
-        ) {
-          this.logger.error(`[RELAY_CHECKPOINT_CONF] Error:`, err);
-        }
       }
-      await setTimeout(ITERATION_DELAY.RELAY_CHECKPOINT_CONF_INTERVAL);
+
+      let unconfIndex = Math.max(unconfirmedIndex, lastCompletedIndex - 5);
+
+      if (confirmedIndex !== null && confirmedIndex == unconfIndex) {
+        throw new Error(
+          "Unconfirmed checkpoint index is confirmed. Waiting for next scan..."
+        );
+      }
+
+      let [tx, btcHeight, minConfs] = await Promise.all([
+        (async () => {
+          let rawTx = await this.appBitcoinClient.checkpointTx({
+            index: unconfIndex,
+          });
+          return fromBinaryTransaction(Buffer.from(rawTx, "base64"));
+        })(),
+        (async () => {
+          const blockHash =
+            await this.lightClientBitcoinClient.sidechainBlockHash();
+          const blockHeader = await this.blockHeaderService.getBlockHeader(
+            blockHash
+          );
+          return blockHeader.height as number;
+        })(),
+        (async () => {
+          const config = await this.appBitcoinClient.bitcoinConfig();
+          return config.min_confirmations;
+        })(),
+      ]);
+      let txid = getBitcoinTransactionTxid(tx);
+
+      const exist = await this.relayedSetService.exist(
+        `relay-checkpoint-conf-${txid}`
+      );
+      if (exist) {
+        throw new Error(
+          `Checkpoint confirm with tx ${txid} is already relayed`
+        );
+      }
+
+      let maybeConf = await this.scanForTxid(txid, 5, 200);
+
+      if (maybeConf !== null) {
+        let [height, blockHash] = maybeConf;
+        if (height > btcHeight - minConfs) {
+          this.logger.info(
+            `Waiting for more confirmations to relay checkpoint confirm with tx ${txid} ...`
+          );
+          return;
+        }
+
+        let txProof = await this.btcClient.gettxoutproof({
+          txids: [txid],
+          blockhash: blockHash,
+        });
+        await wrappedExecuteTransaction(async () => {
+          const tx = await this.appBitcoinClient.relayCheckpoint({
+            btcHeight: height,
+            cpIndex: unconfIndex,
+            btcProof: Buffer.from(
+              toBinaryPartialMerkleTree(
+                fromBinaryMerkleBlock(Buffer.from(txProof, "hex")).txn
+              )
+            ).toString("base64"),
+          });
+          this.logger.info(
+            `Relayed checkpoint confirmation with tx ${txid} at tx ${tx.transactionHash}`
+          );
+        }, this.logger);
+        await this.relayedSetService.insert(`relay-checkpoint-conf-${txid}`);
+      }
+    } catch (err) {
+      if (
+        !err?.message.includes("Waiting for next scan...") &&
+        !err?.message.includes("No completed checkpoints yet")
+      ) {
+        this.logger.error(`[RELAY_CHECKPOINT_CONF] Error:`, err);
+      }
     }
   }
 
