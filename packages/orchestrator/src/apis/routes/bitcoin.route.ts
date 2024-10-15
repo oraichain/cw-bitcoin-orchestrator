@@ -1,6 +1,6 @@
-import express from "express";
+import express, { Router } from "express";
 import bitcoinController from "../controllers/bitcoin.controller";
-const router = express.Router();
+const router: Router = express.Router();
 
 router.get("/config", bitcoinController.getConfig);
 router.get("/pending_deposits", bitcoinController.getPendingDeposits);
