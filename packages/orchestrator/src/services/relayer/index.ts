@@ -340,7 +340,7 @@ export default class RelayerService implements RelayerInterface {
         verbosity: 2
       });
       hash = block.previousblockhash;
-      blocks = [...blocks, block];
+      blocks.push(block);
     }
     return blocks;
   }
