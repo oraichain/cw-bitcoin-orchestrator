@@ -23,6 +23,7 @@ import { logger } from '../../configs/logger';
 import { ITERATION_DELAY, RELAY_DEPOSIT_BLOCKS_SIZE, RELAY_HEADER_BATCH_SIZE, SCAN_BLOCKS_CHUNK_SIZE, SCAN_MEMPOOL_CHUNK_SIZE, SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY, SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY } from '../../constants';
 import { mapSlice } from '../../utils/array';
 import { calculateOutpointKey, decodeAddress, getCurrentNetwork, ScriptPubkeyType, toScriptPubKeyP2WSH } from '../../utils/bitcoin';
+import { trackExecutionTime } from '../../utils/catchAsync';
 import { wrappedExecuteTransaction } from '../../utils/cosmos';
 import { convertSdkDestToWasmDest } from '../../utils/dest';
 import BlockHeaderService from '../block_header';
@@ -92,6 +93,7 @@ export default class RelayerService implements RelayerInterface {
 
       if (fullNodeHash !== sideChainHash) {
         await this.relayHeaderBatch(fullNodeHash, sideChainHash);
+
         // Delay between headers
         return lastHash;
       }
@@ -110,11 +112,18 @@ export default class RelayerService implements RelayerInterface {
   async relayHeaderBatch(fullNodeHash: string, sideChainHash: string) {
     let [fullNodeInfo, sideChainInfo]: [BlockHeader, BlockHeader] = await Promise.all([this.blockHeaderService.getBlockHeader(fullNodeHash), this.blockHeaderService.getBlockHeader(sideChainHash)]);
 
+    console.log({ fullNodeInfo }, { sideChainInfo });
     if (fullNodeInfo.height < sideChainInfo.height) {
       this.logger.info('Full node is still syncing with real running node!');
       return;
     }
-    let startHeader = await this.commonAncestor(fullNodeHash, sideChainHash);
+    let startHeader = await trackExecutionTime(
+      async () => {
+        return this.commonAncestor(fullNodeHash, sideChainHash);
+      },
+      'commonAncestor',
+      this.logger
+    );
     let wrappedHeaders = await this.getHeaderBatch(startHeader.hash);
 
     if (wrappedHeaders.length > 0) {
@@ -185,7 +194,13 @@ export default class RelayerService implements RelayerInterface {
       this.logger.info('Scanning mempool for deposit transactions...');
 
       // Mempool handler
-      await this.scanTxsFromMempools();
+      await trackExecutionTime(
+        async () => {
+          this.scanTxsFromMempools();
+        },
+        'scanTxsFromMempools',
+        this.logger
+      );
 
       // Block handler
       const tip = await this.lightClientBitcoinClient.sidechainBlockHash();
@@ -193,13 +208,27 @@ export default class RelayerService implements RelayerInterface {
         throw new Error('Current tip block is scanned for relaying. Waiting for next header...');
       }
       prevTip = prevTip || tip;
-      let startHeight = (await this.commonAncestor(tip, prevTip)).height;
+      let startHeight = (
+        await trackExecutionTime(
+          async () => {
+            return this.commonAncestor(tip, prevTip);
+          },
+          'commonAncestor',
+          this.logger
+        )
+      ).height;
 
       let endHeader: BlockHeader = await this.blockHeaderService.getBlockHeader(tip);
       let endHeight = endHeader.height;
       let numBlocks = Math.max(endHeight - startHeight, RELAY_DEPOSIT_BLOCKS_SIZE);
       this.logger.info(`Scanning ${numBlocks} blocks for deposit transactions...`);
-      await this.scanDeposits(numBlocks);
+      await trackExecutionTime(
+        async () => {
+          await this.scanDeposits(numBlocks);
+        },
+        'scanDeposits',
+        this.logger
+      );
       prevTip = tip;
 
       this.logger.info('Waiting some seconds for next scan...');
