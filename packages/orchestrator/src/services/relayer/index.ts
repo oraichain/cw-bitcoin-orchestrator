@@ -21,7 +21,6 @@ import {
 } from "@oraichain/bitcoin-bridge-wasm-sdk";
 import { RPCClient } from "@oraichain/rpc-bitcoin";
 import * as btc from "bitcoinjs-lib";
-import process from "process";
 import { setTimeout } from "timers/promises";
 import { Logger } from "winston";
 import {
@@ -33,6 +32,7 @@ import {
 import env from "../../configs/env";
 import { logger } from "../../configs/logger";
 import {
+  ITERATION_DELAY,
   RELAY_DEPOSIT_BLOCKS_SIZE,
   RELAY_HEADER_BATCH_SIZE,
   SCAN_BLOCKS_CHUNK_SIZE,
@@ -107,23 +107,23 @@ export default class RelayerService implements RelayerInterface {
   // [TRACKER]
   async trackMemoryLeak() {
     while (true) {
-    const used = process.memoryUsage();
-    const currentHeapTotal = used.heapTotal / 1024 / 1024;
-    const currentHeapUsed = used.heapUsed / 1024 / 1024;
-    this.logger.info("=============================================");
-    this.logger.info(
-      `Memory heap total that GC predicts to allocate: ${currentHeapTotal} MB`
-    );
-    this.logger.info(
-      `Memory heap total that GC actually used: ${currentHeapUsed} MB`
-    );
-    if (currentHeapUsed > 1200) {
-      this.logger.error(
-        `Heap is very high now, at ${currentHeapUsed} MB. Consider to check the process!`
+      const used = process.memoryUsage();
+      const currentHeapTotal = used.heapTotal / 1024 / 1024;
+      const currentHeapUsed = used.heapUsed / 1024 / 1024;
+      this.logger.info("=============================================");
+      this.logger.info(
+        `Memory heap total that GC predicts to allocate: ${currentHeapTotal} MB`
       );
-    }
-    this.logger.info("=============================================");
-    await setTimeout(ITERATION_DELAY.TRACK_MEMORY_LEAK);
+      this.logger.info(
+        `Memory heap total that GC actually used: ${currentHeapUsed} MB`
+      );
+      if (currentHeapUsed > 1200) {
+        this.logger.error(
+          `Heap is very high now, at ${currentHeapUsed} MB. Consider to check the process!`
+        );
+      }
+      this.logger.info("=============================================");
+      await setTimeout(ITERATION_DELAY.TRACK_MEMORY_LEAK);
     }
   }
 
