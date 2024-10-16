@@ -24,10 +24,12 @@ class BlockHeaderService {
           blockhash,
           verbose: true,
         });
-      await this.db.insert(TableName.BlockHeader, {
-        hash: blockhash,
-        data: JSON.stringify(blockHeaderData),
-      });
+      if (blockHeaderData !== null) {
+        await this.db.insert(TableName.BlockHeader, {
+          hash: blockhash,
+          data: JSON.stringify(blockHeaderData),
+        });
+      }
       this.logger.info(`Inserted new block header with hash ${blockhash}`);
       return blockHeaderData;
     } catch (err) {
@@ -46,7 +48,6 @@ class BlockHeaderService {
         where: { hash: blockhash },
       }
     );
-    console.log({ data });
     if (data.length === 0) {
       return this.insert(blockhash);
     }
