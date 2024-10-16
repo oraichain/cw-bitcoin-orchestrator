@@ -98,7 +98,7 @@ export default class RelayerService implements RelayerInterface {
       // await this.relayCheckpoints();
       // await this.relayCheckpointConf();
       console.log("Done round!");
-      await setTimeout(100);
+      await setTimeout(1000);
     }
   }
 
