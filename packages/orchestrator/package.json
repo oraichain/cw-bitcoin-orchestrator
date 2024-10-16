@@ -1,6 +1,6 @@
 {
   "name": "@oraichain/bitcoin-bridge-orchestrator",
-  "version": "1.1.18",
+  "version": "1.1.19",
   "main": "build/index.js",
   "files": [
     "build/"
@@ -30,7 +30,7 @@
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
-    "duckdb-async": "^0.9.2",
+    "duckdb-async": "^1.1.1",
     "express": "^4.19.2",
     "hdkey": "^2.1.0",
     "helmet": "^7.1.0",

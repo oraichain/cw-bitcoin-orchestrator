@@ -3033,7 +3033,7 @@ __metadata:
     cookie-parser: "npm:^1.4.6"
     cors: "npm:^2.8.5"
     dotenv: "npm:^16.4.5"
-    duckdb-async: "npm:^0.9.2"
+    duckdb-async: "npm:^1.1.1"
     express: "npm:^4.19.2"
     hdkey: "npm:^2.1.0"
     helmet: "npm:^7.1.0"
@@ -6572,23 +6572,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"duckdb-async@npm:^0.9.2":
-  version: 0.9.2
-  resolution: "duckdb-async@npm:0.9.2"
+"duckdb-async@npm:^1.1.1":
+  version: 1.1.1
+  resolution: "duckdb-async@npm:1.1.1"
   dependencies:
-    duckdb: "npm:0.9.2"
-  checksum: 10c0/391217046dc3e74170608fdc4600f6aeaf18b404d1bae5826a04507a248a62a186086e10464e2927de0413ef8889f2f6a225ae665b3b84ffddd7cfcb1acc10b8
+    duckdb: "npm:1.1.1"
+  checksum: 10c0/8dd70625c9ef6839ef4e74fbadf5d311de500b4f0df5066ae09c01996896b02f5cd4103a5602be192d94906b5041fbbd5801344c5bd1fe8433b6aebb91d033e5
   languageName: node
   linkType: hard
 
-"duckdb@npm:0.9.2":
-  version: 0.9.2
-  resolution: "duckdb@npm:0.9.2"
+"duckdb@npm:1.1.1":
+  version: 1.1.1
+  resolution: "duckdb@npm:1.1.1"
   dependencies:
     "@mapbox/node-pre-gyp": "npm:^1.0.0"
     node-addon-api: "npm:^7.0.0"
     node-gyp: "npm:^9.3.0"
-  checksum: 10c0/c38b31faced1d0d32df6ee0b02d2f4ca0d1dffeb8c9d27e6a6f9d078838431cec107bc889c07df6d2d87f19a0a1561bb49bade61c0e38f1df6a6dc9ccda318ca
+  checksum: 10c0/27bc223ce8f669cba9b55ffaee6b2eb8892243789fbe85599887d6fc9112af51741e203f82d4c9c6f894f0cdc12fec49d4b08ef2d692407d4616b4e12af8ac33
   languageName: node
   linkType: hard
 
