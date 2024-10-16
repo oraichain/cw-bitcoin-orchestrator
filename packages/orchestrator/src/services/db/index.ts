@@ -119,10 +119,6 @@ export class DuckDbNode extends DuckDB {
       await db.close(); // close to flush WAL file
       db = await Database.create(dbPath);
       db.exec("SET memory_limit='100MB'");
-      console.log(
-        "[DuckDB] memory limit: ",
-        await db.all("SELECT current_setting('memory_limit') AS memlimit;")
-      );
       const conn = await db.connect();
       DuckDbNode.instances = new DuckDbNode(conn);
     }
