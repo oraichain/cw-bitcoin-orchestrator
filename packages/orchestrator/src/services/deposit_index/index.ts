@@ -15,7 +15,6 @@ export interface GetParams extends Omit<DepositIndexInterface, 'deposit'> {}
 export interface DeleteParams extends Omit<DepositIndexInterface, 'deposit'> {}
 
 class DepositIndexService {
-  static instances: DepositIndexService;
   logger: Logger;
   constructor(protected db: DuckDbNode) {
     this.logger = logger('DepositIndexService');

@@ -1,6 +1,5 @@
 import { AppBitcoinClient, LightClientBitcoinClient } from '@oraichain/bitcoin-bridge-contracts-sdk';
 import { RPCClient } from '@oraichain/rpc-bitcoin';
-import bitcoinService from '../apis/services/bitcoin.service';
 import env from '../configs/env';
 import { OraichainConfig } from '../configs/networks';
 import { DuckDbNode } from '../services/db';
@@ -29,8 +28,8 @@ const main = async (oraiAddress: string, depositAddress: string, sigsetIndex: nu
   const lightClientBitcoinClient = new LightClientBitcoinClient(client, sender, env.cosmos.lightClientBitcoin);
   const appBitcoinClient = new AppBitcoinClient(client, sender, env.cosmos.appBitcoin);
   const relayerService = new RelayerService(btcClient, lightClientBitcoinClient, appBitcoinClient, DuckDbNode.instances);
-  RelayerService.instances = relayerService;
-  await bitcoinService.submitDepositAddress(depositAddress, sigsetIndex, {
+
+  await relayerService.submitDepositAddress(depositAddress, sigsetIndex, {
     address: oraiAddress
   });
   console.log('Added deposit address successfully!');
