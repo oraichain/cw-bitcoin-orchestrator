@@ -1,11 +1,11 @@
-import { toObject } from '@oraichain/oraidex-common';
-import { Connection, Database } from 'duckdb-async';
-import fs from 'fs';
-import _ from 'lodash';
-import os from 'os';
-import path from 'path';
-import env from '../../configs/env';
-import { TableName } from '../../utils/db';
+import { toObject } from "@oraichain/oraidex-common";
+import { Connection, Database } from "duckdb-async";
+import fs from "fs";
+import _ from "lodash";
+import os from "os";
+import path from "path";
+import env from "../../configs/env";
+import { TableName } from "../../utils/db";
 
 export const sqlCommands = {
   create: {
@@ -38,8 +38,8 @@ export const sqlCommands = {
         hash VARCHAR PRIMARY KEY,
         data VARCHAR,
       )
-      `
-  }
+      `,
+  },
 };
 
 export abstract class DuckDB {
@@ -48,7 +48,11 @@ export abstract class DuckDB {
   abstract select(tableName: TableName, options: OptionInterface): Promise<any>;
   abstract insert(tableName: TableName, data: Object): Promise<void>;
   abstract delete(tableName: TableName, options: OptionInterface): Promise<any>;
-  abstract update(tableName: TableName, overrideData: Object, options: OptionInterface): Promise<void>;
+  abstract update(
+    tableName: TableName,
+    overrideData: Object,
+    options: OptionInterface
+  ): Promise<void>;
 }
 
 export interface PaginationInterface {
@@ -72,11 +76,11 @@ export class DuckDbNode extends DuckDB {
     const defaultOptions = {
       where: {},
       attributes: [],
-      pagination: {}
+      pagination: {},
     };
     const [query, values] = this.selectClause(tableName, {
       ...defaultOptions,
-      ...options
+      ...options,
     });
     const result = await this.conn.all(query, ...values);
     return result;
@@ -92,7 +96,11 @@ export class DuckDbNode extends DuckDB {
     await this.conn.run(query, ...values);
   }
 
-  async update(tableName: TableName, overrideData: Object, options: OptionInterface): Promise<void> {
+  async update(
+    tableName: TableName,
+    overrideData: Object,
+    options: OptionInterface
+  ): Promise<void> {
     const [query, values] = this.updateClause(tableName, overrideData, options);
     await this.conn.run(query, ...values);
   }
@@ -105,11 +113,12 @@ export class DuckDbNode extends DuckDB {
       fs.mkdirSync(relayerDirPath, { recursive: true });
     }
 
-    const dbPath = dbName ? `${relayerDirPath}/${dbName}` : ':memory:';
+    const dbPath = dbName ? `${relayerDirPath}/${dbName}` : ":memory:";
     if (!DuckDbNode.instances) {
       let db = await Database.create(dbPath);
       await db.close(); // close to flush WAL file
       db = await Database.create(dbPath);
+      db.exec("SET memory_limit='100MB'");
       const conn = await db.connect();
       DuckDbNode.instances = new DuckDbNode(conn);
     }
@@ -144,18 +153,30 @@ export class DuckDbNode extends DuckDB {
     options: OptionInterface = {
       where: {},
       attributes: [],
-      pagination: {}
+      pagination: {},
     }
   ): [string, any[]] {
     const attributes = options.attributes;
     const whereKeys = Object.keys(options.where);
     const whereValues = Object.values(options.where);
-    const whereClauses = whereKeys.length > 0 ? `WHERE ${whereKeys.map((item) => `${item} = ?`).join(' AND ')}` : '';
+    const whereClauses =
+      whereKeys.length > 0
+        ? `WHERE ${whereKeys.map((item) => `${item} = ?`).join(" AND ")}`
+        : "";
     const paginationKeys = Object.keys(options.pagination);
     const paginationValues = Object.values(options.pagination);
-    const paginationClause = paginationKeys.length > 0 ? `${options.pagination?.limit ? `LIMIT ?` : ''} ${options.pagination?.offset ? 'OFFSET ?' : ''}` : '';
+    const paginationClause =
+      paginationKeys.length > 0
+        ? `${options.pagination?.limit ? `LIMIT ?` : ""} ${
+            options.pagination?.offset ? "OFFSET ?" : ""
+          }`
+        : "";
 
-    const query = _.trim(`SELECT ${attributes.length > 0 ? attributes.join(', ') : '*'} FROM ${tableName} ${whereClauses} ${paginationClause}`);
+    const query = _.trim(
+      `SELECT ${
+        attributes.length > 0 ? attributes.join(", ") : "*"
+      } FROM ${tableName} ${whereClauses} ${paginationClause}`
+    );
 
     return [query, [...whereValues, ...paginationValues]];
   }
@@ -163,27 +184,43 @@ export class DuckDbNode extends DuckDB {
   insertClause(tableName: string, data: Object): [string, any[]] {
     const keys = Object.keys(data);
     const values = Object.values(data);
-    const query = `INSERT OR IGNORE INTO ${tableName} (${keys.join(', ')}) VALUES (${keys.map((_) => '?').join(', ')})`;
+    const query = `INSERT OR IGNORE INTO ${tableName} (${keys.join(
+      ", "
+    )}) VALUES (${keys.map((_) => "?").join(", ")})`;
     return [_.trim(query), values];
   }
 
   deleteClause(tableName: string, options: OptionInterface): [string, any[]] {
     const whereKeys = Object.keys(options.where);
     const whereValues = Object.values(options.where);
-    const whereClauses = whereKeys.length > 0 ? `WHERE ${whereKeys.map((item) => `${item} = ?`).join(' AND ')}` : '';
+    const whereClauses =
+      whereKeys.length > 0
+        ? `WHERE ${whereKeys.map((item) => `${item} = ?`).join(" AND ")}`
+        : "";
     const query = _.trim(`DELETE FROM ${tableName} ${whereClauses}`);
     return [query, whereValues];
   }
 
-  updateClause(tableName: TableName, overrideData: Object, options: OptionInterface): [string, any[]] {
+  updateClause(
+    tableName: TableName,
+    overrideData: Object,
+    options: OptionInterface
+  ): [string, any[]] {
     const overrideDataKeys = Object.keys(overrideData);
     const overrideDataValues = Object.values(overrideData);
-    const setDataClause = `SET ${overrideDataKeys.map((item) => `${item} = ?`).join(', ')}`;
+    const setDataClause = `SET ${overrideDataKeys
+      .map((item) => `${item} = ?`)
+      .join(", ")}`;
     const whereKeys = Object.keys(options.where);
     const whereValues = Object.values(options.where);
-    const whereClauses = whereKeys.length > 0 ? `WHERE ${whereKeys.map((item) => `${item} = ?`).join(' AND ')}` : '';
+    const whereClauses =
+      whereKeys.length > 0
+        ? `WHERE ${whereKeys.map((item) => `${item} = ?`).join(" AND ")}`
+        : "";
 
-    const query = _.trim(`UPDATE ${tableName} ${setDataClause} ${whereClauses}`);
+    const query = _.trim(
+      `UPDATE ${tableName} ${setDataClause} ${whereClauses}`
+    );
 
     return [query, [...overrideDataValues, ...whereValues]];
   }
