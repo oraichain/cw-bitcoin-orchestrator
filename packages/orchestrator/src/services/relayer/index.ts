@@ -105,8 +105,8 @@ export default class RelayerService implements RelayerInterface {
   }
 
   // [TRACKER]
-  trackMemoryLeak() {
-    // while (true) {
+  async trackMemoryLeak() {
+    while (true) {
     const used = process.memoryUsage();
     const currentHeapTotal = used.heapTotal / 1024 / 1024;
     const currentHeapUsed = used.heapUsed / 1024 / 1024;
@@ -123,8 +123,8 @@ export default class RelayerService implements RelayerInterface {
       );
     }
     this.logger.info("=============================================");
-    // await setTimeout(ITERATION_DELAY.TRACK_MEMORY_LEAK);
-    // }
+    await setTimeout(ITERATION_DELAY.TRACK_MEMORY_LEAK);
+    }
   }
 
   // [RELAY HEADER]
