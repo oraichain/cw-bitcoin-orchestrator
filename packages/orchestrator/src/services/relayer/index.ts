@@ -165,6 +165,7 @@ export default class RelayerService implements RelayerInterface {
         this.blockHeaderService.getBlockHeader(sideChainHash),
       ]);
 
+    console.log({ fullNodeInfo }, { sideChainInfo });
     if (fullNodeInfo.height < sideChainInfo.height) {
       this.logger.info("Full node is still syncing with real running node!");
       return;
