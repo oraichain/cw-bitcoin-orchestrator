@@ -171,7 +171,7 @@ export default class RelayerService implements RelayerInterface {
     }
     let startHeader = await trackExecutionTime(
       async () => {
-        this.commonAncestor(fullNodeHash, sideChainHash);
+        return this.commonAncestor(fullNodeHash, sideChainHash);
       },
       "commonAncestor",
       this.logger
