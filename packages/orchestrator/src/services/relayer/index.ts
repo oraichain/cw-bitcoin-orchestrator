@@ -48,6 +48,7 @@ import {
   ScriptPubkeyType,
   toScriptPubKeyP2WSH,
 } from "../../utils/bitcoin";
+import { trackExecutionTime } from "../../utils/catchAsync";
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { convertSdkDestToWasmDest } from "../../utils/dest";
 import BlockHeaderService from "../block_header";
@@ -138,6 +139,7 @@ export default class RelayerService implements RelayerInterface {
 
       if (fullNodeHash !== sideChainHash) {
         await this.relayHeaderBatch(fullNodeHash, sideChainHash);
+
         // Delay between headers
         return lastHash;
       }
@@ -167,7 +169,13 @@ export default class RelayerService implements RelayerInterface {
       this.logger.info("Full node is still syncing with real running node!");
       return;
     }
-    let startHeader = await this.commonAncestor(fullNodeHash, sideChainHash);
+    let startHeader = await trackExecutionTime(
+      async () => {
+        this.commonAncestor(fullNodeHash, sideChainHash);
+      },
+      "commonAncestor",
+      this.logger
+    );
     let wrappedHeaders = await this.getHeaderBatch(startHeader.hash);
 
     if (wrappedHeaders.length > 0) {
@@ -257,7 +265,13 @@ export default class RelayerService implements RelayerInterface {
       this.logger.info("Scanning mempool for deposit transactions...");
 
       // Mempool handler
-      await this.scanTxsFromMempools();
+      await trackExecutionTime(
+        async () => {
+          this.scanTxsFromMempools();
+        },
+        "scanTxsFromMempools",
+        this.logger
+      );
 
       // Block handler
       const tip = await this.lightClientBitcoinClient.sidechainBlockHash();
@@ -267,7 +281,15 @@ export default class RelayerService implements RelayerInterface {
         );
       }
       prevTip = prevTip || tip;
-      let startHeight = (await this.commonAncestor(tip, prevTip)).height;
+      let startHeight = (
+        await trackExecutionTime(
+          async () => {
+            return this.commonAncestor(tip, prevTip);
+          },
+          "commonAncestor",
+          this.logger
+        )
+      ).height;
 
       let endHeader: BlockHeader = await this.blockHeaderService.getBlockHeader(
         tip
@@ -280,7 +302,13 @@ export default class RelayerService implements RelayerInterface {
       this.logger.info(
         `Scanning ${numBlocks} blocks for deposit transactions...`
       );
-      await this.scanDeposits(numBlocks);
+      await trackExecutionTime(
+        async () => {
+          await this.scanDeposits(numBlocks);
+        },
+        "scanDeposits",
+        this.logger
+      );
       prevTip = tip;
 
       this.logger.info("Waiting some seconds for next scan...");
