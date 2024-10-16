@@ -92,11 +92,11 @@ export default class RelayerService implements RelayerInterface {
     let prevTip = null;
     this.trackMemoryLeak();
     while (true) {
-      lastHash = await this.relayHeader(lastHash);
-      prevTip = await this.relayDeposit(prevTip);
-      await this.relayRecoveryDeposits();
+      // lastHash = await this.relayHeader(lastHash);
+      // prevTip = await this.relayDeposit(prevTip);
+      // await this.relayRecoveryDeposits();
       await this.relayCheckpoints();
-      await this.relayCheckpointConf();
+      // await this.relayCheckpointConf();
       console.log("Done round!");
       await setTimeout(100);
     }
