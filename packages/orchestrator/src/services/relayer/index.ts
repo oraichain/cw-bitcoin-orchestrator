@@ -99,7 +99,13 @@ export default class RelayerService implements RelayerInterface {
       await this.relayCheckpoints();
       await this.relayCheckpointConf();
       console.log("Done round!");
-      this.trackMemoryLeak();
+      if (global.gc) {
+        this.logger.info("Forcing garbage collection...");
+        global.gc({
+          execution: "sync",
+        });
+        this.trackMemoryLeak();
+      }
       await setTimeout(2000);
     }
   }
