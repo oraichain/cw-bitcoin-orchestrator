@@ -23,13 +23,14 @@ class BlockHeaderService {
         blockhash,
         verbose: true
       });
-      if (blockHeaderData !== null) {
-        await this.db.insert(TableName.BlockHeader, {
-          hash: blockhash,
-          data: JSON.stringify(blockHeaderData)
-        });
-        this.logger.info(`Inserted new block header with hash ${blockhash}`);
+      if (blockHeaderData === null) {
+        throw new Error(`Block header with hash ${blockhash} is null`);
       }
+      await this.db.insert(TableName.BlockHeader, {
+        hash: blockhash,
+        data: JSON.stringify(blockHeaderData)
+      });
+      this.logger.info(`Inserted new block header with hash ${blockhash}`);
       return blockHeaderData;
     } catch (err) {
       this.logger.error(`Error inserting block header with hash ${blockhash}`, err);
