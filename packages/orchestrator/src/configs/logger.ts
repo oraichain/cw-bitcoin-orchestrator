@@ -14,9 +14,11 @@ export const logger = (label: string, loglevel?: string): any => {
   // }
   return {
     info: (text: string) =>
-      console.info(`${new Date()} [INFO] [${label}]: ${text}`),
+      console.info(`${new Date().toLocaleString()} [INFO] [${label}]: ${text}`),
     error: (text: string, ...args) =>
-      console.error(`${new Date()} [ERROR] [${label}]: ${text}, ${args}`),
+      console.error(
+        `${new Date().toLocaleString()} [ERROR] [${label}]: ${text}, ${args}`
+      ),
   };
   // return createLogger({
   //   level: loglevel || "info",
