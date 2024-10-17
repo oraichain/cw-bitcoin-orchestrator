@@ -51,7 +51,8 @@ class SignerService implements RelayerInterface {
   }
 
   async startRelay({ xpriv, xpub }: { xpriv: string; xpub: string }) {
-    await Promise.all([this.startSigningCheckpoint(xpriv, xpub), this.startRecoveryTxSigning(xpriv, xpub)]);
+    await this.startSigningCheckpoint(xpriv, xpub);
+    await this.startRecoveryTxSigning(xpriv, xpub);
   }
 
   // SIGNING CHECKPOINT

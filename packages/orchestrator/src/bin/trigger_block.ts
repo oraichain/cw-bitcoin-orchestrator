@@ -26,7 +26,7 @@ const start = async () => {
 
   const triggerBlock = new TriggerBlocks(appBitcoinClient);
 
-  await Promise.all([triggerBlock.relay()]);
+  await triggerBlock.relay();
 };
 
 export default async () => {

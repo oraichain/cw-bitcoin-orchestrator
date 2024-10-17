@@ -23,7 +23,10 @@ const getCheckpointQueue = async () => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
   const queryClient = new AppBitcoinQueryClient(client, env.cosmos.appBitcoin);
   try {
-    const [buildingIndex, confirmedIndex, firstUnconfirmedIndex] = await Promise.all([queryClient.buildingIndex(), queryClient.confirmedIndex(), queryClient.unhandledConfirmedIndex()]);
+    const buildingIndex = await queryClient.buildingIndex();
+    const confirmedIndex = await queryClient.confirmedIndex();
+    const firstUnconfirmedIndex = await queryClient.unhandledConfirmedIndex();
+
     return {
       index: buildingIndex,
       first_unhandled_confirmed_cp_index: firstUnconfirmedIndex,
