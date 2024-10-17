@@ -324,9 +324,11 @@ export default class RelayerService implements RelayerInterface {
       const allMempoolTxs = await this.btcClient.getrawmempool();
       const mempoolTxs = (
         await Promise.all([
-          allMempoolTxs.filter((item: string)=> item !== null).map((txid: string) => {
-            return this.relayedSetService.exist(`relay-deposit-${txid}`);
-          }),
+          allMempoolTxs
+            .filter((item: string) => item !== null)
+            .map((txid: string) => {
+              return this.relayedSetService.exist(`relay-deposit-${txid}`);
+            }),
         ])
       ).filter((item) => item);
 
