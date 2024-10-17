@@ -5,3 +5,17 @@ export const chunkArray = <T>(array: T[], chunkSize: number): T[][] => {
   }
   return chunks;
 };
+
+export const mapSlice = <A, B>(
+  array: A[],
+  start: number,
+  size: number,
+  map: (item: A) => B
+): B[] => {
+  const ret = [];
+  const end = Math.min(array.length, start + size);
+  for (let i = start; i < end; ++i) {
+    ret.push(map(array[i]));
+  }
+  return ret;
+};

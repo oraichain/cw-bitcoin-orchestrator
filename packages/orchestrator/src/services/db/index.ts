@@ -33,6 +33,12 @@ export const sqlCommands = {
         data VARCHAR PRIMARY KEY,
       )
       `,
+    [TableName.BlockHeader]: `CREATE TABLE IF NOT EXISTS ${TableName.BlockHeader}
+      (
+        hash VARCHAR PRIMARY KEY,
+        data VARCHAR,
+      )
+      `,
   },
 };
 
@@ -112,6 +118,7 @@ export class DuckDbNode extends DuckDB {
       let db = await Database.create(dbPath);
       await db.close(); // close to flush WAL file
       db = await Database.create(dbPath);
+      db.exec("SET memory_limit='100MB'");
       const conn = await db.connect();
       DuckDbNode.instances = new DuckDbNode(conn);
     }

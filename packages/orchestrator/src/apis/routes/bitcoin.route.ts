@@ -1,11 +1,15 @@
-import express from "express";
-import bitcoinController from "../controllers/bitcoin.controller";
-const router = express.Router();
+import express, { Router } from 'express';
+import RelayerService from '../../services/relayer';
+import BitcoinController from '../controllers/bitcoin.controller';
+const router: Router = express.Router();
 
-router.get("/config", bitcoinController.getConfig);
-router.get("/pending_deposits", bitcoinController.getPendingDeposits);
-router.post("/deposit", bitcoinController.submitDepositAddress);
-router.get("/value_locked", bitcoinController.getValueLocked);
-router.get("/checkpoint_queue", bitcoinController.getCheckpointQueue);
+export default (relayer: RelayerService) => {
+  const bitcoinController = new BitcoinController(relayer);
+  router.get('/config', bitcoinController.getConfig);
+  router.get('/pending_deposits', bitcoinController.getPendingDeposits);
+  router.post('/deposit', bitcoinController.submitDepositAddress);
+  router.get('/value_locked', bitcoinController.getValueLocked);
+  router.get('/checkpoint_queue', bitcoinController.getCheckpointQueue);
 
-export default router;
+  return router;
+};

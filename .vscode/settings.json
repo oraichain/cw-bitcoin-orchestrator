@@ -3,4 +3,8 @@
         "source.organizeImports": "explicit"
     },
     "typescript.tsdk": "node_modules/typescript/lib",
+    "sonarlint.connectedMode.project": {
+        "connectionId": "http-localhost-9000",
+        "projectKey": "cw-bitcoin-orchestrator"
+    },
 }
