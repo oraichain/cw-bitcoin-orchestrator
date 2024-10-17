@@ -97,10 +97,13 @@ export default class RelayerService implements RelayerInterface {
       await this.relayRecoveryDeposits();
       await this.relayCheckpoints();
       await this.relayCheckpointConf();
-      global.gc?.({
-        execution: "sync",
-      });
-      console.log("Done round!");
+      if (global.gc) {
+        global.gc?.({
+          execution: "sync",
+        });
+        this.logger.info("Garbage collection is done!");
+      }
+      this.logger.info("Done round!");
       await setTimeout(5000);
     }
   }
