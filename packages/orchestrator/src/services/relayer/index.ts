@@ -337,12 +337,14 @@ export default class RelayerService implements RelayerInterface {
         const txChunk = mapSlice(
           mempoolTxs,
           i,
-          (i += SCAN_MEMPOOL_CHUNK_SIZE),
+          SCAN_MEMPOOL_CHUNK_SIZE,
           (txid: string) => ({
             method: "getrawtransaction",
             params: [txid, true],
           })
         );
+
+        i += SCAN_MEMPOOL_CHUNK_SIZE;
 
         let detailMempoolTxs: BitcoinTransaction[] = (
           await this.btcClient.batch(txChunk)
@@ -410,12 +412,13 @@ export default class RelayerService implements RelayerInterface {
         const blockhashChunk = mapSlice(
           allBlockhashes,
           i,
-          (i += SCAN_BLOCKS_CHUNK_SIZE),
+          SCAN_BLOCKS_CHUNK_SIZE,
           (blockhash: string) => ({
             method: "getblock",
             params: [blockhash, 2],
           })
         );
+        i += SCAN_BLOCKS_CHUNK_SIZE;
 
         let allDetailBlocks = (await this.btcClient.batch(blockhashChunk)).map(
           (item) => item.result
