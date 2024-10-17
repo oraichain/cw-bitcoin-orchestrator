@@ -420,8 +420,8 @@ export default class RelayerService implements RelayerInterface {
         let allDetailBlocks = (await this.btcClient.batch(blockhashChunk)).map(
           (item) => item.result
         );
+        console.dir(allDetailBlocks);
         for (const block of allDetailBlocks) {
-          console.log(block);
           let txs = await this.filterDepositTxs(block.tx);
           for (const tx of txs) {
             try {
