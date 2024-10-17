@@ -421,6 +421,7 @@ export default class RelayerService implements RelayerInterface {
           (item) => item.result
         );
         for (const block of allDetailBlocks) {
+          console.log(block);
           let txs = await this.filterDepositTxs(block.tx);
           for (const tx of txs) {
             try {
