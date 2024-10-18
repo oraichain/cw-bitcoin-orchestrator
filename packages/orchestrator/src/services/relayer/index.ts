@@ -420,10 +420,11 @@ export default class RelayerService implements RelayerInterface {
         );
         i += SCAN_BLOCKS_CHUNK_SIZE;
 
-        let allDetailBlocks = (await this.btcClient.batch(blockhashChunk)).map(
-          (item) => item.result
-        );
+        let allDetailBlocks: BitcoinBlock[] = (
+          await this.btcClient.batch(blockhashChunk)
+        ).map((item) => item.result);
         for (const block of allDetailBlocks) {
+          console.log("Block hash: ", block.hash, "Height:", block.height);
           if (
             block.hash ===
             "0000000000000000000297839e436a6b3181ab5c4e987ece22e71f72d4ee34aa"
