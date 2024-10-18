@@ -93,7 +93,7 @@ export default class RelayerService implements RelayerInterface {
     this.trackMemoryLeak();
     while (true) {
       lastHash = await this.relayHeader(lastHash);
-      // prevTip = await this.relayDeposit(prevTip);
+      prevTip = await this.relayDeposit(prevTip);
       await this.relayRecoveryDeposits();
       await this.relayCheckpoints();
       await this.relayCheckpointConf();
@@ -172,7 +172,6 @@ export default class RelayerService implements RelayerInterface {
       return;
     }
     let startHeader = await this.commonAncestor(fullNodeHash, sideChainHash);
-    console.log({ startHeader });
     let wrappedHeaders = await this.getHeaderBatch(startHeader.hash);
 
     if (wrappedHeaders.length > 0) {
