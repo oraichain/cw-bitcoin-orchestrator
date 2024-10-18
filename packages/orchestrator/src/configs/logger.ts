@@ -14,7 +14,7 @@ export const logger = (label: string, loglevel?: string): any => {
         .setDescription(error.stack)
         .setColor("Red")
         .setImage(
-          "https://miro.medium.com/v2/resize:fit:1400/format:webp/1*PnNRGFIy2mTXtIJzNAoy_A.jpeg"
+          "https://cdn.discordapp.com/attachments/1263547562120577058/1296729095975211050/demo.jpg?ex=67135894&is=67120714&hm=6020d73a3063554bd1eca81e81b3c378e3b84196d577c087d7311d53e6ee009a&"
         );
       webhookClient.send({
         embeds: [embed],
