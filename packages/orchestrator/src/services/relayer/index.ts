@@ -167,7 +167,10 @@ export default class RelayerService implements RelayerInterface {
     const sideChainInfo = await this.blockHeaderService.getBlockHeader(
       sideChainHash
     );
-
+    console.log(
+      { fullNodeInfoHash: fullNodeInfo.hash },
+      { sideChainInfoHash: sideChainInfo.hash }
+    );
     if (fullNodeInfo.height < sideChainInfo.height) {
       this.logger.info("Full node is still syncing with real running node!");
       return;
@@ -396,13 +399,7 @@ export default class RelayerService implements RelayerInterface {
 
   async scanDeposits(numBlocks: number) {
     try {
-      let sidechainBlockHash =
-        await this.lightClientBitcoinClient.sidechainBlockHash();
-      let sidechainBlock = await this.blockHeaderService.getBlockHeader(
-        sidechainBlockHash
-      );
-      let sidechainHeight = sidechainBlock.height;
-      console.log({ sidechainHeight });
+      let sidechainHeight = await this.lightClientBitcoinClient.headerHeight();
       let allHeightQuerier = [];
       for (let i = 0; i < numBlocks; i++) {
         allHeightQuerier.push({
