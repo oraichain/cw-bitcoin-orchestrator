@@ -521,6 +521,8 @@ export default class RelayerService implements RelayerInterface {
       });
 
       if (isExistOutpoint === true) {
+        console.log({isExistOutpoint}, txid, i);
+
         // Remove this outpoint from deposit index
         await this.depositIndexService.removeDeposit({
           receiver: toReceiverAddr(convertSdkDestToWasmDest(script.dest)),
