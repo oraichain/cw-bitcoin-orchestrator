@@ -1,11 +1,11 @@
 import { AppBitcoinClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import { setTimeout } from "timers/promises";
-import { Logger } from "winston";
+import env from "./configs/env";
 import { logger } from "./configs/logger";
 
 // TODO: remove this in the future
 class TriggerBlocks {
-  logger: Logger;
+  logger: any;
   constructor(protected appBitcoinClient: AppBitcoinClient) {
     this.logger = logger("TriggerBlocks");
   }
@@ -28,7 +28,7 @@ class TriggerBlocks {
       } catch (err) {
         this.logger.error("[TRIGGER BLOCK] Error:", err);
       }
-      await setTimeout(10 * 1000); // 1 minutes per block
+      await setTimeout(env.triggerBlockInterval); // 1 minutes per block
     }
   }
 }
