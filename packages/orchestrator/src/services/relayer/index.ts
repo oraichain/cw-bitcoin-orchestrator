@@ -167,18 +167,11 @@ export default class RelayerService implements RelayerInterface {
     const sideChainInfo = await this.blockHeaderService.getBlockHeader(
       sideChainHash
     );
-
     if (fullNodeInfo.height < sideChainInfo.height) {
       this.logger.info("Full node is still syncing with real running node!");
       return;
     }
-    let startHeader = await trackExecutionTime(
-      async () => {
-        return this.commonAncestor(fullNodeHash, sideChainHash);
-      },
-      "commonAncestor",
-      this.logger
-    );
+    let startHeader = await this.commonAncestor(fullNodeHash, sideChainHash);
     let wrappedHeaders = await this.getHeaderBatch(startHeader.hash);
 
     if (wrappedHeaders.length > 0) {
@@ -207,7 +200,6 @@ export default class RelayerService implements RelayerInterface {
     let wrappedHeaders = [];
     for (let i = 0; i < RELAY_HEADER_BATCH_SIZE; i++) {
       let nextHash = cursorHeader?.nextblockhash;
-
       if (nextHash !== undefined) {
         cursorHeader = await this.blockHeaderService.getBlockHeader(nextHash);
         const wrappedHeader: WrappedHeader = newWrappedHeader(
@@ -420,9 +412,9 @@ export default class RelayerService implements RelayerInterface {
         );
         i += SCAN_BLOCKS_CHUNK_SIZE;
 
-        let allDetailBlocks = (await this.btcClient.batch(blockhashChunk)).map(
-          (item) => item.result
-        );
+        let allDetailBlocks: BitcoinBlock[] = (
+          await this.btcClient.batch(blockhashChunk)
+        ).map((item) => item.result);
         for (const block of allDetailBlocks) {
           let txs = await this.filterDepositTxs(block.tx);
           for (const tx of txs) {
@@ -469,7 +461,7 @@ export default class RelayerService implements RelayerInterface {
 
   async filterDepositTxs(txs: BitcoinTransaction[]) {
     let results = await Promise.all(
-      txs.map(async (tx) => {
+      txs.map(async (tx: BitcoinTransaction) => {
         let outputs = tx.vout;
         for (const output of outputs) {
           if (output.scriptPubKey.type == ScriptPubkeyType.WitnessScriptHash) {
