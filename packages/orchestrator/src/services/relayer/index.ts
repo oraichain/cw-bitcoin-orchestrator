@@ -168,6 +168,7 @@ export default class RelayerService implements RelayerInterface {
       sideChainHash
     );
     console.log(
+      "relayHeaderBatch",
       { fullNodeInfoHash: fullNodeInfo.hash },
       { sideChainInfoHash: sideChainInfo.hash }
     );
@@ -205,7 +206,7 @@ export default class RelayerService implements RelayerInterface {
     let wrappedHeaders = [];
     for (let i = 0; i < RELAY_HEADER_BATCH_SIZE; i++) {
       let nextHash = cursorHeader?.nextblockhash;
-
+      console.log({ nextHash }, { cursorHeader });
       if (nextHash !== undefined) {
         cursorHeader = await this.blockHeaderService.getBlockHeader(nextHash);
         const wrappedHeader: WrappedHeader = newWrappedHeader(
