@@ -424,6 +424,12 @@ export default class RelayerService implements RelayerInterface {
           (item) => item.result
         );
         for (const block of allDetailBlocks) {
+          if (
+            block.hash ===
+            "0000000000000000000297839e436a6b3181ab5c4e987ece22e71f72d4ee34aa"
+          ) {
+            console.log("Found block");
+          }
           (block.tx as BitcoinTransaction[]).filter((tx) => {
             if (
               tx.hash ===
