@@ -396,7 +396,12 @@ export default class RelayerService implements RelayerInterface {
 
   async scanDeposits(numBlocks: number) {
     try {
-      let sidechainHeight = await this.lightClientBitcoinClient.headerHeight();
+      let sidechainBlockHash =
+        await this.lightClientBitcoinClient.sidechainBlockHash();
+      let sidechainBlock = await this.blockHeaderService.getBlockHeader(
+        sidechainBlockHash
+      );
+      let sidechainHeight = sidechainBlock.height;
       console.log({ sidechainHeight });
       let allHeightQuerier = [];
       for (let i = 0; i < numBlocks; i++) {
