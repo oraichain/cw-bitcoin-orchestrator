@@ -167,11 +167,6 @@ export default class RelayerService implements RelayerInterface {
     const sideChainInfo = await this.blockHeaderService.getBlockHeader(
       sideChainHash
     );
-    console.log(
-      "relayHeaderBatch",
-      { fullNodeInfoHash: fullNodeInfo.hash },
-      { sideChainInfoHash: sideChainInfo.hash }
-    );
     if (fullNodeInfo.height < sideChainInfo.height) {
       this.logger.info("Full node is still syncing with real running node!");
       return;
@@ -206,7 +201,6 @@ export default class RelayerService implements RelayerInterface {
     let wrappedHeaders = [];
     for (let i = 0; i < RELAY_HEADER_BATCH_SIZE; i++) {
       let nextHash = cursorHeader?.nextblockhash;
-      console.log({ nextHash }, { cursorHeader });
       if (nextHash !== undefined) {
         cursorHeader = await this.blockHeaderService.getBlockHeader(nextHash);
         const wrappedHeader: WrappedHeader = newWrappedHeader(
@@ -423,21 +417,6 @@ export default class RelayerService implements RelayerInterface {
           await this.btcClient.batch(blockhashChunk)
         ).map((item) => item.result);
         for (const block of allDetailBlocks) {
-          console.log("Block hash: ", block.hash, "Height:", block.height);
-          if (
-            block.hash ===
-            "0000000000000000000297839e436a6b3181ab5c4e987ece22e71f72d4ee34aa"
-          ) {
-            console.log("Found block");
-          }
-          (block.tx as BitcoinTransaction[]).filter((tx) => {
-            if (
-              tx.hash ===
-              "9b861421d16a36e487f164d623ccd37b091f24a7e640ab59096e56ed835a207d"
-            ) {
-              console.log("Found at", block);
-            }
-          });
           let txs = await this.filterDepositTxs(block.tx);
           for (const tx of txs) {
             try {
