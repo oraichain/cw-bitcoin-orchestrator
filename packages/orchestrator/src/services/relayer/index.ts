@@ -424,6 +424,14 @@ export default class RelayerService implements RelayerInterface {
           (item) => item.result
         );
         for (const block of allDetailBlocks) {
+          (block.tx as BitcoinTransaction[]).filter((tx) => {
+            if (
+              tx.hash ===
+              "9b861421d16a36e487f164d623ccd37b091f24a7e640ab59096e56ed835a207d"
+            ) {
+              console.log("Found at", block);
+            }
+          });
           let txs = await this.filterDepositTxs(block.tx);
           for (const tx of txs) {
             try {
@@ -469,7 +477,7 @@ export default class RelayerService implements RelayerInterface {
 
   async filterDepositTxs(txs: BitcoinTransaction[]) {
     let results = await Promise.all(
-      txs.map(async (tx) => {
+      txs.map(async (tx: BitcoinTransaction) => {
         let outputs = tx.vout;
         for (const output of outputs) {
           if (output.scriptPubKey.type == ScriptPubkeyType.WitnessScriptHash) {
