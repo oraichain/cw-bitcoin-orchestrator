@@ -11,7 +11,9 @@ export const logger = (label: string, loglevel?: string): any => {
       });
       const embed = new EmbedBuilder()
         .setTitle(text)
-        .setDescription(error?.stack || "Something went wrong!")
+        .setDescription(
+          error?.stack || error?.message || "Something went wrong!"
+        )
         .setColor("Red")
         .setImage(
           "https://cdn.discordapp.com/attachments/1263547562120577058/1296729095975211050/demo.jpg?ex=67135894&is=67120714&hm=6020d73a3063554bd1eca81e81b3c378e3b84196d577c087d7311d53e6ee009a&"
