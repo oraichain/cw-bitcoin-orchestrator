@@ -18,7 +18,7 @@ class TriggerBlocks {
     const tx = await this.appBitcoinClient.triggerBeginBlock({
       hash: Buffer.from(hash, "hex").toString("base64"),
     });
-    this.logger.info("Update block at:", tx.transactionHash);
+    this.logger.info(`Update block at: ${tx.transactionHash}`);
   }
 
   async relay() {
