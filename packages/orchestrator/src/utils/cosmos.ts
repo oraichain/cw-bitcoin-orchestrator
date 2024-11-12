@@ -32,7 +32,7 @@ export const wrappedExecuteTransaction = async (
 
 export const initQueryClient = async (rpcUrl: string) => {
   const client = await CosmWasmClient.connect(rpcUrl);
-  return client;
+  return client as any;
 };
 
 export const initSignerClient = async (

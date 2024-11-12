@@ -1,6 +1,6 @@
-import { AppBitcoinQueryClient } from '@oraichain/bitcoin-bridge-contracts-sdk';
-import env from '../../configs/env';
-import { initQueryClient } from '../../utils/cosmos';
+import { AppBitcoinQueryClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import env from "../../configs/env";
+import { initQueryClient } from "../../utils/cosmos";
 
 const getConfig = async () => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
@@ -30,13 +30,13 @@ const getCheckpointQueue = async () => {
     return {
       index: buildingIndex,
       first_unhandled_confirmed_cp_index: firstUnconfirmedIndex,
-      confirmed_index: confirmedIndex
+      confirmed_index: confirmedIndex,
     };
   } catch (err) {
     return {
       index: 0,
       first_unhandled_confirmed_cp_index: 0,
-      confirmed_index: 0
+      confirmed_index: 0,
     };
   }
 };
@@ -44,5 +44,5 @@ const getCheckpointQueue = async () => {
 export default {
   getConfig,
   getValueLocked,
-  getCheckpointQueue
+  getCheckpointQueue,
 };

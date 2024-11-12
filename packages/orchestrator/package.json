@@ -12,12 +12,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "@cosmjs/amino": "0.32.1",
-    "@cosmjs/cosmwasm-stargate": "0.32.4",
-    "@cosmjs/crypto": "0.32.4",
-    "@cosmjs/proto-signing": "0.32.1",
-    "@cosmjs/stargate": "0.32.4",
-    "@cosmjs/tendermint-rpc": "0.32.4",
     "@oraichain/bitcoin-bridge-contracts-build": "workspace:^",
     "@oraichain/bitcoin-bridge-contracts-sdk": "workspace:^",
     "@oraichain/bitcoin-bridge-lib-js": "workspace:^",

@@ -1,7 +1,10 @@
-import { AppBitcoinQueryClient } from '@oraichain/bitcoin-bridge-contracts-sdk';
-import { fromBinaryTransaction, getBitcoinTransactionTxid } from '@oraichain/bitcoin-bridge-wasm-sdk';
-import env from '../../configs/env';
-import { initQueryClient } from '../../utils/cosmos';
+import { AppBitcoinQueryClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
+import {
+  fromBinaryTransaction,
+  getBitcoinTransactionTxid,
+} from "@oraichain/bitcoin-bridge-wasm-sdk";
+import env from "../../configs/env";
+import { initQueryClient } from "../../utils/cosmos";
 
 const getConfig = async () => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
@@ -12,16 +15,20 @@ const getConfig = async () => {
 const getCheckpoint = async (index: number | undefined) => {
   const client = await initQueryClient(env.cosmos.rpcUrl);
   const queryClient = new AppBitcoinQueryClient(client, env.cosmos.appBitcoin);
-  const checkpoint = index ? await queryClient.checkpointByIndex({ index }) : await queryClient.buildingCheckpoint();
+  const checkpoint = index
+    ? await queryClient.checkpointByIndex({ index })
+    : await queryClient.buildingCheckpoint();
 
   const checkpointTx = await queryClient.checkpointTx({ index });
-  let checkpointTransaction = fromBinaryTransaction(Buffer.from(checkpointTx, 'base64'));
+  let checkpointTransaction = fromBinaryTransaction(
+    Buffer.from(checkpointTx, "base64")
+  );
   return {
     ...checkpoint,
     transaction: {
       data: checkpointTransaction,
-      hash: getBitcoinTransactionTxid(checkpointTransaction)
-    }
+      hash: getBitcoinTransactionTxid(checkpointTransaction),
+    },
   };
 };
 
@@ -48,5 +55,5 @@ export default {
   getCheckpoint,
   getDepositFee,
   getWithdrawFee,
-  getCheckpointFee
+  getCheckpointFee,
 };
