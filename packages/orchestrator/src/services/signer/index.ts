@@ -84,7 +84,7 @@ class SignerService implements RelayerInterface {
         });
 
         if (checkpoint.status === "signing") {
-          // await this.checkChangeRate();
+          await this.checkChangeRate();
           let signTxs = await this.appBitcoinClient.signingTxsAtCheckpointIndex(
             {
               xpub: encodeXpub({ key: xpub }),

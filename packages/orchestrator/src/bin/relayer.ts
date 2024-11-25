@@ -24,7 +24,10 @@ import RelayerService from "../services/relayer";
 import { initSignerClient } from "../utils/cosmos";
 import { decryptMnemonic } from "../utils/mnemonic";
 
-const startServer = (relayer: RelayerService) =>
+const startServer = (
+  relayer: RelayerService,
+  appBitcoinClient: AppBitcoinClient
+) =>
   new Promise((resolve) => {
     const app = express();
     const server = http.createServer(app);
@@ -54,9 +57,9 @@ const startServer = (relayer: RelayerService) =>
 
     const PORT = env.server.port;
 
-    app.use("/api/bitcoin", bitcoinRoute(relayer));
-    app.use("/api/checkpoint", checkpointRoute);
-    app.use("/api/contract", contractRoute);
+    app.use("/api/bitcoin", bitcoinRoute(relayer, appBitcoinClient));
+    app.use("/api/checkpoint", checkpointRoute(appBitcoinClient));
+    app.use("/api/contract", contractRoute(appBitcoinClient));
     app.get("/node_info", (_, res) => {
       res.status(httpStatus.OK).json({
         message: "Ok",
@@ -74,7 +77,11 @@ const startServer = (relayer: RelayerService) =>
     });
   });
 
-const createService = async (): Promise<RelayerService> => {
+const createService = async (): Promise<{
+  relayerService: RelayerService;
+  appBitcoinClient: AppBitcoinClient;
+  lightClientBitcoinClient: LightClientBitcoinClient;
+}> => {
   console.log("Initilizing DuckDB...");
   await DuckDbNode.create(env.duckdb.name);
   console.log("Initilized DuckDB!");
@@ -123,14 +130,18 @@ const createService = async (): Promise<RelayerService> => {
     DuckDbNode.instances
   );
 
-  return relayerService;
+  return {
+    relayerService,
+    appBitcoinClient,
+    lightClientBitcoinClient,
+  };
 };
 
 export default async () => {
-  const relayerService = await createService();
+  const { relayerService, appBitcoinClient } = await createService();
 
   if (process.env.API_ENABLED === "true") {
-    await startServer(relayerService);
+    await startServer(relayerService, appBitcoinClient);
   }
 
   await relayerService.relay();

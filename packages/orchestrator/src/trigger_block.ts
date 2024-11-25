@@ -22,6 +22,8 @@ class TriggerBlocks {
   }
 
   async relay() {
+    console.log(env);
+    console.log("Trigger block relayer is running...");
     while (true) {
       try {
         await this.triggerBlocks();

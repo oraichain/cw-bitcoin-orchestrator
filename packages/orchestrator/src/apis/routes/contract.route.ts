@@ -1,7 +1,10 @@
+import { AppBitcoinQueryClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
 import express, { Router } from "express";
-import contractController from "../controllers/contract.controller";
+import ContractController from "../controllers/contract.controller";
 const router: Router = express.Router();
 
-router.get("/config", contractController.getConfig);
-
-export default router;
+export default (appBitcoinQueryClient: AppBitcoinQueryClient) => {
+  const contractController = new ContractController(appBitcoinQueryClient);
+  router.get("/config", contractController.getConfig);
+  return router;
+};
