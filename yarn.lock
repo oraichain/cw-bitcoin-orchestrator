@@ -8791,6 +8791,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"helmet@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "helmet@npm:8.0.0"
+  checksum: 10c0/c3d273df206cbb4e5e830ea68afdbd3d0f8e055b2707f67f651ebb4b679c7fd4d6ac77ce6188a2cee32e853d4e24aa00548f787989bbe6e5f98ebfb703855d09
+  languageName: node
+  linkType: hard
+
 "hmac-drbg@npm:^1.0.1":
   version: 1.0.1
   resolution: "hmac-drbg@npm:1.0.1"
@@ -8904,6 +8911,20 @@ __metadata:
   version: 1.7.4
   resolution: "http-status@npm:1.7.4"
   checksum: 10c0/7b550096af22c8330218d1ff3d0736d3d5c84b90f499fdd16b2f7fc74895b18d7ff1e35ca4cb2ce138617347826480da5460ba6ae90eef0783e2c67a49471f10
+  languageName: node
+  linkType: hard
+
+"http-status@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "http-status@npm:2.0.0"
+  checksum: 10c0/56455f68ae2d18f7dd4e9debfe561f27862c37f87854bfde0dddb1781bfbc0b97b37aa5677ce4b1e367d7b90eccf3723021120948fa8f8b961135a43f10aa60c
+  languageName: node
+  linkType: hard
+
+"http@npm:^0.0.1-security":
+  version: 0.0.1-security
+  resolution: "http@npm:0.0.1-security"
+  checksum: 10c0/c0354c2afb6027a80756a30b1fb06607608c0408d100a5e3610d762dd1a320cb2611b0c3cf5ccb969b80f839e2735237ecc9897841e936d098161c38ee153ee5
   languageName: node
   linkType: hard
 
@@ -12142,6 +12163,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"os@npm:^0.1.2":
+  version: 0.1.2
+  resolution: "os@npm:0.1.2"
+  checksum: 10c0/90f0db78a19a43cd26bc7497640eaee566043209e93d7e99570f542370f55d7107487f0bffdff01666b6ba48c88b6da8a6ed3811d745b57de93ab1cf7d3591a4
+  languageName: node
+  linkType: hard
+
 "p-finally@npm:^1.0.0":
   version: 1.0.0
   resolution: "p-finally@npm:1.0.0"
@@ -13327,6 +13355,7 @@ __metadata:
     "@oraichain/oraidex-common": "npm:^1.0.10"
     "@swc/core": "npm:^1.4.11"
     "@swc/jest": "npm:^0.2.36"
+    "@types/cors": "npm:^2.8.17"
     "@types/jest": "npm:^29.5.12"
     "@types/lodash": "npm:^4.17.0"
     "@types/morgan": "npm:^1.9.9"
@@ -13334,6 +13363,7 @@ __metadata:
     "@types/readline-sync": "npm:^1"
     "@typescript-eslint/eslint-plugin": "npm:^7.3.1"
     "@typescript-eslint/parser": "npm:^7.3.1"
+    cors: "npm:^2.8.5"
     cosmjs-types: "npm:0.8.0"
     cz-conventional-changelog: "npm:^3.3.0"
     dotenv: "npm:^16.4.5"
@@ -13341,11 +13371,15 @@ __metadata:
     eslint-import-resolver-typescript: "npm:^3.6.1"
     eslint-plugin-import: "npm:^2.29.1"
     eslint-plugin-security: "npm:^2.1.1"
+    helmet: "npm:^8.0.0"
+    http: "npm:^0.0.1-security"
+    http-status: "npm:^2.0.0"
     husky: "npm:^9.1.4"
     jest: "npm:^29.7.0"
     joi: "npm:^17.13.3"
     lerna: "npm:^8.1.8"
     nx: "npm:19.5.7"
+    os: "npm:^0.1.2"
     patch-package: "npm:^8.0.0"
     readline-sync: "npm:^1.4.10"
     regtest-client: "npm:^0.2.1"
@@ -13355,6 +13389,7 @@ __metadata:
     vitest: "npm:^2.0.5"
     winston: "npm:^3.14.2"
     winston-transport-discord: "npm:^1.0.3"
+    xss-clean: "npm:^0.1.4"
   languageName: unknown
   linkType: soft
 

@@ -36,11 +36,17 @@
     "@cosmjs/stargate": "0.32.4",
     "@cosmjs/tendermint-rpc": "0.32.4",
     "@oraichain/oraidex-common": "^1.0.10",
+    "cors": "^2.8.5",
+    "helmet": "^8.0.0",
+    "http": "^0.0.1-security",
+    "http-status": "^2.0.0",
     "joi": "^17.13.3",
+    "os": "^0.1.2",
     "readline-sync": "^1.4.10",
     "regtest-client": "^0.2.1",
     "winston": "^3.14.2",
-    "winston-transport-discord": "^1.0.3"
+    "winston-transport-discord": "^1.0.3",
+    "xss-clean": "^0.1.4"
   },
   "devDependencies": {
     "@babel/traverse": "7.24.1",
@@ -48,6 +54,7 @@
     "@oraichain/cw-simulate": "^2.8.98",
     "@swc/core": "^1.4.11",
     "@swc/jest": "^0.2.36",
+    "@types/cors": "^2.8.17",
     "@types/jest": "^29.5.12",
     "@types/lodash": "^4.17.0",
     "@types/morgan": "^1.9.9",
