@@ -11,7 +11,8 @@ const envVarsSchema = Joi.object()
     BTC_RPC_USERNAME: Joi.string().default("satoshi"),
     BTC_RPC_PASSWORD: Joi.string().default("nakamoto"),
     BTC_NETWORK: Joi.string().default("testnet"),
-    COSMOS_RPC_URL: Joi.optional(),
+    COSMOS_RPC_URL: Joi.optional().default("https://rpc.orai.io"),
+    COSMOS_LCD_URL: Joi.optional().default("https://lcd.orai.io"),
     LIGHT_CLIENT_BITCOIN_ADDRESS: Joi.string().error(
       new Error("LIGHT_CLIENT_BITCOIN_ADDRESS is required")
     ),
@@ -25,7 +26,7 @@ const envVarsSchema = Joi.object()
     LEGITIMATE_CHECKPOINT_INTERVAL: Joi.number().default(24 * 60 * 60),
     DEPOSIT_BUFFER: Joi.number().error(new Error("DEPOSIT_BUFFER is required")),
     STORAGE_DIR_NAME: Joi.string().default(".oraibtc-relayer"),
-    WEBHOOK_URL: Joi.string().optional(),
+    WEBHOOK_URL: Joi.string().allow("").optional(),
     TRIGGER_BLOCK_INTERVAL: Joi.number().default(5 * 60 * 1000),
   })
   .unknown();
@@ -53,6 +54,7 @@ export default {
   },
   cosmos: {
     rpcUrl: envVars.COSMOS_RPC_URL,
+    lcdUrl: envVars.COSMOS_LCD_URL,
     encryptedMnemonic: envVars.ENCRYPTED_MNEMONIC,
     mnemonic: envVars.MNEMONIC,
     appBitcoin: envVars.APP_BITCOIN_ADDRESS,

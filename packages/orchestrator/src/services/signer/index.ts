@@ -18,6 +18,7 @@ import { ITERATION_DELAY } from "../../constants";
 import { getCurrentNetwork } from "../../utils/bitcoin";
 import { wrappedExecuteTransaction } from "../../utils/cosmos";
 import { RelayerInterface } from "../common/relayer.interface";
+import ContractSimulator from "../contract-simulate";
 
 class SignerService implements RelayerInterface {
   lightClientBitcoinClient: LightClientBitcoinClient;
@@ -38,7 +39,7 @@ class SignerService implements RelayerInterface {
 
   async relay() {
     let { xpriv, xpub } = await this.loadOrGenerateXpriv();
-
+    ContractSimulator.sync();
     const signatoryKey = await this.appBitcoinClient.signatoryKey({
       addr: this.appBitcoinClient.sender,
     });
@@ -51,10 +52,12 @@ class SignerService implements RelayerInterface {
     }
 
     this.logger.info(`Signer is running...`);
-    await this.startRelay({
-      xpriv,
-      xpub,
-    });
+    await Promise.all([
+      this.startRelay({
+        xpriv,
+        xpub,
+      }),
+    ]);
   }
 
   async startRelay({ xpriv, xpub }: { xpriv: string; xpub: string }) {
@@ -69,6 +72,10 @@ class SignerService implements RelayerInterface {
     const node = bip32.fromBase58(xpriv, getCurrentNetwork(this.network));
 
     while (true) {
+      if (!ContractSimulator.initialized) {
+        await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES_INTERVAL);
+        continue;
+      }
       try {
         let btcHeight = await this.lightClientBitcoinClient.headerHeight();
         let buildingIndex = await this.appBitcoinClient.buildingIndex();
@@ -85,12 +92,13 @@ class SignerService implements RelayerInterface {
 
         if (checkpoint.status === "signing") {
           await this.checkChangeRate();
-          let signTxs = await this.appBitcoinClient.signingTxsAtCheckpointIndex(
-            {
-              xpub: encodeXpub({ key: xpub }),
-              checkpointIndex: previousIndex,
-            }
-          );
+          let signTxs =
+            await ContractSimulator.simulateAppCwBitcoin.signingTxsAtCheckpointIndex(
+              {
+                xpub: encodeXpub({ key: xpub }),
+                checkpointIndex: previousIndex,
+              }
+            );
 
           if (signTxs.length > 0) {
             // Fetch latest signed checkpoint height
@@ -154,7 +162,7 @@ class SignerService implements RelayerInterface {
 
   async checkChangeRate() {
     const { withdrawal, sigset_change } =
-      await this.appBitcoinClient.changeRates({
+      await ContractSimulator.simulateAppCwBitcoin.changeRates({
         interval: env.signer.legitimateCheckpointInterval,
       });
     let sigsetChangeRate = sigset_change / 10000;
@@ -179,10 +187,15 @@ class SignerService implements RelayerInterface {
     const node = bip32.fromBase58(xpriv, getCurrentNetwork(this.network));
 
     while (true) {
+      if (!ContractSimulator.initialized) {
+        await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES_INTERVAL);
+        continue;
+      }
       try {
-        let signTxs = await this.appBitcoinClient.signingRecoveryTxs({
-          xpub: encodeXpub({ key: xpub }),
-        });
+        let signTxs =
+          await ContractSimulator.simulateAppCwBitcoin.signingRecoveryTxs({
+            xpub: encodeXpub({ key: xpub }),
+          });
         let sigs = [];
 
         if (signTxs.length > 0) {

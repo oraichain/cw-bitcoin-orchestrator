@@ -1,2 +1,4 @@
 .env.*
 !.env.example
+src/services/contract-simulate/data/final/*
+src/services/contract-simulate/data/pending/*
