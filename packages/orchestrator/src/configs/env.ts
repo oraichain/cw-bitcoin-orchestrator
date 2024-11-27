@@ -54,7 +54,6 @@ export default {
   },
   cosmos: {
     rpcUrl: envVars.COSMOS_RPC_URL,
-    lcdUrl: envVars.COSMOS_LCD_URL,
     encryptedMnemonic: envVars.ENCRYPTED_MNEMONIC,
     mnemonic: envVars.MNEMONIC,
     appBitcoin: envVars.APP_BITCOIN_ADDRESS,

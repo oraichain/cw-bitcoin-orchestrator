@@ -22,11 +22,11 @@ class ContractSimulator {
     bech32Prefix: "orai",
   });
   static finalState = new DownloadState(
-    env.cosmos.lcdUrl,
+    env.cosmos.rpcUrl,
     path.join(os.homedir(), `${env.server.storageDirName}/data/final`)
   );
   static pendingState = new DownloadState(
-    env.cosmos.lcdUrl,
+    env.cosmos.rpcUrl,
     path.join(os.homedir(), `${env.server.storageDirName}/data/pending`)
   );
   static logger = logger("ContractSimulator");

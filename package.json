@@ -74,7 +74,7 @@
     "nx": "19.5.7",
     "patch-package": "^8.0.0",
     "rimraf": "^5.0.5",
-    "typedoc": "^0.25.12",
+    "typedoc": "0.25.12",
     "typescript": "5.5.4",
     "vitest": "^2.0.5"
   },

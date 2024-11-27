@@ -16,7 +16,7 @@
     "@oraichain/bitcoin-bridge-contracts-sdk": "workspace:^",
     "@oraichain/bitcoin-bridge-lib-js": "workspace:^",
     "@oraichain/bitcoin-bridge-wasm-sdk": "workspace:^",
-    "@oraichain/cw-simulate": "^2.8.97",
+    "@oraichain/cw-simulate": "^2.8.108",
     "@oraichain/oraidex-common": "^1.0.10",
     "@oraichain/rpc-bitcoin": "^2.0.6",
     "bip32": "^4.0.0",
