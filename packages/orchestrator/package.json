@@ -16,6 +16,7 @@
     "@oraichain/bitcoin-bridge-contracts-sdk": "workspace:^",
     "@oraichain/bitcoin-bridge-lib-js": "workspace:^",
     "@oraichain/bitcoin-bridge-wasm-sdk": "workspace:^",
+    "@oraichain/cw-simulate": "^2.8.97",
     "@oraichain/oraidex-common": "^1.0.10",
     "@oraichain/rpc-bitcoin": "^2.0.6",
     "bip32": "^4.0.0",
@@ -39,7 +40,6 @@
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@oraichain/cw-simulate": "^2.8.97",
     "@types/bip32": "^2.0.0",
     "@types/compression": "^1.7.5",
     "@types/cookie-parser": "^1",

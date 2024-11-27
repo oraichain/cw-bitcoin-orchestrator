@@ -51,7 +51,6 @@
   "devDependencies": {
     "@babel/traverse": "7.24.1",
     "@cosmjs/encoding": "0.31.3",
-    "@oraichain/cw-simulate": "^2.8.98",
     "@swc/core": "^1.4.11",
     "@swc/jest": "^0.2.36",
     "@types/cors": "^2.8.17",

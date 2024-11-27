@@ -3325,7 +3325,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oraichain/cw-simulate@npm:^2.8.97, @oraichain/cw-simulate@npm:^2.8.98":
+"@oraichain/cw-simulate@npm:^2.8.97":
   version: 2.8.99
   resolution: "@oraichain/cw-simulate@npm:2.8.99"
   dependencies:
@@ -13351,7 +13351,6 @@ __metadata:
     "@cosmjs/proto-signing": "npm:0.32.1"
     "@cosmjs/stargate": "npm:0.32.4"
     "@cosmjs/tendermint-rpc": "npm:0.32.4"
-    "@oraichain/cw-simulate": "npm:^2.8.98"
     "@oraichain/oraidex-common": "npm:^1.0.10"
     "@swc/core": "npm:^1.4.11"
     "@swc/jest": "npm:^0.2.36"
