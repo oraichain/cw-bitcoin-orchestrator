@@ -41,16 +41,16 @@ class SignerService implements RelayerInterface {
     this.logger.info(`Starting signer server!`);
     let { xpriv, xpub } = await this.loadOrGenerateXpriv();
     ContractSimulator.sync();
-    const signatoryKey = await this.appBitcoinClient.signatoryKey({
-      addr: this.appBitcoinClient.sender,
-    });
+    // const signatoryKey = await this.appBitcoinClient.signatoryKey({
+    //   addr: this.appBitcoinClient.sender,
+    // });
 
-    if (signatoryKey === null) {
-      const tx = await this.appBitcoinClient.setSignatoryKey({
-        xpub: encodeXpub({ key: xpub }),
-      });
-      this.logger.info(`Setting signatory key at: ${tx.transactionHash}`);
-    }
+    // if (signatoryKey === null) {
+    //   const tx = await this.appBitcoinClient.setSignatoryKey({
+    //     xpub: encodeXpub({ key: xpub }),
+    //   });
+    //   this.logger.info(`Setting signatory key at: ${tx.transactionHash}`);
+    // }
 
     this.logger.info(`Signer is running...`);
     await Promise.all([

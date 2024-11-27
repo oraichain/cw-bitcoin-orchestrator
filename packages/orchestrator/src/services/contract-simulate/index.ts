@@ -13,7 +13,6 @@ import { setTimeout } from "timers/promises";
 import env from "../../configs/env";
 import { logger } from "../../configs/logger";
 import { ITERATION_DELAY } from "../../constants";
-import CwAppBitcoinCode from "./wasm/cw-app-bitcoin";
 
 class ContractSimulator {
   static simulateAppCwBitcoin: AppBitcoinClient;
@@ -74,13 +73,17 @@ class ContractSimulator {
 
     this.initialized = true;
 
-    await Promise.all([this.loadStateAndCode(env.cosmos.appBitcoin)]);
+    await Promise.all([
+      this.loadStateAndCode("cw-app-bitcoin", env.cosmos.appBitcoin),
+    ]);
     this.logger.info("Finish state crawler!");
   };
 
   static async tryInitializeWithOldData() {
     try {
-      await Promise.all([this.loadStateAndCode(env.cosmos.appBitcoin)]);
+      await Promise.all([
+        this.loadStateAndCode("cw-app-bitcoin", env.cosmos.appBitcoin),
+      ]);
       this.simulateAppCwBitcoin = new AppBitcoinClient(
         this.simulateClient as any,
         this.sender,
@@ -92,8 +95,8 @@ class ContractSimulator {
     }
   }
 
-  static async loadStateAndCode(contractAddress: string) {
-    const code = Buffer.from(CwAppBitcoinCode.code, "base64");
+  static async loadStateAndCode(fileName: string, contractAddress: string) {
+    const code = readFileSync(path.join(__dirname, `wasm/${fileName}.wasm`));
     const state = readFileSync(
       path.join(
         os.homedir(),
