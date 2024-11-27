@@ -1,4 +1,4 @@
-import { Dest as SdkDest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
+import { Dest as SdkDest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/AppBitcoin.types";
 import { Dest as WasmDest } from "@oraichain/bitcoin-bridge-wasm-sdk";
 
 export function convertWasmDestToSdkDest(

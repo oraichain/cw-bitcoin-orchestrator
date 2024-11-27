@@ -2,10 +2,8 @@ import {
   AppBitcoinClient,
   LightClientBitcoinClient,
 } from "@oraichain/bitcoin-bridge-contracts-sdk";
-import {
-  Dest,
-  WrappedHeader,
-} from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
+import { Dest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/AppBitcoin.types";
+import { WrappedHeader } from "@oraichain/bitcoin-bridge-contracts-sdk/build/LightClientBitcoin.types";
 import { BitcoinNetwork, redeemScript } from "@oraichain/bitcoin-bridge-lib-js";
 import {
   commitmentBytes,

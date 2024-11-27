@@ -1,5 +1,5 @@
 import { AppBitcoinQueryClient } from "@oraichain/bitcoin-bridge-contracts-sdk";
-import { Dest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
+import { Dest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/AppBitcoin.types";
 import { Request, Response } from "express";
 import httpStatus from "http-status";
 import RelayerService from "../../services/relayer";
