@@ -38,6 +38,7 @@ class SignerService implements RelayerInterface {
   }
 
   async relay() {
+    this.logger.info(`Starting signer server!`);
     let { xpriv, xpub } = await this.loadOrGenerateXpriv();
     ContractSimulator.sync();
     const signatoryKey = await this.appBitcoinClient.signatoryKey({
