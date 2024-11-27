@@ -7,11 +7,13 @@ import {
   SortedMap,
 } from "@oraichain/cw-simulate";
 import fs, { readFileSync } from "fs";
+import os from "os";
 import path from "path";
 import { setTimeout } from "timers/promises";
 import env from "../../configs/env";
 import { logger } from "../../configs/logger";
 import { ITERATION_DELAY } from "../../constants";
+import CwAppBitcoinCode from "./wasm/cw-app-bitcoin";
 
 class ContractSimulator {
   static simulateAppCwBitcoin: AppBitcoinClient;
@@ -21,11 +23,11 @@ class ContractSimulator {
   });
   static finalState = new DownloadState(
     env.cosmos.lcdUrl,
-    `${__dirname}/data/final`
+    path.join(os.homedir(), `${env.server.storageDirName}/data/final`)
   );
   static pendingState = new DownloadState(
     env.cosmos.lcdUrl,
-    `${__dirname}/data/pending`
+    path.join(os.homedir(), `${env.server.storageDirName}/data/pending`)
   );
   static logger = logger("ContractSimulator");
   static initialized: boolean = false;
@@ -33,8 +35,14 @@ class ContractSimulator {
 
   static stateCrawler = async () => {
     this.logger.info("Starting download new state");
-    const source = `${__dirname}/data/pending`;
-    const dest = `${__dirname}/data/final`;
+    const source = path.join(
+      os.homedir(),
+      `${env.server.storageDirName}/data/pending`
+    );
+    const dest = path.join(
+      os.homedir(),
+      `${env.server.storageDirName}/data/final`
+    );
 
     if (!fs.existsSync(source)) {
       fs.mkdirSync(source, { recursive: true });
@@ -66,17 +74,13 @@ class ContractSimulator {
 
     this.initialized = true;
 
-    await Promise.all([
-      this.loadStateAndCode("cw-app-bitcoin.wasm", env.cosmos.appBitcoin),
-    ]);
+    await Promise.all([this.loadStateAndCode(env.cosmos.appBitcoin)]);
     this.logger.info("Finish state crawler!");
   };
 
   static async tryInitializeWithOldData() {
     try {
-      await Promise.all([
-        this.loadStateAndCode("cw-app-bitcoin.wasm", env.cosmos.appBitcoin),
-      ]);
+      await Promise.all([this.loadStateAndCode(env.cosmos.appBitcoin)]);
       this.simulateAppCwBitcoin = new AppBitcoinClient(
         this.simulateClient as any,
         this.sender,
@@ -88,10 +92,13 @@ class ContractSimulator {
     }
   }
 
-  static async loadStateAndCode(fileName: string, contractAddress: string) {
-    const code = readFileSync(path.join(__dirname, `data/wasm/${fileName}`));
+  static async loadStateAndCode(contractAddress: string) {
+    const code = Buffer.from(CwAppBitcoinCode.code, "base64");
     const state = readFileSync(
-      path.join(__dirname, `data/final/${contractAddress}.state`)
+      path.join(
+        os.homedir(),
+        `${env.server.storageDirName}/data/final/${contractAddress}.state`
+      )
     );
     const { codeId } = await this.simulateClient.upload(
       this.sender,
