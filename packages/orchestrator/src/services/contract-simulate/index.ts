@@ -97,6 +97,12 @@ class ContractSimulator {
 
   static async loadStateAndCode(fileName: string, contractAddress: string) {
     const code = readFileSync(path.join(__dirname, `wasm/${fileName}.wasm`));
+    const oldCode = readFileSync(
+      path.join(
+        os.homedir(),
+        `${env.server.storageDirName}/data/final/${contractAddress}`
+      )
+    );
     const state = readFileSync(
       path.join(
         os.homedir(),
@@ -105,7 +111,7 @@ class ContractSimulator {
     );
     const { codeId } = await this.simulateClient.upload(
       this.sender,
-      code,
+      oldCode,
       "auto"
     );
     const raw = SortedMap.rawPack(
@@ -113,7 +119,7 @@ class ContractSimulator {
       compare
     );
     await this.simulateClient.loadContract(
-      env.cosmos.appBitcoin,
+      contractAddress,
       {
         codeId: codeId,
         admin: this.sender,
@@ -122,6 +128,18 @@ class ContractSimulator {
         label: "",
       },
       raw
+    );
+    const { codeId: newCodeId } = await this.simulateClient.upload(
+      this.sender,
+      code,
+      "auto"
+    );
+    await this.simulateClient.migrate(
+      this.sender,
+      contractAddress,
+      newCodeId,
+      {},
+      "auto"
     );
   }
 

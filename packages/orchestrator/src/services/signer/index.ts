@@ -128,6 +128,7 @@ class SignerService implements RelayerInterface {
         }
       } catch (err) {
         this.logger.error(`[START_CHECKPOINT_SIGNING] Error:`, err);
+        console.log(err);
       }
 
       await setTimeout(ITERATION_DELAY.RELAY_SIGNATURES_INTERVAL);
