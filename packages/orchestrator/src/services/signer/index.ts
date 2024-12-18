@@ -103,6 +103,7 @@ class SignerService implements RelayerInterface {
           console.log({
             previousIndex,
             signTxs,
+            xpub: encodeXpub({ key: xpub }),
           });
 
           if (signTxs.length > 0) {
@@ -258,6 +259,7 @@ class SignerService implements RelayerInterface {
     }
     let xpriv = node.toBase58();
     let xpub = node.neutered().toBase58();
+    console.log("Xpub 52:", node.derive(52).toBase58());
     return {
       xpriv,
       xpub,
