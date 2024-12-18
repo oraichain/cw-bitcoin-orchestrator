@@ -100,6 +100,10 @@ class SignerService implements RelayerInterface {
                 checkpointIndex: previousIndex,
               }
             );
+          console.log({
+            previousIndex,
+            signTxs,
+          });
 
           if (signTxs.length > 0) {
             // Fetch latest signed checkpoint height
