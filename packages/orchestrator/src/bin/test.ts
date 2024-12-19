@@ -28,7 +28,7 @@ const main = async () => {
   );
 
   const realXpub = await appBitcoinClient.signatoryKey({
-    addr: "orai1q53ujvvrcd0t543dsh5445lu6ar0qr2z9ll7ux",
+    addr: sender,
   });
   console.log("Actually xpub:", { xpub }, "Expected xpub:", { xpub: realXpub });
 
