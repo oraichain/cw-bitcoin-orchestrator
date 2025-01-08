@@ -397,10 +397,6 @@ export default class RelayerService implements RelayerInterface {
       let sidechainHeight = await this.lightClientBitcoinClient.headerHeight();
       let allHeightQuerier = [];
       for (let i = 0; i < numBlocks; i++) {
-        if (this.lastBlockHeight > sidechainHeight - i) {
-          break;
-        }
-
         allHeightQuerier.push({
           method: "getblockhash",
           params: [sidechainHeight - i],
@@ -444,9 +440,6 @@ export default class RelayerService implements RelayerInterface {
         }
       }
       await this.watchedScriptClient.removeExpired();
-      if (allHeightQuerier.length > 0) {
-        this.lastBlockHeight = allHeightQuerier[0];
-      }
 
       // let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
       // let hash = tip;
