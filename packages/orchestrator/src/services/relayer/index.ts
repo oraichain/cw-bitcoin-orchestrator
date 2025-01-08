@@ -559,6 +559,21 @@ export default class RelayerService implements RelayerInterface {
         blockhash: blockHash,
       });
 
+      console.log({
+        btcHeight: blockHeight,
+        btcTx: Buffer.from(toBinaryTransaction(decodeRawTx(rawTx))).toString(
+          "base64"
+        ),
+        btcProof: Buffer.from(
+          toBinaryPartialMerkleTree(
+            fromBinaryMerkleBlock(Buffer.from(txProof, "hex")).txn
+          )
+        ).toString("base64"),
+        btcVout: i,
+        dest: script.dest,
+        sigsetIndex: Number(script.sigsetIndex),
+      });
+
       await wrappedExecuteTransaction(async () => {
         const tx = await this.appBitcoinClient.relayDeposit({
           btcHeight: blockHeight,
