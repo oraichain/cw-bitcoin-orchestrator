@@ -3,7 +3,7 @@ import {
   CheckpointConfig,
   Dest,
   SignatorySet,
-} from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
+} from "@oraichain/bitcoin-bridge-contracts-sdk/build/AppBitcoin.types";
 import * as btc from "bitcoinjs-lib";
 import { convertSdkDestToWasmDest } from "./dest";
 import { commitmentBytes } from "./wasm/cw_bitcoin_wasm";
