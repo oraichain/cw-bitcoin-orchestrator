@@ -92,6 +92,12 @@ export default class RelayerService implements RelayerInterface {
     this.trackMemoryLeak();
     while (true) {
       lastHash = await this.relayHeader(lastHash);
+      let currentHash = await this.btcClient.getbestblockhash();
+      if (currentHash !== lastHash) {
+        this.logger.info("Waiting for next header...");
+        await setTimeout(3000);
+        continue;
+      }
       prevTip = await this.relayDeposit(prevTip);
       await this.relayRecoveryDeposits();
       await this.relayCheckpoints();
