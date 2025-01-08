@@ -44,6 +44,7 @@ class SignerService implements RelayerInterface {
     const signatoryKey = await this.appBitcoinClient.signatoryKey({
       addr: this.appBitcoinClient.sender,
     });
+    console.log("Signatory key:", signatoryKey);
 
     if (signatoryKey === null) {
       const tx = await this.appBitcoinClient.setSignatoryKey({
@@ -87,6 +88,7 @@ class SignerService implements RelayerInterface {
           continue;
         }
 
+        console.log("Previous index:", previousIndex);
         let checkpoint = await this.appBitcoinClient.checkpointByIndex({
           index: previousIndex,
         });

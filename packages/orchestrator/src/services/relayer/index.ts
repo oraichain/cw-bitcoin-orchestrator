@@ -61,6 +61,7 @@ export default class RelayerService implements RelayerInterface {
   depositIndexService: DepositIndexService;
   relayedSetService: RelayedSetService;
   blockHeaderService: BlockHeaderService;
+  lastBlockHeight: number = 0;
   logger: Logger;
 
   constructor(
@@ -101,8 +102,7 @@ export default class RelayerService implements RelayerInterface {
         });
         this.logger.info("Garbage collection is done!");
       }
-      this.logger.info("Done round!");
-      await setTimeout(5000);
+      await setTimeout(10000);
     }
   }
 
@@ -136,10 +136,13 @@ export default class RelayerService implements RelayerInterface {
       const fullNodeHash = await this.btcClient.getbestblockhash();
       const sideChainHash =
         await this.lightClientBitcoinClient.sidechainBlockHash();
+      console.log({
+        fullNodeHash,
+        sideChainHash,
+      });
 
       if (fullNodeHash !== sideChainHash) {
         await this.relayHeaderBatch(fullNodeHash, sideChainHash);
-
         // Delay between headers
         return lastHash;
       }
@@ -359,7 +362,6 @@ export default class RelayerService implements RelayerInterface {
             const script = await this.watchedScriptClient.getScript(
               output.scriptPubKey.hex
             );
-
             if (!script) continue;
 
             this.logger.info(`Found pending deposit transaction ${txid}`);
@@ -389,11 +391,19 @@ export default class RelayerService implements RelayerInterface {
       let sidechainHeight = await this.lightClientBitcoinClient.headerHeight();
       let allHeightQuerier = [];
       for (let i = 0; i < numBlocks; i++) {
+        if (this.lastBlockHeight > sidechainHeight - i) {
+          break;
+        }
+
         allHeightQuerier.push({
           method: "getblockhash",
           params: [sidechainHeight - i],
         });
       }
+      if (allHeightQuerier.length === 0) {
+        return;
+      }
+
       let allBlockhashes = (await this.btcClient.batch(allHeightQuerier)).map(
         (item) => item.result
       );
@@ -428,6 +438,9 @@ export default class RelayerService implements RelayerInterface {
         }
       }
       await this.watchedScriptClient.removeExpired();
+      if (allHeightQuerier.length > 0) {
+        this.lastBlockHeight = allHeightQuerier[0];
+      }
 
       // let tip = await this.lightClientBitcoinClient.sidechainBlockHash();
       // let hash = tip;
@@ -578,7 +591,10 @@ export default class RelayerService implements RelayerInterface {
         const existed = await this.relayedSetService.exist(
           `relay-recovery-deposits-${recoveryTx}`
         );
-        if (existed) continue;
+        if (existed) {
+          await setTimeout(SUBMIT_RELAY_RECOVERY_TX_INTERVAL_DELAY);
+          continue;
+        }
         const tx = await this.btcClient.sendrawtransaction({
           hexstring: Buffer.from(recoveryTx, "base64").toString("hex"),
         });
@@ -609,9 +625,15 @@ export default class RelayerService implements RelayerInterface {
           const tx = await this.btcClient.sendrawtransaction({
             hexstring: Buffer.from(checkpoint, "base64").toString("hex"),
           });
-          await this.relayedSetService.insert(`relay-checkpoint-${checkpoint}`);
+          if (tx !== null) {
+            await this.relayedSetService.insert(
+              `relay-checkpoint-${checkpoint}`
+            );
+          }
           this.logger.info(`Relayed checkpoint tx ${tx}`);
-        } catch (err) {}
+        } catch (err) {
+          console.log("err", err);
+        }
 
         await setTimeout(SUBMIT_RELAY_CHECKPOINT_INTERVAL_DELAY);
       }
@@ -627,6 +649,8 @@ export default class RelayerService implements RelayerInterface {
       let confirmedIndex = await this.appBitcoinClient.confirmedIndex();
       let unconfirmedIndex =
         await this.appBitcoinClient.unhandledConfirmedIndex();
+      console.log("confirmedIndex", confirmedIndex);
+      console.log("unconfirmedIndex", unconfirmedIndex);
       let lastCompletedIndex = await this.appBitcoinClient.completedIndex();
 
       if (unconfirmedIndex === null) {

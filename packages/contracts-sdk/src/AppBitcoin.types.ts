@@ -50,6 +50,11 @@ export type ExecuteMsg =
       register_validator: {};
     }
   | {
+      update_foundation_keys: {
+        xpubs: String[];
+      };
+    }
+  | {
       relay_deposit: {
         btc_height: number;
         btc_proof: Binary;
@@ -113,6 +118,7 @@ export type ExecuteMsg =
         val_addr: Addr;
       };
     };
+export type String = string;
 export type Binary = string;
 export type Dest =
   | {
@@ -122,7 +128,6 @@ export type Dest =
       ibc: IbcDest;
     };
 export type Signature = number[];
-export type String = string;
 export interface Ratio {
   denominator: number;
   nominator: number;
@@ -356,6 +361,7 @@ export interface Coin {
 }
 export interface SignatorySet {
   create_time: number;
+  foundation_signatories: Signatory[];
   index: number;
   possible_vp: number;
   present_vp: number;

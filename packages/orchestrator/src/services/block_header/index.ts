@@ -40,25 +40,44 @@ class BlockHeaderService {
     }
   }
 
-  async getBlockHeader(blockhash: string): Promise<VerbosedBlockHeader | null> {
-    const data: BlockHeaderInterface[] = await this.db.select(
-      TableName.BlockHeader,
-      {
-        where: { hash: blockhash },
+  async getBlockHeader(
+    blockhash: string,
+    direct: boolean = true
+  ): Promise<VerbosedBlockHeader | null> {
+    if (direct) {
+      const blockHeaderData: VerbosedBlockHeader =
+        await this.btcClient.getblockheader({
+          blockhash,
+          verbose: true,
+        });
+      if (blockHeaderData !== null) {
+        await this.db.insert(TableName.BlockHeader, {
+          hash: blockhash,
+          data: JSON.stringify(blockHeaderData),
+        });
       }
-    );
-    if (data.length === 0) {
-      return this.insert(blockhash);
+      this.logger.info(`Inserted new block header with hash ${blockhash}`);
+      return blockHeaderData;
+    } else {
+      const data: BlockHeaderInterface[] = await this.db.select(
+        TableName.BlockHeader,
+        {
+          where: { hash: blockhash },
+        }
+      );
+      if (data.length === 0) {
+        return this.insert(blockhash);
+      }
+      let block = JSON.parse(data[0].data) as VerbosedBlockHeader;
+      if (block?.nextblockhash === undefined) {
+        block = await this.btcClient.getblockheader({
+          blockhash: block.hash,
+          verbose: true,
+        });
+        return block;
+      }
+      return JSON.parse(data[0].data) as VerbosedBlockHeader;
     }
-    let block = JSON.parse(data[0].data) as VerbosedBlockHeader;
-    if (block?.nextblockhash === undefined) {
-      block = await this.btcClient.getblockheader({
-        blockhash: block.hash,
-        verbose: true,
-      });
-      return block;
-    }
-    return JSON.parse(data[0].data) as VerbosedBlockHeader;
   }
 }
 
