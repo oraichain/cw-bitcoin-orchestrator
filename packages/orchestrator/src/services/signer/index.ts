@@ -88,7 +88,7 @@ class SignerService implements RelayerInterface {
           continue;
         }
 
-        console.log("Previous index:", previousIndex);
+        console.log("Check checkpoint at previous index:", previousIndex);
         let checkpoint = await this.appBitcoinClient.checkpointByIndex({
           index: previousIndex,
         });
