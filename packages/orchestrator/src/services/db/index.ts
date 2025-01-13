@@ -112,8 +112,8 @@ export class DuckDbNode extends DuckDB {
       let db = await Database.create(dbPath);
       await db.close(); // close to flush WAL file
       db = await Database.create(dbPath);
+      db.exec("PRAGMA threads=8;");
       db.exec("SET memory_limit='400MB'");
-      db.exec("PRAGMA threads=4");
       const conn = await db.connect();
       DuckDbNode.instances = new DuckDbNode(conn);
     }
