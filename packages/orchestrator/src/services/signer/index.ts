@@ -95,13 +95,12 @@ class SignerService implements RelayerInterface {
 
         if (checkpoint.status === "signing") {
           await this.checkChangeRate();
-          let signTxs =
-            await ContractSimulator.simulateAppCwBitcoin.signingTxsAtCheckpointIndex(
-              {
-                xpub: encodeXpub({ key: xpub }),
-                checkpointIndex: previousIndex,
-              }
-            );
+          const simulateAppCwBitcoin =
+            await ContractSimulator.simulateAppCwBitcoin();
+          let signTxs = await simulateAppCwBitcoin.signingTxsAtCheckpointIndex({
+            xpub: encodeXpub({ key: xpub }),
+            checkpointIndex: previousIndex,
+          });
           console.log({
             previousIndex,
             signTxs,
@@ -170,8 +169,9 @@ class SignerService implements RelayerInterface {
   }
 
   async checkChangeRate() {
+    const simulateAppCwBitcoin = await ContractSimulator.simulateAppCwBitcoin();
     const { withdrawal, sigset_change } =
-      await ContractSimulator.simulateAppCwBitcoin.changeRates({
+      await simulateAppCwBitcoin.changeRates({
         interval: env.signer.legitimateCheckpointInterval,
       });
     let sigsetChangeRate = sigset_change / 10000;
@@ -201,10 +201,11 @@ class SignerService implements RelayerInterface {
         continue;
       }
       try {
-        let signTxs =
-          await ContractSimulator.simulateAppCwBitcoin.signingRecoveryTxs({
-            xpub: encodeXpub({ key: xpub }),
-          });
+        const simulateAppCwBitcoin =
+          await ContractSimulator.simulateAppCwBitcoin();
+        let signTxs = await simulateAppCwBitcoin.signingRecoveryTxs({
+          xpub: encodeXpub({ key: xpub }),
+        });
         let sigs = [];
 
         if (signTxs.length > 0) {
