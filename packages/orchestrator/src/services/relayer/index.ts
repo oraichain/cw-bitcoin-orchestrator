@@ -786,11 +786,7 @@ export default class RelayerService implements RelayerInterface {
 
   // [QUERY FUNCTIONS]
   async getPendingDeposits(receiver: string): Promise<DepositInfo[]> {
-    const currentSidechainBlockHash =
-      await this.lightClientBitcoinClient.sidechainBlockHash();
-    const blockHeader: BlockHeader =
-      await this.blockHeaderService.getBlockHeader(currentSidechainBlockHash);
-    const currentBtcHeight = blockHeader.height;
+    const currentBtcHeight = await this.lightClientBitcoinClient.headerHeight();
     return this.depositIndexService.getDepositsByReceiver(
       receiver,
       currentBtcHeight
