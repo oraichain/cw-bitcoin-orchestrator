@@ -44,8 +44,6 @@ class SignerService implements RelayerInterface {
     const signatoryKey = await this.appBitcoinClient.signatoryKey({
       addr: this.appBitcoinClient.sender,
     });
-    console.log("Signatory key:", signatoryKey);
-
     if (signatoryKey === null) {
       const tx = await this.appBitcoinClient.setSignatoryKey({
         xpub: encodeXpub({ key: xpub }),
@@ -262,7 +260,6 @@ class SignerService implements RelayerInterface {
     }
     let xpriv = node.toBase58();
     let xpub = node.neutered().toBase58();
-    console.log("Xpub 52:", node.derive(52).toBase58());
     return {
       xpriv,
       xpub,
