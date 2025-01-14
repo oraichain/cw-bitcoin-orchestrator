@@ -6,9 +6,9 @@ import { Dest } from "@oraichain/bitcoin-bridge-contracts-sdk/build/AppBitcoin.t
 import { WrappedHeader } from "@oraichain/bitcoin-bridge-contracts-sdk/build/LightClientBitcoin.types";
 import { BitcoinNetwork, redeemScript } from "@oraichain/bitcoin-bridge-lib-js";
 import {
+  DepositInfo,
   commitmentBytes,
   decodeRawTx,
-  DepositInfo,
   fromBinaryMerkleBlock,
   fromBinaryTransaction,
   getBitcoinTransactionTxid,
@@ -40,10 +40,10 @@ import {
 } from "../../constants";
 import { chunkArray, mapSlice } from "../../utils/array";
 import {
+  ScriptPubkeyType,
   calculateOutpointKey,
   decodeAddress,
   getCurrentNetwork,
-  ScriptPubkeyType,
   toScriptPubKeyP2WSH,
 } from "../../utils/bitcoin";
 import { trackExecutionTime } from "../../utils/catchAsync";
@@ -264,7 +264,7 @@ export default class RelayerService implements RelayerInterface {
       // Mempool handler
       await trackExecutionTime(
         async () => {
-          this.scanTxsFromMempools();
+          await this.scanTxsFromMempools();
         },
         "scanTxsFromMempools",
         this.logger
@@ -322,13 +322,16 @@ export default class RelayerService implements RelayerInterface {
     try {
       const allMempoolTxs = await this.btcClient.getrawmempool();
       const mempoolTxs = (
-        await Promise.all([
+        await Promise.all(
           allMempoolTxs
             .filter((item: string) => item !== null)
-            .map((txid: string) => {
-              return this.relayedSetService.exist(`relay-deposit-${txid}`);
-            }),
-        ])
+            .map(async (txid: string) => {
+              const result = await this.relayedSetService.exist(
+                `relay-deposit-${txid}`
+              );
+              return result ? undefined : txid;
+            })
+        )
       ).filter((item) => item);
 
       let i = 0;
