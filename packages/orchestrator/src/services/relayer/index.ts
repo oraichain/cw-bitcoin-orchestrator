@@ -411,13 +411,11 @@ export default class RelayerService implements RelayerInterface {
 
       const chunkHeightQuerier = chunkArray(allHeightQuerier, 50);
       for (const allHeightQuerier of chunkHeightQuerier) {
-        console.log("Batch chunk height");
         let allBlockhashes = (await this.btcClient.batch(allHeightQuerier)).map(
           (item) => item.result
         );
         let i = 0;
         while (i < allBlockhashes.length) {
-          console.log("Batch chunk block");
           const blockhashChunk = mapSlice(
             allBlockhashes,
             i,
