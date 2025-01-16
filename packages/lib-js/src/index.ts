@@ -3,7 +3,7 @@ import {
   CheckpointConfig,
   Dest,
   SignatorySet,
-} from "@oraichain/bitcoin-bridge-contracts-sdk/build/CwBitcoin.types";
+} from "@oraichain/bitcoin-bridge-contracts-sdk/build/AppBitcoin.types";
 import * as btc from "bitcoinjs-lib";
 import { convertSdkDestToWasmDest } from "./dest";
 import { commitmentBytes } from "./wasm/cw_bitcoin_wasm";
@@ -151,6 +151,11 @@ export function redeemScript(
   let truncatedVp = BigInt(firstSig.voting_power) >> truncation;
 
   let script = [];
+  if (sigset.foundation_signatories) {
+    script.push(Buffer.from([0]));
+    script.push(op("OP_EQUAL"));
+    script.push(op("OP_IF"));
+  }
   script.push(Buffer.from(firstSig.pubkey.bytes));
   script.push(op("OP_CHECKSIG"));
   script.push(op("OP_IF"));
@@ -178,6 +183,40 @@ export function redeemScript(
   script.push(op("OP_GREATERTHAN"));
   script.push(dest);
   script.push(op("OP_DROP"));
+
+  if (sigset.foundation_signatories) {
+    if (sigset.foundation_signatories?.length > 0) {
+      let signatories = sigset.foundation_signatories;
+      let totalVotingPower = signatories[0].voting_power;
+      script.push(op("OP_ELSE"));
+      script.push(Buffer.from(signatories[0].pubkey.bytes));
+      script.push(op("OP_CHECKSIG"));
+      script.push(op("OP_IF"));
+      script.push(pushInt(BigInt(signatories[0].voting_power)));
+      script.push(op("OP_ELSE"));
+      script.push(pushInt(0n));
+      script.push(op("OP_ENDIF"));
+      for (let i = 1; i < signatories.length; i++) {
+        script.push(op("OP_SWAP"));
+        script.push(Buffer.from(signatories[i].pubkey.bytes));
+        script.push(op("OP_CHECKSIG"));
+        script.push(op("OP_IF"));
+        script.push(pushInt(BigInt(signatories[i].voting_power)));
+        script.push(op("OP_ADD"));
+        script.push(op("OP_ENDIF"));
+        totalVotingPower += signatories[i].voting_power;
+      }
+      let truncatedThreshold = Math.ceil(
+        (totalVotingPower * numerator) / denominator
+      );
+      script.push(pushInt(BigInt(truncatedThreshold)));
+      script.push(op("OP_GREATERTHANOREQUAL"));
+    } else {
+      script.push(op("OP_ELSE"));
+      script.push(op("OP_RETURN"));
+    }
+    script.push(op("OP_ENDIF"));
+  }
 
   return btc.script.compile(script as any);
 }

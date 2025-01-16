@@ -44,7 +44,6 @@ class SignerService implements RelayerInterface {
     const signatoryKey = await this.appBitcoinClient.signatoryKey({
       addr: this.appBitcoinClient.sender,
     });
-
     if (signatoryKey === null) {
       const tx = await this.appBitcoinClient.setSignatoryKey({
         xpub: encodeXpub({ key: xpub }),
@@ -87,19 +86,19 @@ class SignerService implements RelayerInterface {
           continue;
         }
 
+        console.log("Check checkpoint at previous index:", previousIndex);
         let checkpoint = await this.appBitcoinClient.checkpointByIndex({
           index: previousIndex,
         });
 
         if (checkpoint.status === "signing") {
           await this.checkChangeRate();
-          let signTxs =
-            await ContractSimulator.simulateAppCwBitcoin.signingTxsAtCheckpointIndex(
-              {
-                xpub: encodeXpub({ key: xpub }),
-                checkpointIndex: previousIndex,
-              }
-            );
+          const simulateAppCwBitcoin =
+            await ContractSimulator.simulateAppCwBitcoin();
+          let signTxs = await simulateAppCwBitcoin.signingTxsAtCheckpointIndex({
+            xpub: encodeXpub({ key: xpub }),
+            checkpointIndex: previousIndex,
+          });
           console.log({
             previousIndex,
             signTxs,
@@ -168,8 +167,9 @@ class SignerService implements RelayerInterface {
   }
 
   async checkChangeRate() {
+    const simulateAppCwBitcoin = await ContractSimulator.simulateAppCwBitcoin();
     const { withdrawal, sigset_change } =
-      await ContractSimulator.simulateAppCwBitcoin.changeRates({
+      await simulateAppCwBitcoin.changeRates({
         interval: env.signer.legitimateCheckpointInterval,
       });
     let sigsetChangeRate = sigset_change / 10000;
@@ -199,10 +199,11 @@ class SignerService implements RelayerInterface {
         continue;
       }
       try {
-        let signTxs =
-          await ContractSimulator.simulateAppCwBitcoin.signingRecoveryTxs({
-            xpub: encodeXpub({ key: xpub }),
-          });
+        const simulateAppCwBitcoin =
+          await ContractSimulator.simulateAppCwBitcoin();
+        let signTxs = await simulateAppCwBitcoin.signingRecoveryTxs({
+          xpub: encodeXpub({ key: xpub }),
+        });
         let sigs = [];
 
         if (signTxs.length > 0) {
@@ -259,7 +260,6 @@ class SignerService implements RelayerInterface {
     }
     let xpriv = node.toBase58();
     let xpub = node.neutered().toBase58();
-    console.log("Xpub 52:", node.derive(52).toBase58());
     return {
       xpriv,
       xpub,

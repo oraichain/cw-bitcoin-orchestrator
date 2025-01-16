@@ -336,6 +336,16 @@ export interface AppBitcoinInterface extends AppBitcoinReadOnlyInterface {
     _memo?: string,
     _funds?: Coin[]
   ) => Promise<ExecuteResult>;
+  updateFoundationKeys: (
+    {
+      xpubs,
+    }: {
+      xpubs: String[];
+    },
+    _fee?: number | StdFee | "auto",
+    _memo?: string,
+    _funds?: Coin[]
+  ) => Promise<ExecuteResult>;
   relayDeposit: (
     {
       btcHeight,
@@ -486,6 +496,7 @@ export class AppBitcoinClient
     this.updateBitcoinConfig = this.updateBitcoinConfig.bind(this);
     this.updateCheckpointConfig = this.updateCheckpointConfig.bind(this);
     this.registerValidator = this.registerValidator.bind(this);
+    this.updateFoundationKeys = this.updateFoundationKeys.bind(this);
     this.relayDeposit = this.relayDeposit.bind(this);
     this.relayCheckpoint = this.relayCheckpoint.bind(this);
     this.withdrawToBitcoin = this.withdrawToBitcoin.bind(this);
@@ -604,6 +615,29 @@ export class AppBitcoinClient
       this.contractAddress,
       {
         register_validator: {},
+      },
+      _fee,
+      _memo,
+      _funds
+    );
+  };
+  updateFoundationKeys = async (
+    {
+      xpubs,
+    }: {
+      xpubs: String[];
+    },
+    _fee: number | StdFee | "auto" = "auto",
+    _memo?: string,
+    _funds?: Coin[]
+  ): Promise<ExecuteResult> => {
+    return await this.client.execute(
+      this.sender,
+      this.contractAddress,
+      {
+        update_foundation_keys: {
+          xpubs,
+        },
       },
       _fee,
       _memo,

@@ -12,9 +12,10 @@ class CheckpointService {
   };
 
   getCheckpoint = async (index: number | undefined) => {
-    const checkpoint = index
-      ? await this.appBitcoinQueryClient.checkpointByIndex({ index })
-      : await this.appBitcoinQueryClient.buildingCheckpoint();
+    const checkpoint =
+      index !== undefined
+        ? await this.appBitcoinQueryClient.checkpointByIndex({ index })
+        : await this.appBitcoinQueryClient.buildingCheckpoint();
 
     const checkpointTx = await this.appBitcoinQueryClient.checkpointTx({
       index,
