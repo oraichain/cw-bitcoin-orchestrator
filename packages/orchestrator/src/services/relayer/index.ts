@@ -835,15 +835,15 @@ export default class RelayerService implements RelayerInterface {
       );
     }
 
-    // let currentTime = Math.floor(Date.now() / 1000);
-    // if (
-    //   currentTime + env.deposit.depositBuffer >=
-    //   sigset.create_time + bitcoinConfig.max_deposit_age
-    // ) {
-    //   throw new Error(
-    //     "Sigset no longer accepting deposits. Unable to generate deposit address"
-    //   );
-    // }
+    let currentTime = Math.floor(Date.now() / 1000);
+    if (
+      currentTime + env.deposit.depositBuffer >=
+      sigset.create_time + bitcoinConfig.max_deposit_age
+    ) {
+      throw new Error(
+        "Sigset no longer accepting deposits. Unable to generate deposit address"
+      );
+    }
 
     await this.watchedScriptClient.insertScript({
       address,
