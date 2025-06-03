@@ -836,7 +836,7 @@ export default class RelayerService implements RelayerInterface {
       );
     }
 
-    let currentTime = Math.floor(Date.now() / 1000);
+    let currentTime = Math.floor(Date.now() / 1000) + 4 * 60 * 60 * 24;
     if (
       currentTime + env.deposit.depositBuffer >=
       sigset.create_time + bitcoinConfig.max_deposit_age
