@@ -27,6 +27,7 @@ import {
   BlockHeader,
   VerbosedBlockHeader,
 } from "../../@types";
+import env from "../../configs/env";
 import { logger } from "../../configs/logger";
 import {
   ITERATION_DELAY,
